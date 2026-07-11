@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Billing & Invoice Center - UrbanHub CRM</title>
+
+    <!-- Theme Choice Pre-load Script to avoid flashing -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Fine-tuning for high density invoice dashboard aesthetics */
+      .badge-partial-uh {
+        background-color: rgba(249, 115, 22, 0.15) !important;
+        color: #F97316 !important;
+      }
+      .badge-draft-uh {
+        background-color: rgba(148, 163, 184, 0.15) !important;
+        color: #94A3B8 !important;
+      }
+      .badge-cancelled-uh {
+        background-color: rgba(100, 116, 139, 0.15) !important;
+        color: #64748B !important;
+      }
+      .badge-refunded-uh {
+        background-color: rgba(59, 130, 246, 0.15) !important;
+        color: #3B82F6 !important;
+      }
+
+      /* Statistics Grid Dense Layout */
+      .dense-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.75rem;
+      }
+      @media (min-width: 1400px) {
+        .dense-stat-grid {
+          grid-template-columns: repeat(9, 1fr);
+        }
+      }
+
+      /* Compact KPI card overrides */
+      .uh-card-compact {
+        padding: 0.8rem !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 95px;
+      }
+      .uh-card-compact .stat-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--uh-text-muted);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+      .uh-card-compact .stat-num {
+        font-family: var(--uh-font-title);
+        font-weight: 700;
+        font-size: 1.3rem;
+        color: var(--uh-text-main);
+        margin-bottom: 0;
+      }
+
+      /* High-fidelity PDF print and preview area */
+      .pdf-preview-box {
+        background-color: #FFFFFF !important;
+        color: #1A202C !important;
+        border-radius: 8px;
+        padding: 2.5rem;
+        box-shadow: var(--uh-shadow-lg);
+        font-family: 'Inter', sans-serif;
+      }
+      [data-bs-theme="dark"] .pdf-preview-box {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .pdf-header-title {
+        font-size: 1.8rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: #0F172A !important;
+      }
+      .pdf-divider {
+        height: 1px;
+        background-color: #E2E8F0;
+        margin: 1.5rem 0;
+      }
+
+      /* Horizontal table scroll indicator and containers */
+      .premium-table-wrapper {
+        position: relative;
+        border-radius: 12px;
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-color);
+        overflow: hidden;
+      }
+      .table-container-overlay {
+        position: relative;
+      }
+      .table-loading-spinner {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(var(--uh-primary-rgb), 0.05);
+        backdrop-filter: blur(2px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        transition: opacity 0.3s ease;
+      }
+      .loading-active .table-loading-spinner {
+        display: flex;
+      }
+
+      /* Vertical Payment timeline style */
+      .timeline-container {
+        position: relative;
+        padding-left: 10px;
+      }
+      .timeline-item {
+        position: relative;
+      }
+      .timeline-line {
+        position: absolute;
+        left: 9px;
+        top: 15px;
+        bottom: 0;
+        width: 1px;
+        background-color: var(--uh-border-color);
+      }
+      .timeline-item:last-child .timeline-line {
+        display: none;
+      }
+
+      /* Charts Styling inside grid */
+      .dashboard-chart-card {
+        height: 180px;
+        position: relative;
+      }
+
+      /* Search field layout */
+      .search-toolbar-input {
+        min-width: 260px;
+      }
+
+      /* CSS Media printing configuration */
+      @media print {
+        body * {
+          visibility: hidden !important;
+        }
+        #invoice-print-area, #invoice-print-area * {
+          visibility: visible !important;
+        }
+        #invoice-print-area {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          background: #FFFFFF !important;
+          color: #000000 !important;
+          z-index: 9999;
+        }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- Overlay Backdrop for Mobile Sidebar -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- FIXED LEFT SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <!-- Logo Header -->
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <i class="bi bi-building-up"></i>
+          </div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <!-- Scrollable Navigation Menu -->
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="transactions.html" class="sidebar-menu-link">
+                <i class="bi bi-currency-exchange"></i>
+                <span>Transactions</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="invoices.html" class="sidebar-menu-link active">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Intelligence</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="reports.html" class="sidebar-menu-link">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Analytics</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="calendar.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar3"></i>
+                <span>Calendar</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="tasks.html" class="sidebar-menu-link">
+                <i class="bi bi-check2-square"></i>
+                <span>Tasks</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reviews.html" class="sidebar-menu-link">
+                <i class="bi bi-star"></i>
+                <span>Reviews</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="login.html" class="sidebar-menu-link text-danger">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="User Profile Image" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- PAGE CONTENT AREA & TOP HEADER -->
+      <main class="main-content-wrapper">
+        <!-- TOP HEADER -->
+        <header class="top-header">
+          <!-- Left side controls -->
+          <div class="d-flex align-items-center">
+            <!-- Mobile Toggle Button -->
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn">
+              <i class="bi bi-list"></i>
+            </button>
+            
+            <!-- Elegant Search Box -->
+            <form class="header-search-form d-none d-md-block" onsubmit="event.preventDefault();">
+              <input type="text" class="header-search-input" placeholder="Search invoices, properties, clients..." />
+              <i class="bi bi-search header-search-icon"></i>
+            </form>
+          </div>
+
+          <!-- Right side controls (Dropdowns) -->
+          <div class="header-controls">
+            <!-- Dynamic Theme Toggle -->
+            <button id="theme-toggle" class="header-btn" title="Switch Theme">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+
+            <!-- Language Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Languages">
+                <i class="bi bi-globe"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium lang-dropdown-menu">
+                <li><span class="dropdown-header">Select Language</span></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇬🇧</span> English</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇪🇸</span> Español</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇫🇷</span> Français</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇩🇪</span> Deutsch</a></li>
+              </ul>
+            </div>
+
+            <!-- Messages Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Messages">
+                <i class="bi bi-chat-dots"></i>
+                <span class="header-btn-badge"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="width: 320px;">
+                <li><span class="dropdown-header">Recent Messages</span></li>
+                <li>
+                  <a class="dropdown-item d-flex align-items-start gap-3 py-2 border-bottom border-light-subtle" href="messages.html">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="Sender Avatar" referrerpolicy="no-referrer" />
+                    <div class="w-100">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold font-title" style="font-size: 0.85rem;">Clara Vance</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">2 min ago</span>
+                      </div>
+                      <p class="text-muted mb-0 text-truncate" style="font-size: 0.775rem;">Is the listing price for the Penthouse negotiable?</p>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item text-center fw-semibold text-primary py-2" href="messages.html" style="font-size: 0.8rem;">
+                    View All Messages
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Notifications Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+                <i class="bi bi-bell"></i>
+                <span class="header-btn-badge"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="width: 320px;">
+                <li><span class="dropdown-header">System Notifications</span></li>
+                <li>
+                  <a class="dropdown-item d-flex align-items-start gap-3 py-2 border-bottom border-light-subtle" href="javascript:void(0);">
+                    <div class="stat-icon-wrapper text-success bg-success-subtle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1rem;">
+                      <i class="bi bi-file-earmark-check"></i>
+                    </div>
+                    <div>
+                      <span class="fw-medium d-block" style="font-size: 0.825rem;">Agreement Signed</span>
+                      <p class="text-muted mb-0" style="font-size: 0.75rem;">Unit 402 lease finalised by legal team.</p>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item text-center fw-semibold text-primary py-2" href="javascript:void(0);" style="font-size: 0.8rem;">
+                    Clear All Notifications
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <!-- User Profile Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn p-0 rounded-circle border-2 border-primary" style="width: 40px; height: 40px; overflow: hidden;" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Profile">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" style="width: 100%; height: 100%; object-fit: cover;" alt="User Profile Image" referrerpolicy="no-referrer" />
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="min-width: 220px;">
+                <li>
+                  <div class="px-3 py-2 border-bottom border-light-subtle mb-2">
+                    <span class="fw-bold d-block font-title" style="font-size: 0.9rem;">Sarah Jenkins</span>
+                    <span class="text-muted" style="font-size: 0.75rem;">sarah@urbanhub.com</span>
+                  </div>
+                </li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="profile.html"><i class="bi bi-person"></i> My Profile</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="settings.html"><i class="bi bi-gear"></i> Settings</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger d-flex align-items-center gap-2" href="login.html"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </header>
+
+        <!-- DASHBOARD CONTAINER BODY -->
+        <div class="page-body">
+
+          <!-- 1. WELCOME & BREADCRUMB HEADER -->
+          <div class="row align-items-center mb-4 g-3" data-aos="fade-down">
+            <div class="col-12 col-md-6">
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none">Dashboard</a></li>
+                  <li class="breadcrumb-item active" aria-current="page">Invoices</li>
+                </ol>
+              </nav>
+              <h1 class="mb-0 font-title fw-bold text-main" style="font-size: 1.75rem;">Billing & Invoice Center</h1>
+              <p class="text-muted mb-0">Oversee multi-entity transactional invoices, property sale drafts, and payment operations.</p>
+            </div>
+            <div class="col-12 col-md-6 text-md-end">
+              <span class="badge badge-uh badge-uh-success mb-2" id="dynamic-date">Friday, July 10, 2026</span>
+              <h5 class="mb-0 text-main fw-bold font-title d-none d-md-block" id="dynamic-greeting">Good morning, Sarah Jenkins</h5>
+            </div>
+          </div>
+
+          <!-- 2. NINE STATISTICS KPI CARDS GRID -->
+          <div class="dense-stat-grid mb-4" data-aos="fade-up">
+            <!-- Total Invoices -->
+            <div class="uh-card uh-card-hover uh-card-compact">
+              <span class="stat-label">Total Invoices</span>
+              <h4 class="stat-num" id="stat-total">0</h4>
+            </div>
+            <!-- Paid -->
+            <div class="uh-card uh-card-hover uh-card-compact border-start border-4 border-success">
+              <span class="stat-label text-success">Paid</span>
+              <h4 class="stat-num text-success" id="stat-paid">0</h4>
+            </div>
+            <!-- Pending -->
+            <div class="uh-card uh-card-hover uh-card-compact border-start border-4 border-warning">
+              <span class="stat-label text-warning">Pending</span>
+              <h4 class="stat-num text-warning" id="stat-pending">0</h4>
+            </div>
+            <!-- Overdue -->
+            <div class="uh-card uh-card-hover uh-card-compact border-start border-4 border-danger">
+              <span class="stat-label text-danger">Overdue</span>
+              <h4 class="stat-num text-danger" id="stat-overdue">0</h4>
+            </div>
+            <!-- Draft -->
+            <div class="uh-card uh-card-hover uh-card-compact">
+              <span class="stat-label text-muted">Draft</span>
+              <h4 class="stat-num text-muted" id="stat-draft">0</h4>
+            </div>
+            <!-- Cancelled -->
+            <div class="uh-card uh-card-hover uh-card-compact">
+              <span class="stat-label">Cancelled</span>
+              <h4 class="stat-num text-secondary" id="stat-cancelled">0</h4>
+            </div>
+            <!-- Refunded -->
+            <div class="uh-card uh-card-hover uh-card-compact">
+              <span class="stat-label text-primary">Refunded</span>
+              <h4 class="stat-num text-primary" id="stat-refunded">0</h4>
+            </div>
+            <!-- Monthly Revenue -->
+            <div class="uh-card uh-card-hover uh-card-compact bg-success-subtle border-0">
+              <span class="stat-label text-success fw-bold">Revenue</span>
+              <h4 class="stat-num text-success font-title" id="stat-revenue" style="font-size: 1.15rem;">$0</h4>
+            </div>
+            <!-- Outstanding Amount -->
+            <div class="uh-card uh-card-hover uh-card-compact bg-danger-subtle border-0">
+              <span class="stat-label text-danger fw-bold">Outstanding</span>
+              <h4 class="stat-num text-danger font-title" id="stat-outstanding" style="font-size: 1.15rem;">$0</h4>
+            </div>
+          </div>
+
+          <!-- 3. TOP TOOLBAR & CONTROL DECK -->
+          <div class="uh-card mb-4" data-aos="fade-up">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+              <!-- Left side actions: Search & Filter toggle -->
+              <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1 flex-md-grow-0">
+                <div class="position-relative flex-grow-1" style="max-width: 350px;">
+                  <input type="text" id="search-invoice-input" class="form-control search-toolbar-input py-2 ps-5" placeholder="Search Invoice Number, Customer..." />
+                  <i class="bi bi-search position-absolute text-muted" style="left: 1rem; top: 50%; transform: translateY(-50%);"></i>
+                </div>
+                <button class="btn btn-secondary d-flex align-items-center gap-2" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFiltersPanel" aria-expanded="false" aria-controls="advancedFiltersPanel">
+                  <i class="bi bi-sliders"></i> <span class="d-none d-sm-inline">Filters</span>
+                </button>
+                <button class="btn btn-secondary" onclick="refreshInvoices()" title="Refresh Invoice Database">
+                  <i class="bi bi-arrow-clockwise"></i>
+                </button>
+              </div>
+
+              <!-- Right side actions: Export & Create -->
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <div class="dropdown">
+                  <button class="btn btn-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-download"></i> <span>Export</span>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium shadow-lg">
+                    <li><button class="dropdown-item" onclick="triggerBulkExport('csv')"><i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i> Export CSV</button></li>
+                    <li><button class="dropdown-item" onclick="triggerBulkExport('xlsx')"><i class="bi bi-file-excel me-2 text-success"></i> Export Excel</button></li>
+                    <li><button class="dropdown-item" onclick="triggerBulkExport('pdf')"><i class="bi bi-file-earmark-pdf me-2 text-danger"></i> Export PDF</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item" onclick="window.print()"><i class="bi bi-printer me-2"></i> Print Records</button></li>
+                  </ul>
+                </div>
+                <button class="btn btn-primary d-flex align-items-center gap-2" onclick="openCreateInvoiceModal()">
+                  <i class="bi bi-plus-circle"></i> <span>Create Invoice</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- COLLAPSIBLE ADVANCED FILTERS PANEL -->
+            <div class="collapse" id="advancedFiltersPanel">
+              <div class="border-top border-light-subtle mt-3 pt-3">
+                <h6 class="font-title fw-bold mb-3"><i class="bi bi-funnel me-1 text-primary"></i> Advanced Filtering Parameters</h6>
+                <div class="row g-3">
+                  <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label font-title" style="font-size: 0.75rem;">Invoice Number</label>
+                    <input type="text" id="filter-id" class="form-control form-control-sm" placeholder="e.g. INV-2026-001" />
+                  </div>
+                  <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label font-title" style="font-size: 0.75rem;">Customer Name</label>
+                    <input type="text" id="filter-customer" class="form-control form-control-sm" placeholder="e.g. Arthur Pendragon" />
+                  </div>
+                  <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label font-title" style="font-size: 0.75rem;">Property</label>
+                    <input type="text" id="filter-property" class="form-control form-control-sm" placeholder="e.g. Avala Tower" />
+                  </div>
+                  <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label font-title" style="font-size: 0.75rem;">Agent</label>
+                    <input type="text" id="filter-agent" class="form-control form-control-sm" placeholder="e.g. Sarah Jenkins" />
+                  </div>
+
+                  <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label font-title" style="font-size: 0.75rem;">Invoice Type</label>
+                    <select id="filter-type" class="form-select form-select-sm">
+                      <option value="">All Types</option>
+                      <option value="Property Sale">Property Sale</option>
+                      <option value="Rental">Rental</option>
+                      <option value="Booking">Booking</option>
+                      <option value="Commission">Commission</option>
+                      <option value="Maintenance">Maintenance</option>
+                      <option value="Utility">Utility</option>
+                      <option value="Security Deposit">Security Deposit</option>
+                      <option value="Refund">Refund</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label font-title" style="font-size: 0.75rem;">Status</label>
+                    <select id="filter-status" class="form-select form-select-sm">
+                      <option value="">All Statuses</option>
+                      <option value="Draft">Draft</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Partially Paid">Partially Paid</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Overdue">Overdue</option>
+                      <option value="Cancelled">Cancelled</option>
+                      <option value="Refunded">Refunded</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label font-title" style="font-size: 0.75rem;">Payment Method</label>
+                    <select id="filter-method" class="form-select form-select-sm">
+                      <option value="">All Methods</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Credit Card">Credit Card</option>
+                      <option value="Direct Deposit">Direct Deposit</option>
+                      <option value="PayPal">PayPal</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-sm-6 col-md-3">
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <label class="form-label font-title" style="font-size: 0.75rem;">Min Amount</label>
+                        <input type="number" id="filter-amount-min" class="form-control form-control-sm" placeholder="Min" />
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label font-title" style="font-size: 0.75rem;">Max Amount</label>
+                        <input type="number" id="filter-amount-max" class="form-control form-control-sm" placeholder="Max" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-sm-6 col-md-4">
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <label class="form-label font-title" style="font-size: 0.75rem;">Start Date</label>
+                        <input type="date" id="filter-date-start" class="form-control form-control-sm" />
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label font-title" style="font-size: 0.75rem;">End Date</label>
+                        <input type="date" id="filter-date-end" class="form-control form-control-sm" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-md-8 text-end d-flex align-items-end justify-content-end gap-2">
+                    <button class="btn btn-secondary btn-sm rounded-3 py-2 px-3" id="reset-filters-btn">
+                      <i class="bi bi-x-circle me-1"></i> Reset Parameters
+                    </button>
+                    <button class="btn btn-primary btn-sm rounded-3 py-2 px-4" id="apply-filters-btn">
+                      <i class="bi bi-funnel-fill me-1"></i> Apply Configurations
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. REVENUE CHARTS GRID SECTION -->
+          <div class="row g-3 mb-4" data-aos="fade-up">
+            <!-- Left Side: Monthly Revenue Chart -->
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="uh-card">
+                <h6 class="font-title fw-bold mb-3" style="font-size: 0.85rem;"><i class="bi bi-bar-chart-fill me-1 text-primary"></i> Monthly Revenue</h6>
+                <div class="dashboard-chart-card">
+                  <canvas id="revenueChart"></canvas>
+                </div>
+              </div>
+            </div>
+            <!-- Outstanding Amount Trend -->
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="uh-card">
+                <h6 class="font-title fw-bold mb-3" style="font-size: 0.85rem;"><i class="bi bi-activity me-1 text-danger"></i> Outstanding Amount</h6>
+                <div class="dashboard-chart-card">
+                  <canvas id="trendChart"></canvas>
+                </div>
+              </div>
+            </div>
+            <!-- Collection Rate Doughnut -->
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="uh-card">
+                <h6 class="font-title fw-bold mb-3" style="font-size: 0.85rem;"><i class="bi bi-pie-chart-fill me-1 text-success"></i> Collection Rate</h6>
+                <div class="dashboard-chart-card">
+                  <canvas id="collectionChart"></canvas>
+                </div>
+              </div>
+            </div>
+            <!-- Status Distribution -->
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="uh-card">
+                <h6 class="font-title fw-bold mb-3" style="font-size: 0.85rem;"><i class="bi bi-pie-chart-fill me-1 text-info"></i> Payment Status</h6>
+                <div class="dashboard-chart-card">
+                  <canvas id="statusChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. MAIN CONTENT SPLIT GRID -->
+          <div class="row g-3">
+            <!-- Left Side: Main Invoices Table Container -->
+            <div class="col-12 col-xl-9" data-aos="fade-right">
+              <div class="premium-table-wrapper">
+                <!-- Header of the Table Card -->
+                <div class="px-4 py-3 border-bottom border-light-subtle d-flex flex-wrap align-items-center justify-content-between gap-2">
+                  <div>
+                    <h5 class="mb-0 fw-bold font-title text-main">Ledger Billing Listings</h5>
+                    <span class="text-muted" style="font-size: 0.75rem;" id="invoice-count-badge">Showing 0 of 0 Invoices</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-1">
+                    <span class="badge bg-primary rounded-pill">Production Ready</span>
+                  </div>
+                </div>
+
+                <!-- Scrollable Table block with loading simulator overlay -->
+                <div class="table-container-overlay" id="table-container-overlay">
+                  <div class="table-loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+
+                  <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                      <thead>
+                        <tr class="font-title text-muted" style="font-size: 0.75rem; letter-spacing: 0.5px; border-bottom: 2px solid var(--uh-border-color);">
+                          <th scope="col" class="py-3 ps-4">Invoice #</th>
+                          <th scope="col" class="py-3">Customer</th>
+                          <th scope="col" class="py-3">Property</th>
+                          <th scope="col" class="py-3">Agent</th>
+                          <th scope="col" class="py-3">Issue Date</th>
+                          <th scope="col" class="py-3">Due Date</th>
+                          <th scope="col" class="py-3">Type</th>
+                          <th scope="col" class="py-3 text-end">Amount</th>
+                          <th scope="col" class="py-3 text-end">Tax</th>
+                          <th scope="col" class="py-3 text-end">Paid</th>
+                          <th scope="col" class="py-3 text-end">Balance</th>
+                          <th scope="col" class="py-3">Status</th>
+                          <th scope="col" class="py-3 text-center" style="width: 60px;">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="invoice-table-body">
+                        <!-- Filled in dynamically by JS -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Side: Sidebar Activity Logs and Reminders -->
+            <div class="col-12 col-xl-3" data-aos="fade-left">
+              <!-- Outstanding Bills Card Widget -->
+              <div class="uh-card mb-3">
+                <h6 class="font-title fw-bold mb-3" style="font-size: 0.85rem;"><i class="bi bi-clock-history me-1 text-danger"></i> Outstanding Amounts</h6>
+                <div id="outstanding-payments-container">
+                  <!-- Filled dynamically -->
+                </div>
+              </div>
+
+              <!-- Recent Payments Card Widget -->
+              <div class="uh-card mb-3">
+                <h6 class="font-title fw-bold mb-3" style="font-size: 0.85rem;"><i class="bi bi-credit-card me-1 text-success"></i> Recent Payments</h6>
+                <div id="recent-payments-container">
+                  <!-- Filled dynamically -->
+                </div>
+              </div>
+
+              <!-- General Payments History Timeline Widget -->
+              <div class="uh-card">
+                <h6 class="font-title fw-bold mb-3" style="font-size: 0.85rem;"><i class="bi bi-timeline me-1 text-primary"></i> Action Logs Audit</h6>
+                <div class="timeline-container" id="payment-timeline-container">
+                  <!-- Filled dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- STICKY FOOTER -->
+        <footer class="mt-5 py-4 border-top border-light-subtle text-center text-muted" style="font-size: 0.8rem;">
+          <p class="mb-1">&copy; 2026 <strong class="text-main">UrbanHub Inc.</strong> Real Estate CRM Systems. All rights reserved.</p>
+          <div class="d-flex justify-content-center gap-3">
+            <a href="documentation.html" class="text-decoration-none">API Documentation</a>
+            <span>&bull;</span>
+            <a href="settings.html" class="text-decoration-none">Configurations</a>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- BOOTSTRAP TOAST CONTAINER -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;" id="toast-container-uh">
+      <!-- Toasts inserted dynamically -->
+    </div>
+
+
+    <!-- ================= BOOTSTRAP MODALS ================= -->
+
+    <!-- MODAL 1: CREATE AND EDIT INVOICE FORM -->
+    <div class="modal fade" id="createInvoiceModal" tabindex="-1" aria-labelledby="createInvoiceModal" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-light-subtle shadow-lg">
+          <div class="modal-header">
+            <h5 class="modal-title font-title fw-bold text-main" id="create-invoice-modal-title">Create Premium Invoice</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="create-invoice-form">
+            <div class="modal-body">
+              <div class="row g-3">
+                <!-- Customer Details -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Billed To (Customer Name) <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="inv-customer" placeholder="e.g. Maximilian Sterling" required />
+                </div>
+                <div class="col-12 col-sm-6">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Recipient Email <span class="text-danger">*</span></label>
+                  <input type="email" class="form-control" id="inv-email" placeholder="e.g. sterling@sterlingholdings.com" required />
+                </div>
+
+                <!-- Property Details -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Associated Listing/Property <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="inv-property" placeholder="e.g. Waterfront Villa" required />
+                </div>
+                <div class="col-12 col-sm-6">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Assigned Broker/Agent <span class="text-danger">*</span></label>
+                  <select class="form-select" id="inv-agent" required>
+                    <option value="Sarah Jenkins">Sarah Jenkins (Managing Director)</option>
+                    <option value="Marcus Brody">Marcus Brody (Senior Partner)</option>
+                    <option value="Elena Rostova">Elena Rostova (Lead Negotiator)</option>
+                  </select>
+                </div>
+
+                <!-- Dates -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Issue Date <span class="text-danger">*</span></label>
+                  <input type="date" class="form-control" id="inv-issue-date" required />
+                </div>
+                <div class="col-12 col-sm-6">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Due Date <span class="text-danger">*</span></label>
+                  <input type="date" class="form-control" id="inv-due-date" required />
+                </div>
+
+                <!-- Type and Method -->
+                <div class="col-12 col-sm-6">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Invoice Classification Type <span class="text-danger">*</span></label>
+                  <select class="form-select" id="inv-type" required>
+                    <option value="Property Sale">Property Sale</option>
+                    <option value="Rental">Rental</option>
+                    <option value="Booking">Booking</option>
+                    <option value="Commission">Commission</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Utility">Utility</option>
+                    <option value="Security Deposit">Security Deposit</option>
+                    <option value="Refund">Refund</option>
+                  </select>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Default Payment Method <span class="text-danger">*</span></label>
+                  <select class="form-select" id="inv-method" required>
+                    <option value="Bank Transfer">Bank Transfer (Wire)</option>
+                    <option value="Credit Card">Credit Card (Stripe)</option>
+                    <option value="Direct Deposit">Direct Deposit (ACH)</option>
+                    <option value="PayPal">PayPal Holdings</option>
+                  </select>
+                </div>
+
+                <!-- Financial Variables -->
+                <div class="col-12 col-sm-4">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Base Net Amount ($) <span class="text-danger">*</span></label>
+                  <input type="number" step="0.01" class="form-control" id="inv-amount" placeholder="0.00" required />
+                </div>
+                <div class="col-12 col-sm-4">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Government/Surcharge Tax ($)</label>
+                  <input type="number" step="0.01" class="form-control" id="inv-tax" placeholder="0.00" value="0.00" />
+                </div>
+                <div class="col-12 col-sm-4">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Advance Paid Amount ($)</label>
+                  <input type="number" step="0.01" class="form-control" id="inv-paid-amount" placeholder="0.00" value="0.00" />
+                </div>
+
+                <!-- Status Select -->
+                <div class="col-12">
+                  <label class="form-label font-title" style="font-size: 0.8rem;">Initial Invoice Status <span class="text-danger">*</span></label>
+                  <select class="form-select" id="inv-status" required>
+                    <option value="Draft">Draft</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Partially Paid">Partially Paid</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Overdue">Overdue</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Refunded">Refunded</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer border-top-0">
+              <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary rounded-3 px-4">Save Invoice</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- MODAL 2: HIGH FIDELITY INVOICE PREVIEW (PRINT COMPATIBLE) -->
+    <div class="modal fade" id="invoicePreviewModal" tabindex="-1" aria-labelledby="invoicePreviewModal" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-light-subtle shadow-lg bg-light text-dark">
+          <div class="modal-header border-bottom border-secondary-subtle">
+            <h5 class="modal-title font-title fw-bold text-dark"><i class="bi bi-file-earmark-pdf me-1"></i> Interactive Invoice PDF Invoice</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body bg-light">
+            <div class="pdf-preview-box text-dark" id="invoice-print-area">
+              <!-- Top branding and metadata -->
+              <div class="row align-items-center g-3">
+                <div class="col-6">
+                  <h3 class="pdf-header-title d-flex align-items-center gap-2 m-0 text-dark">
+                    <i class="bi bi-building-up text-primary"></i> UrbanHub<span class="text-primary">.</span>
+                  </h3>
+                  <p class="text-muted mb-0" style="font-size: 0.75rem;">Premium Corporate Real Estate CRM Service</p>
+                </div>
+                <div class="col-6 text-end">
+                  <h4 class="fw-bold font-title m-0 text-dark">BILLING RECORD</h4>
+                  <span class="fs-5 fw-bold font-mono text-primary d-block" id="prev-title-id">INV-2026-000</span>
+                  <span id="prev-status" class="badge">Paid</span>
+                </div>
+              </div>
+
+              <div class="pdf-divider"></div>
+
+              <!-- Billing Entity Details -->
+              <div class="row g-3">
+                <div class="col-6">
+                  <strong class="text-dark d-block mb-1" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Billed To:</strong>
+                  <h5 class="fw-bold m-0 font-title text-dark" id="prev-customer-name">Arthur Pendragon</h5>
+                  <p class="text-muted mb-0" style="font-size: 0.8rem;" id="prev-customer-email">arthur@pendragon.co.uk</p>
+                </div>
+                <div class="col-6 text-end">
+                  <strong class="text-dark d-block mb-1" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Billed By:</strong>
+                  <h5 class="fw-bold m-0 font-title text-dark">UrbanHub Solutions</h5>
+                  <p class="text-muted mb-0" style="font-size: 0.775rem;">120 Collins St, Melbourne, VIC 3000</p>
+                  <p class="text-muted mb-0" style="font-size: 0.775rem;">finance@urbanhub.com</p>
+                </div>
+              </div>
+
+              <div class="pdf-divider"></div>
+
+              <!-- Property, Dates, & Methods Meta Row -->
+              <div class="row g-3">
+                <div class="col-6 col-sm-3">
+                  <span class="text-muted d-block mb-1" style="font-size: 0.725rem; text-transform: uppercase;">Issue Date</span>
+                  <strong class="text-dark font-mono" id="prev-issue-date">2026-06-15</strong>
+                </div>
+                <div class="col-6 col-sm-3">
+                  <span class="text-muted d-block mb-1" style="font-size: 0.725rem; text-transform: uppercase;">Due Date</span>
+                  <strong class="text-dark font-mono" id="prev-due-date">2026-07-15</strong>
+                </div>
+                <div class="col-6 col-sm-3">
+                  <span class="text-muted d-block mb-1" style="font-size: 0.725rem; text-transform: uppercase;">Related Property</span>
+                  <strong class="text-dark" id="prev-property">Avala Tower Penthouse</strong>
+                </div>
+                <div class="col-6 col-sm-3 text-end">
+                  <span class="text-muted d-block mb-1" style="font-size: 0.725rem; text-transform: uppercase;">Method</span>
+                  <strong class="text-dark" id="prev-method">Bank Transfer</strong>
+                </div>
+              </div>
+
+              <div class="pdf-divider"></div>
+
+              <!-- Itemized pricing table -->
+              <table class="table table-bordered mb-4">
+                <thead>
+                  <tr class="bg-light text-dark fw-bold font-title" style="font-size: 0.8rem;">
+                    <th>Item Description</th>
+                    <th class="text-end" style="width: 120px;">Net Base</th>
+                    <th class="text-end" style="width: 100px;">Surcharges / Tax</th>
+                    <th class="text-end" style="width: 140px;">Gross Total</th>
+                  </tr>
+                </thead>
+                <tbody id="prev-items-tbody">
+                  <!-- Injected dynamically -->
+                </tbody>
+              </table>
+
+              <!-- Summaries -->
+              <div class="row">
+                <div class="col-6" style="font-size: 0.725rem;">
+                  <strong class="text-dark d-block">Broker Representative:</strong>
+                  <span class="text-dark" id="prev-agent">Sarah Jenkins</span>
+                  <p class="text-muted mt-2 mb-0">Note: All transactions are processed under secure cryptographic encryptions. For legal inquiries, contact legal@urbanhub.com.</p>
+                </div>
+                <div class="col-6 text-end">
+                  <table class="table table-sm table-borderless mb-0 ms-auto" style="max-width: 250px; font-size: 0.8rem;">
+                    <tr>
+                      <td class="text-muted">Subtotal:</td>
+                      <td class="text-end font-mono text-dark fw-medium" id="prev-subtotal">$0.00</td>
+                    </tr>
+                    <tr>
+                      <td class="text-muted">Tax/VAT:</td>
+                      <td class="text-end font-mono text-dark fw-medium" id="prev-tax">$0.00</td>
+                    </tr>
+                    <tr class="border-top">
+                      <td class="fw-bold text-dark fs-6">Grand Total:</td>
+                      <td class="text-end font-mono fw-bold text-dark fs-6" id="prev-total">$0.00</td>
+                    </tr>
+                    <tr>
+                      <td class="text-success fw-medium">Paid Amount:</td>
+                      <td class="text-end font-mono text-success fw-bold" id="prev-paid">$0.00</td>
+                    </tr>
+                    <tr class="border-top border-dark border-2">
+                      <td class="fw-bold text-danger fs-6">Balance Due:</td>
+                      <td class="text-end font-mono fw-bold text-danger fs-5" id="prev-balance">$0.00</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-secondary-subtle">
+            <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-outline-dark rounded-3" onclick="printInvoice()"><i class="bi bi-printer me-1"></i> Print PDF</button>
+            <button type="button" class="btn btn-success rounded-3 px-4 d-none animate-bounce" id="prev-pay-btn" onclick="processPayment()"><i class="bi bi-wallet2 me-1"></i> Clear / Pay Invoice Balance</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- MODAL 3: PAYMENT HISTORY TIMELINE MODAL -->
+    <div class="modal fade" id="paymentHistoryModal" tabindex="-1" aria-labelledby="paymentHistoryModal" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-light-subtle shadow-lg">
+          <div class="modal-header">
+            <h5 class="modal-title font-title fw-bold text-main" id="hist-modal-title">Payment Timeline</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="timeline-container px-2 py-3" id="modal-payment-history-timeline">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+          <div class="modal-footer border-top-0">
+            <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- MODAL 4: DELETE CONFIRMATION -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModal" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-light-subtle shadow-lg">
+          <div class="modal-body p-4 text-center">
+            <div class="text-danger mb-3">
+              <i class="bi bi-exclamation-octagon" style="font-size: 3rem;"></i>
+            </div>
+            <h5 class="fw-bold font-title text-main">Delete Ledger Record?</h5>
+            <p class="text-muted mb-4" style="font-size: 0.85rem;">Are you sure you want to permanently purge Invoice <strong id="delete-inv-id-span" class="text-danger">INV-X</strong> from the corporate files? This action is irreversible.</p>
+            <div class="d-flex gap-2 justify-content-center">
+              <button type="button" class="btn btn-secondary rounded-3 py-2 px-3" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-danger rounded-3 py-2 px-4" onclick="executeDelete()">Yes, Purge</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ================= JAVASCRIPT CDNS & MODULES ================= -->
+
+    <!-- Bootstrap 5.3 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- AOS JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Framework Main JS -->
+    <script src="/assets/js/main.js"></script>
+    <!-- Page business logic -->
+    <script src="/assets/js/invoices-app.js"></script>
+  </body>
+</html>
