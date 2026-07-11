@@ -1,0 +1,1885 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customers Management - UrbanHub CRM</title>
+
+    <!-- Pre-load Theme Choice to Prevent Visual Flicker -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Page-specific overrides for high fidelity */
+      .glow-card {
+        position: relative;
+        overflow: hidden;
+      }
+      .card-glow-effect {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        background: radial-gradient(circle 120px at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(var(--uh-primary-rgb), 0.08), transparent 80%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 1;
+      }
+      .glow-card:hover .card-glow-effect {
+        opacity: 1;
+      }
+
+      /* Hover uplift utilities */
+      .lift-on-hover {
+        transition: var(--uh-transition-smooth);
+      }
+      .lift-on-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--uh-shadow-lg) !important;
+      }
+
+      /* Skeleton loader simulation animations */
+      .skeleton-placeholder {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255, 255, 255, 0.05) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading-flow 1.5s infinite;
+        border-radius: 6px;
+      }
+      @keyframes skeleton-loading-flow {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-hidden {
+        display: none !important;
+      }
+      .fade-transition {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+
+      /* Custom grid styles for statistics */
+      .stats-container {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+      }
+      @media (max-width: 1400px) {
+        .stats-container {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (max-width: 992px) {
+        .stats-container {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 576px) {
+        .stats-container {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Quick Online indicator */
+      .avatar-container {
+        position: relative;
+        display: inline-block;
+      }
+      .online-dot {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 2px solid var(--uh-bg-card);
+      }
+      .online-dot.active {
+        background-color: var(--uh-success);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+      }
+      .online-dot.inactive {
+        background-color: var(--uh-text-muted);
+      }
+
+      /* Horizontal recent customer card spacing */
+      .recent-customer-card {
+        border-bottom: 1px solid var(--uh-border-card);
+        padding-bottom: 0.75rem;
+      }
+      .recent-customer-card:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      /* Advanced Filters custom styling */
+      .advanced-filters-panel {
+        background-color: var(--uh-bg-sidebar);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+      }
+
+      /* Compact table design elements */
+      .premium-table th {
+        border-top: none;
+        background-color: rgba(var(--uh-primary-rgb), 0.02);
+      }
+
+      @media print {
+        .sidebar-wrapper, .top-header, .top-toolbar-actions, .advanced-filters-panel, .side-intelligence-panel, .bulk-actions-wrapper, .view-toggle-container {
+          display: none !important;
+        }
+        .main-content-wrapper {
+          margin-left: 0 !important;
+          padding: 0 !important;
+        }
+        .page-body {
+          padding: 0 !important;
+        }
+        #customers-list-view {
+          display: block !important;
+        }
+        #customers-grid-view {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar mobile overlay backdrop -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon"><i class="bi bi-building-up"></i></div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link active">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input" id="global-search-customers" placeholder="Quick find customer ID or name..." />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <button id="theme-toggle" class="header-btn" title="Switch Theme">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-bell"></i>
+                <span class="header-btn-badge bg-primary"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="width: 300px;">
+                <li><span class="dropdown-header">System Notifications</span></li>
+                <li><a class="dropdown-item py-2 border-bottom border-light-subtle text-wrap" style="font-size: 0.8rem;" href="messages.html">VIP Buyer <strong>Arthur Pendelton</strong> scheduled a private view today.</a></li>
+                <li><a class="dropdown-item py-2 text-wrap" style="font-size: 0.8rem;" href="appointments.html">New customer registration: <strong>Lucas Miller</strong>.</a></li>
+              </ul>
+            </div>
+          </div>
+        </header>
+
+        <!-- PAGE CONTAINER -->
+        <div class="page-body">
+          <!-- BREADCRUMBS & TITLE -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 animate-fade-down">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Customers</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Customers Directory</h1>
+              <p class="text-muted mb-0" style="font-size: 0.85rem;">Enterprise CRM registry of active buyers, high-yield sellers, institutional landlords, and premium tenants.</p>
+            </div>
+            <div class="d-flex gap-2 top-toolbar-actions">
+              <button class="btn btn-outline-secondary d-flex align-items-center gap-1" id="btn-toggle-filters" type="button" aria-expanded="false">
+                <i class="bi bi-filter"></i> <span>Advanced Filters</span>
+              </button>
+              <button class="btn btn-outline-secondary" id="btn-refresh" title="Refresh Database">
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown">
+                  <i class="bi bi-download"></i> <span>Export</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium">
+                  <li><button class="dropdown-item" id="btn-export-csv"><i class="bi bi-filetype-csv me-2 text-success"></i> Export CSV Registry</button></li>
+                  <li><button class="dropdown-item" id="btn-export-pdf"><i class="bi bi-file-earmark-pdf me-2 text-danger"></i> Export PDF Dossier</button></li>
+                  <li><button class="dropdown-item" id="btn-print"><i class="bi bi-printer me-2 text-primary"></i> Print CRM Sheets</button></li>
+                </ul>
+              </div>
+              <a href="coming-soon.html" class="btn btn-primary d-flex align-items-center gap-1">
+                <i class="bi bi-person-plus-fill"></i> <span>Add Customer</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- SKELETON LOADERS -->
+          <div id="skeleton-loader">
+            <!-- Stats Skeleton -->
+            <div class="row g-3 mb-4">
+              <div class="col-12">
+                <div class="stats-container">
+                  <div class="uh-card" style="height: 100px;" v-for="n in 5">
+                    <div class="skeleton-placeholder mb-2" style="height: 16px; width: 50%;"></div>
+                    <div class="skeleton-placeholder" style="height: 28px; width: 70%;"></div>
+                  </div>
+                  <div class="uh-card" style="height: 100px;" v-for="n in 5">
+                    <div class="skeleton-placeholder mb-2" style="height: 16px; width: 50%;"></div>
+                    <div class="skeleton-placeholder" style="height: 28px; width: 70%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Body Skeleton -->
+            <div class="row g-4">
+              <div class="col-lg-8 col-xl-9">
+                <div class="uh-card p-4">
+                  <div class="skeleton-placeholder mb-4" style="height: 40px; width: 100%;"></div>
+                  <div class="row g-3">
+                    <div class="col-md-4" v-for="n in 6">
+                      <div class="uh-card p-3" style="height: 280px;">
+                        <div class="skeleton-placeholder mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 50%;"></div>
+                        <div class="skeleton-placeholder mx-auto mb-2" style="height: 20px; width: 60%;"></div>
+                        <div class="skeleton-placeholder mx-auto mb-3" style="height: 14px; width: 40%;"></div>
+                        <div class="skeleton-placeholder mb-2" style="height: 14px; width: 100%;"></div>
+                        <div class="skeleton-placeholder" style="height: 14px; width: 80%;"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4 col-xl-3">
+                <div class="uh-card p-4 h-100">
+                  <div class="skeleton-placeholder mb-4" style="height: 30px; width: 70%;"></div>
+                  <div class="skeleton-placeholder mb-3" style="height: 150px; width: 100%;"></div>
+                  <div class="skeleton-placeholder mb-3" style="height: 80px; width: 100%;"></div>
+                  <div class="skeleton-placeholder" style="height: 80px; width: 100%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REAL DATA AND CONTENT -->
+          <div id="real-data" class="fade-transition skeleton-hidden" style="opacity: 0;">
+            <!-- COLLAPSIBLE ADVANCED FILTERS PANEL -->
+            <div class="collapse advanced-filters-panel" id="advancedFiltersCollapse">
+              <div class="card-body p-4">
+                <h5 class="fw-bold font-title mb-3 text-main"><i class="bi bi-sliders me-2 text-primary"></i>Advanced Query Filters</h5>
+                <form id="filters-form">
+                  <div class="row g-3">
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                      <label class="form-label text-muted small fw-semibold">Customer Name</label>
+                      <input type="text" class="form-control bg-body" id="filter-name" placeholder="Search by name..." />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                      <label class="form-label text-muted small fw-semibold">Customer ID</label>
+                      <input type="text" class="form-control bg-body" id="filter-id" placeholder="CST-XXXX..." />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                      <label class="form-label text-muted small fw-semibold">Customer Type</label>
+                      <select class="form-select bg-body" id="filter-type">
+                        <option value="">All Types</option>
+                        <option value="Buyer">Buyer</option>
+                        <option value="Seller">Seller</option>
+                        <option value="Tenant">Tenant</option>
+                        <option value="Landlord">Landlord</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                      <label class="form-label text-muted small fw-semibold">Status</label>
+                      <select class="form-select bg-body" id="filter-status">
+                        <option value="">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                      <label class="form-label text-muted small fw-semibold">City</label>
+                      <input type="text" class="form-control bg-body" id="filter-city" placeholder="e.g. Beverly Hills" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                      <label class="form-label text-muted small fw-semibold">Country</label>
+                      <input type="text" class="form-control bg-body" id="filter-country" placeholder="e.g. USA" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                      <label class="form-label text-muted small fw-semibold">Max Budget Limit</label>
+                      <select class="form-select bg-body" id="filter-budget">
+                        <option value="">Any Budget</option>
+                        <option value="1000000">Up to $1,000,000</option>
+                        <option value="5000000">Up to $5,000,000</option>
+                        <option value="10000000">Up to $10,000,000</option>
+                        <option value="30000000">Up to $30,000,000</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                      <label class="form-label text-muted small fw-semibold">Assigned Advisor</label>
+                      <select class="form-select bg-body" id="filter-agent">
+                        <option value="">All Advisors</option>
+                        <option value="Marcus Vance">Marcus Vance</option>
+                        <option value="Sarah Jenkins">Sarah Jenkins</option>
+                        <option value="Elena Rostova">Elena Rostova</option>
+                        <option value="Jean-Luc Picard">Jean-Luc Picard</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                      <label class="form-label text-muted small fw-semibold">Property Interest</label>
+                      <select class="form-select bg-body" id="filter-property-type">
+                        <option value="">All Types</option>
+                        <option value="Mansion">Mansion</option>
+                        <option value="Penthouse">Penthouse</option>
+                        <option value="Modern">Modern Estate</option>
+                        <option value="Villa">Villa</option>
+                        <option value="Apartment">Apartment</option>
+                        <option value="Waterfront">Waterfront</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                      <label class="form-label text-muted small fw-semibold">Last Contact</label>
+                      <select class="form-select bg-body" id="filter-contact">
+                        <option value="">Any Time</option>
+                        <option value="Recently">Recently Active</option>
+                        <option value="Scheduled">Scheduled Visits</option>
+                        <option value="Inquiry">Pending Inquiries</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                      <label class="form-label text-muted small fw-semibold">Registration Date From</label>
+                      <input type="date" class="form-control bg-body" id="filter-reg-date" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3 d-flex align-items-end gap-2">
+                      <button class="btn btn-outline-secondary w-100" type="button" id="btn-reset-filters">Reset</button>
+                      <button class="btn btn-primary w-100" type="button" id="btn-apply-filters">Apply Filters</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- STATISTICS CARDS GRID (10 CARDS) -->
+            <div class="row g-3 mb-4" data-aos="fade-up">
+              <div class="col-12">
+                <div class="stats-container">
+                  <!-- Total Customers -->
+                  <div class="uh-card uh-card-hover lift-on-hover p-3">
+                    <span class="text-muted d-block small uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">TOTAL CUSTOMERS</span>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                      <h4 class="font-title fw-bold mb-0" id="stat-total">1,420</h4>
+                      <div class="stat-icon-wrapper p-2 rounded-3 text-primary"><i class="bi bi-people-fill"></i></div>
+                    </div>
+                    <span class="stat-trend trend-up mt-2"><i class="bi bi-graph-up"></i> +12% this month</span>
+                  </div>
+                  <!-- Buyers -->
+                  <div class="uh-card uh-card-hover lift-on-hover p-3">
+                    <span class="text-muted d-block small uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">BUYERS</span>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                      <h4 class="font-title fw-bold mb-0" id="stat-buyers">680</h4>
+                      <div class="stat-icon-wrapper p-2 rounded-3 text-success"><i class="bi bi-cart-check"></i></div>
+                    </div>
+                    <span class="stat-trend trend-up mt-2 text-success"><i class="bi bi-graph-up"></i> +8% this month</span>
+                  </div>
+                  <!-- Sellers -->
+                  <div class="uh-card uh-card-hover lift-on-hover p-3">
+                    <span class="text-muted d-block small uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">SELLERS</span>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                      <h4 class="font-title fw-bold mb-0" id="stat-sellers">340</h4>
+                      <div class="stat-icon-wrapper p-2 rounded-3 text-warning"><i class="bi bi-tags"></i></div>
+                    </div>
+                    <span class="stat-trend trend-up mt-2 text-warning"><i class="bi bi-graph-up"></i> +4% this month</span>
+                  </div>
+                  <!-- Tenants -->
+                  <div class="uh-card uh-card-hover lift-on-hover p-3">
+                    <span class="text-muted d-block small uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">TENANTS</span>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                      <h4 class="font-title fw-bold mb-0" id="stat-tenants">290</h4>
+                      <div class="stat-icon-wrapper p-2 rounded-3 text-info"><i class="bi bi-key"></i></div>
+                    </div>
+                    <span class="stat-trend trend-up mt-2 text-info"><i class="bi bi-graph-up"></i> +15% this month</span>
+                  </div>
+                  <!-- Landlords -->
+                  <div class="uh-card uh-card-hover lift-on-hover p-3">
+                    <span class="text-muted d-block small uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">LANDLORDS</span>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                      <h4 class="font-title fw-bold mb-0" id="stat-landlords">110</h4>
+                      <div class="stat-icon-wrapper p-2 rounded-3 text-danger"><i class="bi bi-building"></i></div>
+                    </div>
+                    <span class="stat-trend trend-up mt-2 text-success"><i class="bi bi-graph-up"></i> +3% this month</span>
+                  </div>
+                  <!-- VIP Customers -->
+                  <div class="uh-card uh-card-hover lift-on-hover p-3">
+                    <span class="text-muted d-block small uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">VIP CLIENTS</span>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                      <h4 class="font-title fw-bold mb-0 text-main" id="stat-vip">185</h4>
+                      <div class="stat-icon-wrapper p-2 rounded-3 text-warning" style="background-color: rgba(var(--uh-primary-rgb), 0.15);"><i class="bi bi-gem"></i></div>
+                    </div>
+                    <span class="stat-trend trend-up mt-2" style="color: var(--uh-primary);"><i class="bi bi-star-fill"></i> +20% active</span>
+                  </div>
+                  <!-- Active Customers -->
+                  <div class="uh-card uh-card-hover lift-on-hover p-3">
+                    <span class="text-muted d-block small uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">ACTIVE DISPATCHED</span>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                      <h4 class="font-title fw-bold mb-0" id="stat-active">1,150</h4>
+                      <div class="stat-icon-wrapper p-2 rounded-3 text-success"><i class="bi bi-patch-check"></i></div>
+                    </div>
+                    <span class="stat-trend trend-up mt-2 text-success"><i class="bi bi-activity"></i> +10% online</span>
+                  </div>
+                  <!-- Inactive Customers -->
+                  <div class="uh-card uh-card-hover lift-on-hover p-3">
+                    <span class="text-muted d-block small uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">INACTIVE SLOTS</span>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                      <h4 class="font-title fw-bold mb-0 text-muted" id="stat-inactive">270</h4>
+                      <div class="stat-icon-wrapper p-2 rounded-3 text-secondary"><i class="bi bi-person-x"></i></div>
+                    </div>
+                    <span class="stat-trend trend-down mt-2 text-muted"><i class="bi bi-graph-down"></i> -5% idle</span>
+                  </div>
+                  <!-- New This Month -->
+                  <div class="uh-card uh-card-hover lift-on-hover p-3">
+                    <span class="text-muted d-block small uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">NEW REGISTRATIONS</span>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                      <h4 class="font-title fw-bold mb-0" id="stat-new">95</h4>
+                      <div class="stat-icon-wrapper p-2 rounded-3 text-info"><i class="bi bi-person-plus"></i></div>
+                    </div>
+                    <span class="stat-trend trend-up mt-2 text-info"><i class="bi bi-sparkles"></i> +25% conversion</span>
+                  </div>
+                  <!-- Returning Customers -->
+                  <div class="uh-card uh-card-hover lift-on-hover p-3">
+                    <span class="text-muted d-block small uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">RETURNING INVESTORS</span>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                      <h4 class="font-title fw-bold mb-0 text-main" id="stat-returning">430</h4>
+                      <div class="stat-icon-wrapper p-2 rounded-3 text-primary"><i class="bi bi-arrow-repeat"></i></div>
+                    </div>
+                    <span class="stat-trend trend-up mt-2 text-primary"><i class="bi bi-building-up"></i> +18% retention</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MAIN DUAL-COLUMN GRID -->
+            <div class="row g-4">
+              <!-- LEFT COLUMN (9/12) - CUSTOMERS DIRECTORY PANELS -->
+              <div class="col-12 col-xl-9">
+                <div class="uh-card p-4">
+                  <!-- TOP INTERACTION LINE (Bulk Actions + View Toggle) -->
+                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4 pb-3 border-bottom border-light-subtle">
+                    <!-- Bulk Actions -->
+                    <div class="d-flex align-items-center gap-2 bulk-actions-wrapper">
+                      <div class="form-check text-muted" style="font-size: 0.85rem;">
+                        <input class="form-check-input" type="checkbox" id="check-select-all" />
+                        <label class="form-check-label fw-semibold" for="check-select-all">Select All</label>
+                      </div>
+                      <div class="vertical-divider mx-1 text-muted opacity-25">|</div>
+                      <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" id="bulk-actions-btn" disabled>
+                          <span>Bulk Actions</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-premium">
+                          <li><button class="dropdown-item" onclick="triggerBulkAction('assign')"><i class="bi bi-person-gear me-2"></i> Assign Advisor</button></li>
+                          <li><button class="dropdown-item" onclick="triggerBulkAction('export')"><i class="bi bi-download me-2"></i> Export Selected (CSV)</button></li>
+                          <li><button class="dropdown-item" onclick="triggerBulkAction('archive')"><i class="bi bi-archive me-2"></i> Archive Selected</button></li>
+                          <li><button class="dropdown-item text-danger" onclick="triggerBulkAction('delete')"><i class="bi bi-trash3 me-2"></i> Delete Selected</button></li>
+                        </ul>
+                      </div>
+                      <span class="text-muted small d-none d-sm-inline" id="selected-counter">(0 selected)</span>
+                    </div>
+
+                    <!-- View Switcher -->
+                    <div class="d-flex align-items-center gap-2 view-toggle-container">
+                      <span class="text-muted small font-title fw-bold" id="showing-count-label">Showing 12 Customers</span>
+                      <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" id="btn-view-grid" title="Grid View">
+                          <i class="bi bi-grid-fill"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-view-list" title="List View">
+                          <i class="bi bi-list-task"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- GRID VIEW WRAPPER -->
+                  <div id="customers-grid-view">
+                    <div class="row g-3" id="customers-cards-container">
+                      <!-- Dynamic customer cards are injected here -->
+                    </div>
+                  </div>
+
+                  <!-- LIST VIEW WRAPPER (Initially Hidden) -->
+                  <div id="customers-list-view" class="d-none">
+                    <div class="table-responsive premium-table-container">
+                      <table class="table align-middle premium-table mb-0">
+                        <thead>
+                          <tr>
+                            <th style="width: 40px;"></th>
+                            <th>Advisor Match</th>
+                            <th>Full Name & ID</th>
+                            <th>Role Category</th>
+                            <th>Location</th>
+                            <th>Capital Outlay</th>
+                            <th>Agent assigned</th>
+                            <th>Status Index</th>
+                            <th>Joined CRM</th>
+                            <th class="text-end">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody id="customers-table-body">
+                          <!-- Dynamic customer table rows are injected here -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- EMPTY STATE CONTAINER (Initially Hidden) -->
+                  <div class="text-center py-5 d-none" id="empty-state-view">
+                    <div class="mb-3 text-muted display-4"><i class="bi bi-person-fill-exclamation text-primary"></i></div>
+                    <h5 class="fw-bold font-title">No customers match this query</h5>
+                    <p class="text-muted mx-auto mb-4" style="max-width: 420px; font-size: 0.85rem;">We couldn't locate any records in the CRM database matching your selected filters. Adjust your search criteria or register a new customer.</p>
+                    <button class="btn btn-primary btn-sm px-4 py-2" id="btn-clear-empty-state"><i class="bi bi-arrow-counterclockwise me-1"></i> Clear Filter Metrics</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT COLUMN (3/12) - CRM INTELLIGENCE HUB -->
+              <div class="col-12 col-xl-3 side-intelligence-panel">
+                <!-- CUSTOMER SEGMENTS PIE CHART -->
+                <div class="uh-card p-3 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-1"><i class="bi bi-pie-chart text-primary me-2"></i>Customer Segments</h5>
+                  <p class="text-muted small mb-3">Portfolio composition by target category.</p>
+                  <div style="position: relative; height: 180px; width: 100%;" class="mb-3">
+                    <canvas id="segmentsChart"></canvas>
+                  </div>
+                  <div class="d-flex flex-column gap-2" style="font-size: 0.75rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span><i class="bi bi-circle-fill text-primary me-1"></i> VIP Clients</span>
+                      <strong class="text-main">185 (13%)</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span><i class="bi bi-circle-fill text-success me-1"></i> Premium Investors</span>
+                      <strong class="text-main">430 (30%)</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span><i class="bi bi-circle-fill text-info me-1"></i> Regular Leads</span>
+                      <strong class="text-main">520 (37%)</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span><i class="bi bi-circle-fill text-warning me-1"></i> New Accounts</span>
+                      <strong class="text-main">95 (7%)</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span><i class="bi bi-circle-fill text-secondary me-1"></i> Inactive Portfolio</span>
+                      <strong class="text-main">190 (13%)</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- RECENT REGISTERED CUSTOMERS -->
+                <div class="uh-card p-3 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-person-plus-fill text-primary me-2"></i>Recent Sign-ups</h5>
+                  <div class="d-flex flex-column gap-3">
+                    <div class="recent-customer-card d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=100&auto=format&fit=crop" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;" alt="Amara" />
+                        <div>
+                          <span class="fw-bold d-block text-main" style="font-size: 0.8rem;">Amara Okafor</span>
+                          <span class="text-muted" style="font-size: 0.7rem;">Buyer &bull; $2.1M Budget</span>
+                        </div>
+                      </div>
+                      <span class="badge bg-success-light text-success small" style="font-size: 0.65rem;">Today</span>
+                    </div>
+                    <div class="recent-customer-card d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=100&auto=format&fit=crop" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;" alt="Lucas" />
+                        <div>
+                          <span class="fw-bold d-block text-main" style="font-size: 0.8rem;">Lucas Miller</span>
+                          <span class="text-muted" style="font-size: 0.7rem;">Tenant &bull; $8K / mo</span>
+                        </div>
+                      </div>
+                      <span class="badge bg-success-light text-success small" style="font-size: 0.65rem;">Yesterday</span>
+                    </div>
+                    <div class="recent-customer-card d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&auto=format&fit=crop" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;" alt="Clara" />
+                        <div>
+                          <span class="fw-bold d-block text-main" style="font-size: 0.8rem;">Clara Dupont</span>
+                          <span class="text-muted" style="font-size: 0.7rem;">Tenant &bull; $15K / mo</span>
+                        </div>
+                      </div>
+                      <span class="badge bg-secondary-subtle text-secondary small" style="font-size: 0.65rem;">3 days ago</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- LIVE TIMELINE ACTIVITY -->
+                <div class="uh-card p-3 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-clock-history text-primary me-2"></i>Live Pipeline Activity</h5>
+                  <div class="timeline-uh" style="font-size: 0.8rem;">
+                    <!-- Activity 1 -->
+                    <div class="timeline-item-uh">
+                      <span class="timeline-marker-uh success"></span>
+                      <div class="timeline-content-uh">
+                        <span class="text-muted d-block" style="font-size: 0.7rem;">Today, 10:45 AM</span>
+                        <strong class="text-main">Arthur Pendelton</strong> closed contract signature on Bel Air Mansion.
+                      </div>
+                    </div>
+                    <!-- Activity 2 -->
+                    <div class="timeline-item-uh">
+                      <span class="timeline-marker-uh warning"></span>
+                      <div class="timeline-content-uh">
+                        <span class="text-muted d-block" style="font-size: 0.7rem;">Today, 8:20 AM</span>
+                        <strong class="text-main">David Chen</strong> registered a new listing for Pacific Heights Modern.
+                      </div>
+                    </div>
+                    <!-- Activity 3 -->
+                    <div class="timeline-item-uh">
+                      <span class="timeline-marker-uh info"></span>
+                      <div class="timeline-content-uh">
+                        <span class="text-muted d-block" style="font-size: 0.7rem;">Yesterday, 4:15 PM</span>
+                        <strong class="text-main">Amara Okafor</strong> scheduled private tour in Beverly Hills.
+                      </div>
+                    </div>
+                    <!-- Activity 4 -->
+                    <div class="timeline-item-uh">
+                      <span class="timeline-marker-uh success"></span>
+                      <div class="timeline-content-uh">
+                        <span class="text-muted d-block" style="font-size: 0.7rem;">Jul 8, 2026</span>
+                        <strong class="text-main">Clara Dupont</strong> completed a digital rental agreement for Paris Duplex.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CRM DISPATCH & COMMUNICATION HUB -->
+                <div class="uh-card p-3 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-broadcast text-primary me-2"></i>CRM Communication Hub</h5>
+                  <form id="comm-form">
+                    <div class="mb-2">
+                      <label class="form-label text-muted small fw-semibold">Target Customer</label>
+                      <select class="form-select form-select-sm bg-body" id="comm-target">
+                        <option value="Arthur Pendelton">Arthur Pendelton (CST-5082)</option>
+                        <option value="Isabella Rossi">Isabella Rossi (CST-3194)</option>
+                        <option value="David Chen">David Chen (CST-4211)</option>
+                        <option value="Sofia Al-Maktoum">Sofia Al-Maktoum (CST-9031)</option>
+                      </select>
+                    </div>
+                    <div class="mb-2">
+                      <label class="form-label text-muted small fw-semibold">Method Channel</label>
+                      <div class="d-flex gap-2 justify-content-between mb-2">
+                        <input type="radio" class="btn-check" name="comm-channel" id="chan-whatsapp" checked />
+                        <label class="btn btn-xs btn-outline-success flex-grow-1 p-1 small" for="chan-whatsapp"><i class="bi bi-whatsapp"></i> WA</label>
+
+                        <input type="radio" class="btn-check" name="comm-channel" id="chan-sms" />
+                        <label class="btn btn-xs btn-outline-info flex-grow-1 p-1 small" for="chan-sms"><i class="bi bi-chat-left-dots"></i> SMS</label>
+
+                        <input type="radio" class="btn-check" name="comm-channel" id="chan-email" />
+                        <label class="btn btn-xs btn-outline-primary flex-grow-1 p-1 small" for="chan-email"><i class="bi bi-envelope"></i> Mail</label>
+
+                        <input type="radio" class="btn-check" name="comm-channel" id="chan-call" />
+                        <label class="btn btn-xs btn-outline-warning flex-grow-1 p-1 small" for="chan-call"><i class="bi bi-telephone"></i> Call</label>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label text-muted small fw-semibold">Interactive Memo Content</label>
+                      <textarea class="form-control form-control-sm bg-body" id="comm-message" rows="2" placeholder="Write message summary..."></textarea>
+                    </div>
+                    <button class="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center gap-1" type="button" onclick="executeHubDispatch()">
+                      <i class="bi bi-send-fill"></i> <span>Execute Dispatch</span>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- CUSTOMER PROFILE PREVIEW MODAL -->
+    <div class="modal fade" id="customerPreviewModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 16px; overflow: hidden;">
+          <div class="modal-header border-bottom border-light-subtle px-4 py-3 bg-body">
+            <h5 class="modal-title font-title fw-bold text-main d-flex align-items-center gap-2">
+              <i class="bi bi-person-video2 text-primary"></i> <span>Customer CRM Dossier Preview</span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4 text-start">
+            <div class="row g-4">
+              <!-- Sidebar of Modal -->
+              <div class="col-md-4 text-center border-end border-light-subtle">
+                <div class="position-relative d-inline-block mb-3">
+                  <img id="modal-photo" src="" class="rounded-circle border border-3 border-primary" style="width: 100px; height: 100px; object-fit: cover;" alt="Avatar" />
+                  <span id="modal-verified-badge" class="position-absolute bottom-0 end-0 bg-primary rounded-circle d-flex align-items-center justify-content-center p-1 border border-2 border-dark" style="width: 28px; height: 28px;">
+                    <i class="bi bi-patch-check-fill text-body" style="font-size: 0.85rem;"></i>
+                  </span>
+                </div>
+                <h4 id="modal-name" class="font-title fw-bold text-main mb-1">Customer Name</h4>
+                <p id="modal-id" class="text-muted small mb-2">CST-XXXX</p>
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                  <span id="modal-role-badge" class="badge bg-primary-subtle text-primary">VIP Buyer</span>
+                  <span id="modal-status-badge" class="badge bg-success-light text-success">Active</span>
+                </div>
+                <div class="p-2 bg-body rounded-3 border">
+                  <span class="text-muted d-block" style="font-size: 0.7rem;">Average Rating Index</span>
+                  <div class="text-warning d-flex align-items-center justify-content-center gap-1 my-1">
+                    <i class="bi bi-star-fill"></i> <strong id="modal-rating" class="text-main">4.9</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Main particulars -->
+              <div class="col-md-8">
+                <div class="row g-3">
+                  <div class="col-6">
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">Primary Direct Dial</span>
+                    <strong class="text-main" id="modal-phone">+1 (310) 555-0100</strong>
+                  </div>
+                  <div class="col-6">
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">Work Email Address</span>
+                    <strong class="text-main" id="modal-email">client@email.com</strong>
+                  </div>
+                  <div class="col-6">
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">Location City / Country</span>
+                    <strong class="text-main" id="modal-location">Beverly Hills, USA</strong>
+                  </div>
+                  <div class="col-6">
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">Assigned CRM Advisor</span>
+                    <strong class="text-main text-primary" id="modal-agent">Marcus Vance</strong>
+                  </div>
+                  <div class="col-6">
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">Registered Outlay Capital</span>
+                    <strong class="text-main text-success" id="modal-budget">$14,500,000</strong>
+                  </div>
+                  <div class="col-6">
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">Interested Estate Concept</span>
+                    <strong class="text-main" id="modal-interest">Luxury Mansion</strong>
+                  </div>
+                  <div class="col-12"><hr class="border-secondary opacity-25 my-1" /></div>
+                  <div class="col-12">
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">Advisor Activity logs & Milestones</span>
+                    <div class="p-2 border rounded-3 bg-body" id="modal-activity" style="font-size: 0.8rem; font-style: italic;">
+                      Purchase Completed - Escrow Closed.
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">System Notes</span>
+                    <p class="mb-0 text-muted" id="modal-notes" style="font-size: 0.8rem;">Notes</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-light-subtle px-4 py-3 bg-body d-flex justify-content-between">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close Dossier</button>
+            <div class="d-flex gap-2">
+              <button onclick="triggerQuickComm('call')" class="btn btn-sm btn-outline-primary"><i class="bi bi-telephone-fill"></i> Call</button>
+              <button onclick="triggerQuickComm('whatsapp')" class="btn btn-sm btn-outline-success"><i class="bi bi-whatsapp"></i> WA</button>
+              <a id="modal-view-full-btn" href="customer-details.html" class="btn btn-sm btn-primary">View Full Profile</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BULK ASSIGN AGENT MODAL -->
+    <div class="modal fade" id="bulkAssignModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main">Re-Assign CRM Advisor</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4 text-start">
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Select New Advisor</label>
+              <select class="form-select bg-body" id="bulk-agent-select">
+                <option value="Marcus Vance">Marcus Vance</option>
+                <option value="Sarah Jenkins">Sarah Jenkins</option>
+                <option value="Elena Rostova">Elena Rostova</option>
+                <option value="Jean-Luc Picard">Jean-Luc Picard</option>
+              </select>
+            </div>
+            <p class="text-muted small mb-0">The selected CRM Advisor will become the default coordinator for the selected customer accounts, and real-time email notices will be dispatched.</p>
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="applyBulkAssign()">Apply Assignment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-danger bg-dark" style="border-radius: 12px; overflow: hidden;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-danger d-flex align-items-center gap-2">
+              <i class="bi bi-exclamation-triangle-fill"></i> <span>Destructive Deletion Confirmation</span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4 text-start">
+            <p class="text-main fw-bold mb-2">Are you absolutely sure you want to delete this customer record?</p>
+            <p class="text-muted small mb-0">This operation cannot be reversed. The entire customer data including matching parameters, historical timelines, appraisal tickets, and chat logs will be purged permanently from the relational datastore.</p>
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="executeDeleteRecord()">Purge Customer Record</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- AOS JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Core Framework Script -->
+    <script src="/assets/js/main.js"></script>
+
+    <!-- CUSTOMERS DATABASE APP ENGINE -->
+    <script>
+      // JSON Master Registry Array (12 Customers)
+      const customersData = [
+        {
+          id: "CST-5082",
+          name: "Arthur Pendelton",
+          type: "VIP Buyer",
+          roleType: "Buyer",
+          photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop",
+          verified: true,
+          online: true,
+          phone: "+1 (310) 555-0210",
+          email: "arthur.p@pendeltoncorp.com",
+          city: "Beverly Hills",
+          country: "USA",
+          budget: "$14,500,000",
+          budgetNum: 14500000,
+          preferredProperty: "Bel Air Mansion",
+          agent: "Marcus Vance",
+          lastActivity: "Purchase Completed - Escrow Closed",
+          rating: 5.0,
+          status: "Active",
+          regDate: "2024-03-12",
+          interestType: "Mansion",
+          notes: "Arthur is interested in securing another parcel adjacent to his estate. Prefers off-market listings.",
+          segment: "VIP"
+        },
+        {
+          id: "CST-3194",
+          name: "Isabella Rossi",
+          type: "Buyer",
+          roleType: "Buyer",
+          photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop",
+          verified: true,
+          online: false,
+          phone: "+1 (212) 555-0811",
+          email: "isabella.rossi@rossidesign.it",
+          city: "New York",
+          country: "USA",
+          budget: "$4,200,000",
+          budgetNum: 4200000,
+          preferredProperty: "Tribeca Penthouse",
+          agent: "Elena Rostova",
+          lastActivity: "Recently Viewed Property - 2 hours ago",
+          rating: 4.8,
+          status: "Active",
+          regDate: "2025-01-20",
+          interestType: "Penthouse",
+          notes: "High-end fashion executive. Prefers minimalist modern loft aesthetics and floor-to-ceiling glass.",
+          segment: "Premium"
+        },
+        {
+          id: "CST-4211",
+          name: "David Chen",
+          type: "Seller",
+          roleType: "Seller",
+          photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop",
+          verified: true,
+          online: true,
+          phone: "+1 (415) 555-1982",
+          email: "dchen@chenventures.com",
+          city: "San Francisco",
+          country: "USA",
+          budget: "$8,900,000",
+          budgetNum: 8900000,
+          preferredProperty: "Pacific Heights Modern",
+          agent: "Sarah Jenkins",
+          lastActivity: "Property Inquiry - Contract Review",
+          rating: 4.9,
+          status: "Active",
+          regDate: "2024-08-15",
+          interestType: "Modern",
+          notes: "Listing his tech-house estate. Demands high marketing exposure and professional cinematic video tours.",
+          segment: "Premium"
+        },
+        {
+          id: "CST-9031",
+          name: "Sofia Al-Maktoum",
+          type: "VIP Buyer",
+          roleType: "Buyer",
+          photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop",
+          verified: true,
+          online: true,
+          phone: "+971 4 555 0100",
+          email: "sofia.am@dubaiholdings.ae",
+          city: "Dubai",
+          country: "UAE",
+          budget: "$28,000,000",
+          budgetNum: 28000000,
+          preferredProperty: "Palm Jumeirah Villa",
+          agent: "Marcus Vance",
+          lastActivity: "Visit Scheduled - Tour Confirmed",
+          rating: 5.0,
+          status: "Active",
+          regDate: "2025-05-10",
+          interestType: "Villa",
+          notes: "Requires extreme privacy and bulletproof security details during showings. Wants helipad access.",
+          segment: "VIP"
+        },
+        {
+          id: "CST-2845",
+          name: "Clara Dupont",
+          type: "Tenant",
+          roleType: "Tenant",
+          photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop",
+          verified: false,
+          online: false,
+          phone: "+33 1 5555 9011",
+          email: "c.dupont@sorbonne.edu",
+          city: "Paris",
+          country: "France",
+          budget: "$15,000/mo",
+          budgetNum: 15000,
+          preferredProperty: "Champs-Élysées Apartment",
+          agent: "Jean-Luc Picard",
+          lastActivity: "Rental Agreement - Signed Lease",
+          rating: 4.6,
+          status: "Active",
+          regDate: "2026-02-01",
+          interestType: "Apartment",
+          notes: "Leasing luxury duplex for 24 months. Demands full concierge service and parking space.",
+          segment: "Regular"
+        },
+        {
+          id: "CST-1084",
+          name: "George Thompson",
+          type: "Landlord",
+          roleType: "Landlord",
+          photo: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?q=80&w=150&auto=format&fit=crop",
+          verified: true,
+          online: false,
+          phone: "+1 (305) 555-4422",
+          email: "george@thompsonrentals.com",
+          city: "Miami",
+          country: "USA",
+          budget: "$12,000,000",
+          budgetNum: 12000000,
+          preferredProperty: "Brickell Penthouse Collection",
+          agent: "Elena Rostova",
+          lastActivity: "Property Inquiry - New Listing Registered",
+          rating: 4.7,
+          status: "Active",
+          regDate: "2023-11-12",
+          interestType: "Apartment",
+          notes: "Owns a portfolio of 15 premium condos in Miami. Expanding holdings into commercial spaces.",
+          segment: "Premium"
+        },
+        {
+          id: "CST-7144",
+          name: "Yuki Tanaka",
+          type: "Buyer",
+          roleType: "Buyer",
+          photo: "https://images.unsplash.com/photo-1554151228-14d9def656e4?q=80&w=150&auto=format&fit=crop",
+          verified: true,
+          online: true,
+          phone: "+81 3 5555 0184",
+          email: "y.tanaka@tokyomedia.jp",
+          city: "Tokyo",
+          country: "Japan",
+          budget: "$6,500,000",
+          budgetNum: 6500000,
+          preferredProperty: "Shibuya Sky Duplex",
+          agent: "Sarah Jenkins",
+          lastActivity: "Recently Viewed Property - 3 hours ago",
+          rating: 4.9,
+          status: "Active",
+          regDate: "2025-06-01",
+          interestType: "Penthouse",
+          notes: "Looking for high-floor properties with Mt. Fuji views. Flexible with closure times.",
+          segment: "Regular"
+        },
+        {
+          id: "CST-6052",
+          name: "Oliver Schmidt",
+          type: "Seller",
+          roleType: "Seller",
+          photo: "https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?q=80&w=150&auto=format&fit=crop",
+          verified: false,
+          online: false,
+          phone: "+49 89 5555 3822",
+          email: "o.schmidt@munichindustries.de",
+          city: "Munich",
+          country: "Germany",
+          budget: "$3,400,000",
+          budgetNum: 3400000,
+          preferredProperty: "Bavarian Country Villa",
+          agent: "Jean-Luc Picard",
+          lastActivity: "Property Inquiry - Appraisal Sent",
+          rating: 4.5,
+          status: "Inactive",
+          regDate: "2023-05-18",
+          interestType: "Villa",
+          notes: "Looking to liquidate German suburban portfolio to move assets to Cyprus. Accounts currently idle.",
+          segment: "Inactive"
+        },
+        {
+          id: "CST-8821",
+          name: "Amara Okafor",
+          type: "Buyer",
+          roleType: "Buyer",
+          photo: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=150&auto=format&fit=crop",
+          verified: true,
+          online: true,
+          phone: "+234 1 555 0911",
+          email: "amara.o@okaforlaw.ng",
+          city: "Lagos",
+          country: "Nigeria",
+          budget: "$2,100,000",
+          budgetNum: 2100000,
+          preferredProperty: "Ikoyi Waterfront Estate",
+          agent: "Elena Rostova",
+          lastActivity: "Visit Scheduled - Tour Confirmed",
+          rating: 4.9,
+          status: "Active",
+          regDate: "2025-11-04",
+          interestType: "Waterfront",
+          notes: "Prominent corporate attorney. Relocating family, seeking high-security residential estate.",
+          segment: "New"
+        },
+        {
+          id: "CST-4402",
+          name: "Lucas Miller",
+          type: "Tenant",
+          roleType: "Tenant",
+          photo: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=150&auto=format&fit=crop",
+          verified: true,
+          online: false,
+          phone: "+1 (206) 555-9081",
+          email: "l.miller@millerdesign.com",
+          city: "Seattle",
+          country: "USA",
+          budget: "$8,000/mo",
+          budgetNum: 8000,
+          preferredProperty: "Lake Union Floating House",
+          agent: "Sarah Jenkins",
+          lastActivity: "Recently Viewed Property - 4 hours ago",
+          rating: 4.7,
+          status: "Active",
+          regDate: "2026-03-01",
+          interestType: "Modern",
+          notes: "Creative director seeking modern artistic design. Requires short lease options (6-12 months).",
+          segment: "New"
+        },
+        {
+          id: "CST-1199",
+          name: "Victoria Sterling",
+          type: "VIP Seller",
+          roleType: "Seller",
+          photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=150&auto=format&fit=crop",
+          verified: true,
+          online: true,
+          phone: "+1 (310) 555-8840",
+          email: "victoria@sterlingholdings.com",
+          city: "Beverly Hills",
+          country: "USA",
+          budget: "$18,200,000",
+          budgetNum: 18200000,
+          preferredProperty: "Beverly Hills Modern Mansion",
+          agent: "Marcus Vance",
+          lastActivity: "Property Inquiry - Contract Negotiations",
+          rating: 5.0,
+          status: "Active",
+          regDate: "2024-04-10",
+          interestType: "Mansion",
+          notes: "Venture capitalist listing an ultra-premium compound. Expects highest confidentiality.",
+          segment: "VIP"
+        },
+        {
+          id: "CST-2940",
+          name: "Santiago Gomez",
+          type: "Landlord",
+          roleType: "Landlord",
+          photo: "https://images.unsplash.com/photo-1500048993953-d23a436266cf?q=80&w=150&auto=format&fit=crop",
+          verified: false,
+          online: true,
+          phone: "+34 91 555 7899",
+          email: "santiago@gomezgroup.es",
+          city: "Madrid",
+          country: "Spain",
+          budget: "$5,000,000",
+          budgetNum: 5000000,
+          preferredProperty: "Salamanca Duplex Portfolio",
+          agent: "Jean-Luc Picard",
+          lastActivity: "Rental Agreement - Draft Review",
+          rating: 4.6,
+          status: "Active",
+          regDate: "2024-06-25",
+          interestType: "Apartment",
+          notes: "Leasing multiple premium residential properties. Requires automated billing and tenant screening.",
+          segment: "Regular"
+        }
+      ];
+
+      // Local state variables
+      let selectedCustomerIds = [];
+      let activeView = "grid"; // grid or list
+      let itemToDeleteId = null;
+      let segmentsChartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // --- DELAYED SKELETON LOADER LAUNCHER ---
+        setTimeout(() => {
+          const skeletonLoader = document.getElementById("skeleton-loader");
+          const realData = document.getElementById("real-data");
+          if (skeletonLoader && realData) {
+            skeletonLoader.classList.add("skeleton-hidden");
+            realData.classList.remove("skeleton-hidden");
+            setTimeout(() => {
+              realData.style.opacity = "1";
+              initLocalCounters();
+              initSegmentsChart();
+            }, 50);
+          }
+        }, 800);
+
+        // Advanced filter toggler
+        const advancedFilterToggleBtn = document.getElementById("btn-toggle-filters");
+        const advancedFiltersCollapseEl = document.getElementById("advancedFiltersCollapse");
+        if (advancedFilterToggleBtn && advancedFiltersCollapseEl) {
+          const bsCollapse = new bootstrap.Collapse(advancedFiltersCollapseEl, { toggle: false });
+          advancedFilterToggleBtn.addEventListener("click", () => {
+            bsCollapse.toggle();
+            const expanded = advancedFilterToggleBtn.getAttribute("aria-expanded") === "true";
+            advancedFilterToggleBtn.setAttribute("aria-expanded", !expanded);
+            advancedFilterToggleBtn.classList.toggle("active");
+          });
+        }
+
+        // View Toggles
+        document.getElementById("btn-view-grid").addEventListener("click", () => switchView("grid"));
+        document.getElementById("btn-view-list").addEventListener("click", () => switchView("list"));
+
+        // Global and advanced inputs binding
+        document.getElementById("global-search-customers").addEventListener("input", performSearchQuery);
+        document.getElementById("btn-apply-filters").addEventListener("click", performSearchQuery);
+        document.getElementById("btn-reset-filters").addEventListener("click", resetAllFilters);
+        document.getElementById("btn-clear-empty-state").addEventListener("click", resetAllFilters);
+
+        // Bulk Actions select all checkbox
+        document.getElementById("check-select-all").addEventListener("change", (e) => {
+          const isChecked = e.target.checked;
+          const checkBoxes = document.querySelectorAll(".customer-select-checkbox");
+          selectedCustomerIds = [];
+          checkBoxes.forEach(cb => {
+            cb.checked = isChecked;
+            if (isChecked) selectedCustomerIds.push(cb.getAttribute("data-id"));
+          });
+          updateBulkActionBar();
+        });
+
+        // Refresh Button
+        document.getElementById("btn-refresh").addEventListener("click", triggerRefreshData);
+
+        // Export Actions
+        document.getElementById("btn-export-csv").addEventListener("click", executeExportCSV);
+        document.getElementById("btn-export-pdf").addEventListener("click", executeExportPDF);
+        document.getElementById("btn-print").addEventListener("click", () => window.print());
+
+        // Initialize Cards Hover Mouse Move Gradient glow effect listener
+        document.addEventListener("mousemove", (e) => {
+          const card = e.target.closest(".glow-card");
+          if (card) {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty("--mouse-x", `${x}px`);
+            card.style.setProperty("--mouse-y", `${y}px`);
+          }
+        });
+
+        // Initialize display
+        renderCustomers(customersData);
+      });
+
+      // Local Custom Counters count up animation
+      function initLocalCounters() {
+        const counts = {
+          total: 1420,
+          buyers: 680,
+          sellers: 340,
+          tenants: 290,
+          landlords: 110,
+          vip: 185,
+          active: 1150,
+          inactive: 270,
+          new: 95,
+          returning: 430
+        };
+
+        Object.keys(counts).forEach(key => {
+          const target = counts[key];
+          const el = document.getElementById(`stat-${key}`);
+          if (el) {
+            let start = 0;
+            const increment = target / 30; // 30 frames
+            const timer = setInterval(() => {
+              start += increment;
+              if (start >= target) {
+                el.textContent = Math.round(target).toLocaleString();
+                clearInterval(timer);
+              } else {
+                el.textContent = Math.round(start).toLocaleString();
+              }
+            }, 25);
+          }
+        });
+      }
+
+      // Initialize Customer Segments Chart.js Doughnut
+      function initSegmentsChart() {
+        const ctx = document.getElementById("segmentsChart");
+        if (!ctx) return;
+        
+        const isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+        const textMainColor = isDark ? "#E2E8F0" : "#0F172A";
+
+        segmentsChartInstance = new Chart(ctx, {
+          type: "doughnut",
+          data: {
+            labels: ["VIP Clients", "Premium Investors", "Regular Leads", "New Accounts", "Inactive Portfolio"],
+            datasets: [{
+              data: [185, 430, 520, 95, 190],
+              backgroundColor: ["#D4AF37", "#10B981", "#3B82F6", "#F59E0B", "#94A3B8"],
+              borderWidth: isDark ? 2 : 1,
+              borderColor: isDark ? "#111114" : "#FFFFFF"
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            },
+            cutout: "70%"
+          }
+        });
+
+        // Re-align colors on theme switcher changes
+        window.addEventListener("themeChanged", (e) => {
+          const isDarkTheme = e.detail.theme === "dark";
+          if (segmentsChartInstance) {
+            segmentsChartInstance.data.datasets[0].borderColor = isDarkTheme ? "#111114" : "#FFFFFF";
+            segmentsChartInstance.data.datasets[0].borderWidth = isDarkTheme ? 2 : 1;
+            segmentsChartInstance.update();
+          }
+        });
+      }
+
+      // Switch between Grid and List view
+      function switchView(view) {
+        activeView = view;
+        const gridView = document.getElementById("customers-grid-view");
+        const listView = document.getElementById("customers-list-view");
+        const btnGrid = document.getElementById("btn-view-grid");
+        const btnList = document.getElementById("btn-view-list");
+
+        if (view === "grid") {
+          gridView.classList.remove("d-none");
+          listView.classList.add("d-none");
+          btnGrid.classList.add("active");
+          btnList.classList.remove("active");
+        } else {
+          gridView.classList.add("d-none");
+          listView.classList.remove("d-none");
+          btnGrid.classList.remove("active");
+          btnList.classList.add("active");
+        }
+      }
+
+      // Perform real-time filtering & search
+      function performSearchQuery() {
+        const globalSearch = document.getElementById("global-search-customers").value.trim().toLowerCase();
+        
+        const nameFilter = document.getElementById("filter-name").value.trim().toLowerCase();
+        const idFilter = document.getElementById("filter-id").value.trim().toLowerCase();
+        const typeFilter = document.getElementById("filter-type").value;
+        const statusFilter = document.getElementById("filter-status").value;
+        const cityFilter = document.getElementById("filter-city").value.trim().toLowerCase();
+        const countryFilter = document.getElementById("filter-country").value.trim().toLowerCase();
+        const budgetFilter = document.getElementById("filter-budget").value;
+        const agentFilter = document.getElementById("filter-agent").value;
+        const propertyTypeFilter = document.getElementById("filter-property-type").value;
+        const contactFilter = document.getElementById("filter-contact").value;
+        const regDateFilter = document.getElementById("filter-reg-date").value;
+
+        const filtered = customersData.filter(customer => {
+          // Global Quick search (ID or Name match)
+          if (globalSearch && !customer.id.toLowerCase().includes(globalSearch) && !customer.name.toLowerCase().includes(globalSearch)) {
+            return false;
+          }
+          // Advanced Filters
+          if (nameFilter && !customer.name.toLowerCase().includes(nameFilter)) return false;
+          if (idFilter && !customer.id.toLowerCase().includes(idFilter)) return false;
+          if (typeFilter && customer.roleType !== typeFilter) return false;
+          if (statusFilter && customer.status !== statusFilter) return false;
+          if (cityFilter && !customer.city.toLowerCase().includes(cityFilter)) return false;
+          if (countryFilter && !customer.country.toLowerCase().includes(countryFilter)) return false;
+          if (agentFilter && customer.agent !== agentFilter) return false;
+          if (propertyTypeFilter && customer.interestType !== propertyTypeFilter) return false;
+          if (regDateFilter && customer.regDate < regDateFilter) return false;
+          
+          if (budgetFilter) {
+            const maxBudget = parseInt(budgetFilter);
+            if (customer.budgetNum > maxBudget) return false;
+          }
+
+          if (contactFilter) {
+            if (contactFilter === "Recently" && !customer.lastActivity.includes("Recently")) return false;
+            if (contactFilter === "Scheduled" && !customer.lastActivity.includes("Scheduled")) return false;
+            if (contactFilter === "Inquiry" && !customer.lastActivity.includes("Inquiry")) return false;
+          }
+
+          return true;
+        });
+
+        renderCustomers(filtered);
+      }
+
+      // Reset all Advanced filter form fields
+      function resetAllFilters() {
+        document.getElementById("global-search-customers").value = "";
+        document.getElementById("filters-form").reset();
+        renderCustomers(customersData);
+      }
+
+      // Render grid cards and table rows dynamically
+      function renderCustomers(list) {
+        const cardsContainer = document.getElementById("customers-cards-container");
+        const tableBody = document.getElementById("customers-table-body");
+        const showingLabel = document.getElementById("showing-count-label");
+        const emptyState = document.getElementById("empty-state-view");
+        const gridView = document.getElementById("customers-grid-view");
+        const listView = document.getElementById("customers-list-view");
+
+        // Clear existing items
+        cardsContainer.innerHTML = "";
+        tableBody.innerHTML = "";
+        selectedCustomerIds = [];
+        document.getElementById("check-select-all").checked = false;
+        updateBulkActionBar();
+
+        showingLabel.textContent = `Showing ${list.length} Customers`;
+
+        if (list.length === 0) {
+          emptyState.classList.remove("d-none");
+          gridView.classList.add("d-none");
+          listView.classList.add("d-none");
+          return;
+        } else {
+          emptyState.classList.add("d-none");
+          if (activeView === "grid") {
+            gridView.classList.remove("d-none");
+          } else {
+            listView.classList.remove("d-none");
+          }
+        }
+
+        list.forEach(cust => {
+          // 1. Render Grid Card
+          const cardHtml = `
+            <div class="col-12 col-md-6 col-xxl-4 animate-fade-up">
+              <div class="uh-card glow-card lift-on-hover h-100 d-flex flex-column p-3 position-relative">
+                <div class="card-glow-effect"></div>
+                
+                <!-- Floating Checkbox -->
+                <div class="position-absolute top-3 start-3" style="z-index: 10;">
+                  <input class="form-check-input customer-select-checkbox" type="checkbox" data-id="${cust.id}" onchange="toggleIndividualSelect(this, '${cust.id}')">
+                </div>
+
+                <!-- Floating Favorite Toggle -->
+                <div class="position-absolute top-3 end-3" style="z-index: 10;">
+                  <button class="btn btn-sm text-muted p-1 border-0" onclick="toggleFavorite(this, '${cust.id}')" title="Mark Favorite">
+                    <i class="bi bi-star" style="font-size: 1.15rem;"></i>
+                  </button>
+                </div>
+
+                <!-- Header Info -->
+                <div class="text-center mt-2 mb-3">
+                  <div class="avatar-container mb-2">
+                    <img src="${cust.photo}" class="rounded-circle border border-3 border-primary" style="width: 76px; height: 76px; object-fit: cover;" alt="${cust.name}" />
+                    <span class="online-dot ${cust.online ? 'active' : 'inactive'}"></span>
+                  </div>
+                  <h5 class="fw-bold font-title text-main mb-0 d-flex align-items-center justify-content-center gap-1">
+                    <span>${cust.name}</span>
+                    ${cust.verified ? '<i class="bi bi-patch-check-fill text-primary" style="font-size: 0.95rem;" title="Verified Enterprise Client"></i>' : ''}
+                  </h5>
+                  <span class="text-muted small">${cust.id} &bull; <strong class="text-primary">${cust.type}</strong></span>
+                </div>
+
+                <!-- Main Specifications -->
+                <div class="bg-body border rounded-3 p-3 mb-3 text-start flex-grow-1" style="font-size: 0.8rem;">
+                  <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted"><i class="bi bi-geo-alt me-1"></i> City / Country:</span>
+                    <strong class="text-main">${cust.city}, ${cust.country}</strong>
+                  </div>
+                  <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted"><i class="bi bi-cash-stack me-1"></i> Capital Budget:</span>
+                    <strong class="text-success">${cust.budget}</strong>
+                  </div>
+                  <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted"><i class="bi bi-house me-1"></i> Preferred Prop:</span>
+                    <strong class="text-main">${cust.preferredProperty}</strong>
+                  </div>
+                  <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted"><i class="bi bi-person-gear me-1"></i> Advisor:</span>
+                    <strong class="text-primary">${cust.agent}</strong>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span class="text-muted"><i class="bi bi-activity me-1"></i> Last Activity:</span>
+                    <strong class="text-warning text-end" style="max-width: 140px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" title="${cust.lastActivity}">${cust.lastActivity}</strong>
+                  </div>
+                </div>
+
+                <!-- Footer Quick Controls -->
+                <div class="d-flex gap-1 justify-content-between mb-2">
+                  <button class="btn btn-xs btn-outline-secondary p-1 flex-grow-1" onclick="triggerQuickComm('call', '${cust.name}')" title="Call Client"><i class="bi bi-telephone-fill text-warning"></i> Call</button>
+                  <button class="btn btn-xs btn-outline-secondary p-1 flex-grow-1" onclick="triggerQuickComm('email', '${cust.name}')" title="Email Client"><i class="bi bi-envelope-fill text-primary"></i> Email</button>
+                  <button class="btn btn-xs btn-outline-secondary p-1 flex-grow-1" onclick="triggerQuickComm('whatsapp', '${cust.name}')" title="WhatsApp Message"><i class="bi bi-whatsapp text-success"></i> WA</button>
+                </div>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-outline-primary flex-grow-1 d-flex align-items-center justify-content-center gap-1" onclick="viewCustomerDossier('${cust.id}')"><i class="bi bi-file-text"></i> Details</button>
+                  <button class="btn btn-sm btn-outline-secondary" onclick="editCustomer('${cust.id}')" title="Edit Customer"><i class="bi bi-pencil"></i></button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteCustomer('${cust.id}')" title="Delete Account"><i class="bi bi-trash"></i></button>
+                </div>
+              </div>
+            </div>
+          `;
+          cardsContainer.insertAdjacentHTML("beforeend", cardHtml);
+
+          // 2. Render Table Row
+          const rowHtml = `
+            <tr>
+              <td>
+                <input class="form-check-input row-select-checkbox customer-select-checkbox" type="checkbox" data-id="${cust.id}" onchange="toggleIndividualSelect(this, '${cust.id}')">
+              </td>
+              <td>
+                <div class="avatar-container">
+                  <img src="${cust.photo}" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;" alt="${cust.name}" />
+                  <span class="online-dot ${cust.online ? 'active' : 'inactive'}"></span>
+                </div>
+              </td>
+              <td>
+                <span class="fw-bold d-block text-main mb-0">${cust.name} ${cust.verified ? '<i class="bi bi-patch-check-fill text-primary" style="font-size: 0.8rem;"></i>' : ''}</span>
+                <span class="text-muted small" style="font-size: 0.75rem;">${cust.id}</span>
+              </td>
+              <td><span class="badge bg-primary-subtle text-primary fw-bold" style="font-size: 0.7rem;">${cust.type}</span></td>
+              <td><span class="text-main" style="font-size: 0.8rem;"><i class="bi bi-geo-alt"></i> ${cust.city}</span></td>
+              <td><strong class="text-success" style="font-size: 0.8rem;">${cust.budget}</strong></td>
+              <td><span class="fw-semibold text-main" style="font-size: 0.8rem;">${cust.agent}</span></td>
+              <td><span class="badge ${cust.status === 'Active' ? 'bg-success-light text-success' : 'bg-secondary-subtle text-secondary'} small" style="font-size: 0.7rem;">${cust.status}</span></td>
+              <td><span class="text-muted" style="font-size: 0.8rem;">${cust.regDate}</span></td>
+              <td>
+                <div class="d-flex gap-1 justify-content-end">
+                  <button class="btn btn-xs btn-outline-primary" onclick="viewCustomerDossier('${cust.id}')" title="Preview Dossier"><i class="bi bi-eye"></i></button>
+                  <button class="btn btn-xs btn-outline-secondary" onclick="editCustomer('${cust.id}')" title="Edit"><i class="bi bi-pencil"></i></button>
+                  <button class="btn btn-xs btn-outline-danger" onclick="confirmDeleteCustomer('${cust.id}')" title="Purge"><i class="bi bi-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          `;
+          tableBody.insertAdjacentHTML("beforeend", rowHtml);
+        });
+
+        // Trigger AOS animations for newly rendered items
+        if (typeof AOS !== "undefined") {
+          AOS.refresh();
+        }
+      }
+
+      // Individual item select toggle
+      function toggleIndividualSelect(checkbox, id) {
+        if (checkbox.checked) {
+          if (!selectedCustomerIds.includes(id)) {
+            selectedCustomerIds.push(id);
+          }
+        } else {
+          selectedCustomerIds = selectedCustomerIds.filter(item => item !== id);
+        }
+        updateBulkActionBar();
+      }
+
+      // Enable/Disable bulk action controls based on selection
+      function updateBulkActionBar() {
+        const bulkBtn = document.getElementById("bulk-actions-btn");
+        const selectCounter = document.getElementById("selected-counter");
+        if (selectedCustomerIds.length > 0) {
+          bulkBtn.disabled = false;
+          bulkBtn.classList.remove("btn-outline-secondary");
+          bulkBtn.classList.add("btn-primary");
+          selectCounter.textContent = `(${selectedCustomerIds.length} selected)`;
+        } else {
+          bulkBtn.disabled = true;
+          bulkBtn.classList.add("btn-outline-secondary");
+          bulkBtn.classList.remove("btn-primary");
+          selectCounter.textContent = `(0 selected)`;
+        }
+      }
+
+      // Favorite toggle effect
+      function toggleFavorite(btn, id) {
+        const icon = btn.querySelector("i");
+        if (icon.classList.contains("bi-star")) {
+          icon.className = "bi bi-star-fill text-warning";
+          showNotification(`Client ${id} added to premium bookmarks.`);
+        } else {
+          icon.className = "bi bi-star text-muted";
+          showNotification(`Client ${id} removed from bookmarks.`);
+        }
+      }
+
+      // Preview Customer Dossier in modal
+      function viewCustomerDossier(id) {
+        const cust = customersData.find(c => c.id === id);
+        if (!cust) return;
+
+        document.getElementById("modal-photo").src = cust.photo;
+        document.getElementById("modal-name").textContent = cust.name;
+        document.getElementById("modal-id").textContent = cust.id;
+        document.getElementById("modal-role-badge").textContent = cust.type;
+        document.getElementById("modal-status-badge").textContent = cust.status;
+        document.getElementById("modal-status-badge").className = `badge ${cust.status === 'Active' ? 'bg-success-light text-success' : 'bg-secondary-subtle text-secondary'}`;
+        document.getElementById("modal-rating").textContent = cust.rating.toFixed(1);
+        document.getElementById("modal-phone").textContent = cust.phone;
+        document.getElementById("modal-email").textContent = cust.email;
+        document.getElementById("modal-location").textContent = `${cust.city}, ${cust.country}`;
+        document.getElementById("modal-agent").textContent = cust.agent;
+        document.getElementById("modal-budget").textContent = cust.budget;
+        document.getElementById("modal-interest").textContent = cust.preferredProperty;
+        document.getElementById("modal-activity").textContent = cust.lastActivity;
+        document.getElementById("modal-notes").textContent = cust.notes;
+        
+        // Link to customer-details.html (separate HTML page)
+        document.getElementById("modal-view-full-btn").href = `customer-details.html?id=${cust.id}`;
+
+        const previewModal = new bootstrap.Modal(document.getElementById("customerPreviewModal"));
+        previewModal.show();
+      }
+
+      // Simulate edit redirection
+      function editCustomer(id) {
+        window.location.href = `edit-customer.html?id=${id}`;
+      }
+
+      // Trigger delete confirm modal
+      function confirmDeleteCustomer(id) {
+        itemToDeleteId = id;
+        const deleteModal = new bootstrap.Modal(document.getElementById("deleteConfirmModal"));
+        deleteModal.show();
+      }
+
+      // Purge customer record from array
+      function executeDeleteRecord() {
+        if (!itemToDeleteId) return;
+
+        const index = customersData.findIndex(c => c.id === itemToDeleteId);
+        if (index !== -1) {
+          const removedName = customersData[index].name;
+          customersData.splice(index, 1);
+          showNotification(`Purged record for client: ${removedName}`, "danger");
+          performSearchQuery();
+        }
+
+        // Close delete modal
+        const deleteModalEl = document.getElementById("deleteConfirmModal");
+        const modalInstance = bootstrap.Modal.getInstance(deleteModalEl);
+        if (modalInstance) modalInstance.hide();
+        itemToDeleteId = null;
+      }
+
+      // Handle Bulk Action selections
+      function triggerBulkAction(action) {
+        if (selectedCustomerIds.length === 0) return;
+
+        if (action === "assign") {
+          const assignModal = new bootstrap.Modal(document.getElementById("bulkAssignModal"));
+          assignModal.show();
+        } else if (action === "export") {
+          executeExportCSV(true);
+        } else if (action === "archive") {
+          showNotification(`Archived ${selectedCustomerIds.length} customer records in secondary secure datastore.`);
+          selectedCustomerIds = [];
+          document.getElementById("check-select-all").checked = false;
+          updateBulkActionBar();
+        } else if (action === "delete") {
+          const deleteModal = new bootstrap.Modal(document.getElementById("deleteConfirmModal"));
+          deleteModal.show();
+        }
+      }
+
+      // Apply Bulk Advisor assignment
+      function applyBulkAssign() {
+        const newAgent = document.getElementById("bulk-agent-select").value;
+        selectedCustomerIds.forEach(id => {
+          const cust = customersData.find(c => c.id === id);
+          if (cust) cust.agent = newAgent;
+        });
+
+        showNotification(`Reassigned selected accounts to advisor: ${newAgent}`);
+        performSearchQuery();
+
+        const assignModalEl = document.getElementById("bulkAssignModal");
+        const modalInstance = bootstrap.Modal.getInstance(assignModalEl);
+        if (modalInstance) modalInstance.hide();
+        selectedCustomerIds = [];
+        document.getElementById("check-select-all").checked = false;
+        updateBulkActionBar();
+      }
+
+      // Refresh button callback
+      function triggerRefreshData() {
+        const skeletonLoader = document.getElementById("skeleton-loader");
+        const realData = document.getElementById("real-data");
+        
+        skeletonLoader.classList.remove("skeleton-hidden");
+        realData.classList.add("skeleton-hidden");
+        realData.style.opacity = "0";
+
+        setTimeout(() => {
+          skeletonLoader.classList.add("skeleton-hidden");
+          realData.classList.remove("skeleton-hidden");
+          setTimeout(() => {
+            realData.style.opacity = "1";
+            performSearchQuery();
+            showNotification("Refreshed CRM index registry successfully.");
+          }, 50);
+        }, 600);
+      }
+
+      // Execute CSV export compilation
+      function executeExportCSV(selectedOnly = false) {
+        const listToExport = selectedOnly 
+          ? customersData.filter(c => selectedCustomerIds.includes(c.id))
+          : customersData;
+
+        if (listToExport.length === 0) {
+          showNotification("No records available to export.", "warning");
+          return;
+        }
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Customer ID,Full Name,Category Role,City,Country,Capital Budget,Assigned Advisor,Joined Date,StatusIndex\n";
+
+        listToExport.forEach(c => {
+          const row = `"${c.id}","${c.name}","${c.type}","${c.city}","${c.country}","${c.budget}","${c.agent}","${c.regDate}","${c.status}"`;
+          csvContent += row + "\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `UrbanHub_CRM_Customers_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showNotification(`Successfully exported ${listToExport.length} records into CSV.`);
+      }
+
+      // Execute PDF mock export trigger
+      function executeExportPDF() {
+        showNotification("Generating high-resolution client dossier summary PDF...", "primary");
+        setTimeout(() => {
+          window.print();
+        }, 1000);
+      }
+
+      // Dispatch Communication Hub message
+      function executeHubDispatch() {
+        const target = document.getElementById("comm-target").value;
+        const msg = document.getElementById("comm-message").value.trim();
+        if (!msg) {
+          showNotification("Cannot dispatch an empty memo message.", "warning");
+          return;
+        }
+
+        showNotification(`Dispatched secure memo to ${target} via encrypted channel.`);
+        document.getElementById("comm-message").value = "";
+      }
+
+      // Quick actions triggers
+      function triggerQuickComm(type, name) {
+        if (type === "call") {
+          showNotification(`Calling ${name || 'client'} via UrbanHub SIP communication gateway...`);
+        } else if (type === "email") {
+          showNotification(`Drafting encrypted email dispatch for ${name || 'client'}...`);
+        } else if (type === "whatsapp") {
+          showNotification(`Directing to WhatsApp Web link for ${name || 'client'}...`);
+        }
+      }
+
+      // Show professional floating toast notification
+      function showNotification(text, type = "success") {
+        // Remove existing if any
+        const existing = document.querySelector(".crm-floating-toast");
+        if (existing) existing.remove();
+
+        let icon = "bi-check-circle-fill";
+        let bgClass = "bg-success";
+        if (type === "danger") {
+          icon = "bi-exclamation-triangle-fill";
+          bgClass = "bg-danger";
+        } else if (type === "warning") {
+          icon = "bi-exclamation-circle-fill";
+          bgClass = "bg-warning text-dark";
+        } else if (type === "primary") {
+          icon = "bi-info-circle-fill";
+          bgClass = "bg-primary";
+        }
+
+        const toastHtml = `
+          <div class="crm-floating-toast position-fixed bottom-3 end-3 p-3 text-white rounded-3 shadow-lg d-flex align-items-center gap-2 ${bgClass}" style="z-index: 2050; min-width: 280px; max-width: 380px; transition: var(--uh-transition-smooth);">
+            <i class="bi ${icon}" style="font-size: 1.2rem;"></i>
+            <div style="font-size: 0.85rem;" class="flex-grow-1">${text}</div>
+            <button class="btn-close btn-close-white" onclick="this.parentElement.remove()"></button>
+          </div>
+        `;
+        document.body.insertAdjacentHTML("beforeend", toastHtml);
+
+        setTimeout(() => {
+          const toast = document.querySelector(".crm-floating-toast");
+          if (toast) toast.remove();
+        }, 4000);
+      }
+    </script>
+  </body>
+</html>

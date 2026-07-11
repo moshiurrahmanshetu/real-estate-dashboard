@@ -1,0 +1,1551 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar & Schedule - UrbanHub CRM</title>
+
+    <!-- Theme Choice Pre-load Script to avoid flashing -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* State Simulator styling */
+      .state-simulator-bar {
+        background-color: rgba(var(--uh-primary-rgb), 0.04);
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.15);
+        border-radius: 10px;
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      .skeleton-placeholder {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255, 255, 255, 0.05) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading-flow 1.5s infinite;
+        border-radius: 6px;
+        display: inline-block;
+      }
+      @keyframes skeleton-loading-flow {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-hidden {
+        display: none !important;
+      }
+      .badge-custom {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.35em 0.65em;
+        border-radius: 6px;
+        letter-spacing: 0.5px;
+      }
+      .card-lift-hover {
+        transition: var(--uh-transition-smooth);
+      }
+      .card-lift-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--uh-shadow-lg);
+        border-color: rgba(var(--uh-primary-rgb), 0.25);
+      }
+
+      /* FullCalendar Dark/Light overrides */
+      .fc {
+        --fc-border-color: rgba(var(--uh-primary-rgb), 0.12) !important;
+        --fc-daygrid-event-dot-width: 8px !important;
+        --fc-event-border-color: transparent !important;
+        --fc-today-bg-color: rgba(var(--uh-primary-rgb), 0.08) !important;
+        --fc-neutral-bg-color: transparent !important;
+        --fc-list-event-hover-bg-color: rgba(var(--uh-primary-rgb), 0.04) !important;
+        color: var(--uh-text-main) !important;
+        font-family: var(--font-sans) !important;
+      }
+      .fc-theme-standard td, .fc-theme-standard th {
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.1) !important;
+      }
+      .fc-theme-standard .fc-scrollgrid {
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.15) !important;
+      }
+      .fc-col-header-cell-cushion {
+        color: var(--uh-text-main) !important;
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 0.8rem;
+      }
+      .fc-daygrid-day-number {
+        color: var(--uh-text-muted) !important;
+        text-decoration: none !important;
+        font-size: 0.8rem;
+        padding: 4px 6px !important;
+      }
+      .fc-day-today .fc-daygrid-day-number {
+        color: var(--uh-primary) !important;
+        font-weight: bold;
+      }
+      .fc-event {
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-size: 0.72rem;
+        font-weight: 500;
+        border: none !important;
+      }
+      .fc-toolbar-title {
+        font-size: 1.15rem !important;
+        font-weight: bold;
+        font-family: var(--font-title);
+        color: var(--uh-text-main);
+      }
+      .fc-button {
+        background-color: var(--uh-bg-card) !important;
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.15) !important;
+        color: var(--uh-text-main) !important;
+        text-transform: capitalize !important;
+        font-size: 0.75rem !important;
+        padding: 0.35rem 0.7rem !important;
+        transition: all 0.2s ease !important;
+      }
+      .fc-button:hover {
+        background-color: rgba(var(--uh-primary-rgb), 0.1) !important;
+        color: var(--uh-primary) !important;
+      }
+      .fc-button-active {
+        background-color: var(--uh-primary) !important;
+        border-color: var(--uh-primary) !important;
+        color: #fff !important;
+      }
+
+      /* Mini Calendar styles */
+      .mini-cal-table {
+        width: 100%;
+        text-align: center;
+        border-collapse: collapse;
+      }
+      .mini-cal-table th {
+        font-size: 0.65rem;
+        color: var(--uh-text-muted);
+        font-weight: 700;
+        padding-bottom: 0.4rem;
+        text-transform: uppercase;
+      }
+      .mini-cal-table td {
+        font-size: 0.75rem;
+        padding: 0.25rem 0;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.15s ease;
+      }
+      .mini-cal-table td:hover {
+        background-color: rgba(var(--uh-primary-rgb), 0.1);
+      }
+      .mini-cal-table td.today {
+        background-color: var(--uh-primary);
+        color: #fff !important;
+        font-weight: bold;
+      }
+      .mini-cal-table td.has-event {
+        position: relative;
+        font-weight: 600;
+      }
+      .mini-cal-table td.has-event::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background-color: var(--uh-primary);
+      }
+      .mini-cal-table td.other-month {
+        opacity: 0.3;
+      }
+
+      /* Category Dot colors */
+      .category-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+
+      /* Timeline Schedule */
+      .timeline-container {
+        position: relative;
+        padding-left: 2rem;
+      }
+      .timeline-line {
+        position: absolute;
+        left: 0.75rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: rgba(var(--uh-primary-rgb), 0.1);
+      }
+      .timeline-item {
+        position: relative;
+        padding-bottom: 1.25rem;
+      }
+      .timeline-time {
+        position: absolute;
+        left: -2rem;
+        top: 0;
+        width: 1.5rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--uh-text-muted);
+        text-align: right;
+      }
+      .timeline-node {
+        position: absolute;
+        left: -1.45rem;
+        top: 0.2rem;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--uh-primary);
+        border: 2px solid var(--uh-bg-card);
+        z-index: 1;
+      }
+      .timeline-node.pulsing {
+        box-shadow: 0 0 0 4px rgba(var(--uh-primary-rgb), 0.2);
+        animation: pulse-node 2s infinite;
+      }
+      @keyframes pulse-node {
+        0% { box-shadow: 0 0 0 0 rgba(var(--uh-primary-rgb), 0.4); }
+        70% { box-shadow: 0 0 0 5px rgba(var(--uh-primary-rgb), 0); }
+        100% { box-shadow: 0 0 0 0 rgba(var(--uh-primary-rgb), 0); }
+      }
+      
+      a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+        outline: 2px solid var(--uh-primary) !important;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Overlay Backdrop for Mobile Sidebar -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon"><i class="bi bi-building-up"></i></div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="transactions.html" class="sidebar-menu-link">
+                <i class="bi bi-currency-exchange"></i>
+                <span>Transactions</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Intelligence</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Analytics</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="calendar.html" class="sidebar-menu-link active">
+                <i class="bi bi-calendar3"></i>
+                <span>Calendar</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="tasks.html" class="sidebar-menu-link">
+                <i class="bi bi-check2-square"></i>
+                <span>Tasks</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reviews.html" class="sidebar-menu-link">
+                <i class="bi bi-star"></i>
+                <span>Reviews</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reports.html" class="sidebar-menu-link">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Reports</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn" aria-label="Toggle Navigation menu">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input" id="global-search-input" placeholder="Search calendar events, rooms, agents..." onkeyup="handleToolbarSearch(this.value)" />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <!-- Theme toggle standard binding -->
+            <button id="theme-toggle" class="header-btn" title="Switch Theme" aria-label="Switch Theme UI Color Mode">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE BODY CONTAINER -->
+        <div class="page-body">
+
+          <!-- STATE SIMULATOR BAR -->
+          <div class="state-simulator-bar mb-4 btn-no-print" data-aos="fade-down">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-cpu text-primary"></i>
+              <span class="small fw-semibold text-main">UI Reusable States Simulator:</span>
+            </div>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <button class="btn btn-xs btn-outline-primary px-2.5 py-1 active" id="sim-btn-success" onclick="switchSimulatorState('success')">
+                <i class="bi bi-check-circle me-1"></i> Success State
+              </button>
+              <button class="btn btn-xs btn-outline-secondary px-2.5 py-1" id="sim-btn-loading" onclick="switchSimulatorState('loading')">
+                <i class="bi bi-hourglass-split me-1"></i> Loading Skeleton
+              </button>
+              <button class="btn btn-xs btn-outline-warning px-2.5 py-1" id="sim-btn-empty" onclick="switchSimulatorState('empty')">
+                <i class="bi bi-calendar-x me-1"></i> Empty Calendar
+              </button>
+              <button class="btn btn-xs btn-outline-danger px-2.5 py-1" id="sim-btn-error" onclick="switchSimulatorState('error')">
+                <i class="bi bi-exclamation-triangle me-1"></i> Error State
+              </button>
+            </div>
+          </div>
+
+          <!-- BREADCRUMB & HEADER PANEL -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-down" data-aos-delay="50">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Calendar</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Calendar & Schedule</h1>
+            </div>
+
+            <!-- Toolbar buttons -->
+            <div class="d-flex align-items-center flex-wrap gap-2 btn-no-print">
+              <button class="btn btn-sm btn-primary d-flex align-items-center gap-1.5" onclick="openCreateModal()" title="Add new calendar event entry">
+                <i class="bi bi-plus-circle"></i> <span>Add Event</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerExport()" title="Export current calendar items">
+                <i class="bi bi-calendar-plus"></i> <span>Export Calendar</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="window.print()" title="Print current views layout">
+                <i class="bi bi-printer"></i> <span>Print</span>
+              </button>
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5" onclick="triggerRefresh()" title="Sync schedule logs">
+                <i class="bi bi-arrow-clockwise"></i> <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SKELETON PRELOAD STATE -->
+          <div id="state-loading-skeleton" class="skeleton-hidden">
+            <div class="row g-3">
+              <div class="col-12 col-lg-3">
+                <div class="uh-card p-3 mb-3">
+                  <div class="skeleton-placeholder mb-3" style="width: 60%; height: 16px;"></div>
+                  <div class="skeleton-placeholder mb-2" style="width: 100%; height: 120px;"></div>
+                </div>
+                <div class="uh-card p-3">
+                  <div class="skeleton-placeholder mb-2" style="width: 50%; height: 14px;"></div>
+                  <div class="skeleton-placeholder mb-1" style="width: 90%; height: 10px;" v-for="i in 5"></div>
+                </div>
+              </div>
+              <div class="col-12 col-lg-9">
+                <div class="uh-card p-4">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="skeleton-placeholder" style="width: 25%; height: 24px;"></div>
+                    <div class="skeleton-placeholder" style="width: 40%; height: 24px;"></div>
+                  </div>
+                  <div class="skeleton-placeholder mb-1" style="width: 100%; height: 350px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE PANEL -->
+          <div id="state-empty" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 mx-auto" style="max-width: 600px;">
+              <div class="text-warning mb-4"><i class="bi bi-calendar-x" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">No Active Events Found</h3>
+              <p class="text-muted small mb-4">There are currently no events registered for the specified real-estate calendar query. Schedule a property visit or meeting to fill your itinerary.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-primary" onclick="openCreateModal()"><i class="bi bi-plus-circle me-1"></i> Create First Event</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ERROR STATE PANEL -->
+          <div id="state-error" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 mx-auto border-danger" style="max-width: 600px;">
+              <div class="text-danger mb-4"><i class="bi bi-exclamation-triangle-fill" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">Scheduler Connection Error</h3>
+              <p class="text-muted small mb-4">Failed to synchronize calendar instances with the remote server. Verify your internet connection or try again.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-danger" onclick="triggerRefresh()"><i class="bi bi-arrow-clockwise me-1"></i> Retry Server Sync</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUCCESS STATE CONTAINER -->
+          <div id="state-success-content" class="fade-transition">
+            <div class="row g-4">
+              
+              <!-- LEFT INTERACTIVE SIDEBAR -->
+              <div class="col-12 col-xl-3" data-aos="fade-right">
+                
+                <!-- MINI CALENDAR WIDGET -->
+                <div class="uh-card p-3 mb-4 bg-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="font-title fw-bold mb-0 text-main" id="mini-cal-month-label">July 2026</h6>
+                    <div class="btn-group btn-group-xs btn-no-print">
+                      <button class="btn btn-outline-secondary p-1" onclick="changeMiniMonth(-1)"><i class="bi bi-chevron-left" style="font-size: 0.75rem;"></i></button>
+                      <button class="btn btn-outline-secondary p-1" onclick="changeMiniMonth(1)"><i class="bi bi-chevron-right" style="font-size: 0.75rem;"></i></button>
+                    </div>
+                  </div>
+                  <table class="mini-cal-table">
+                    <thead>
+                      <tr>
+                        <th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
+                      </tr>
+                    </thead>
+                    <tbody id="mini-cal-body">
+                      <!-- Rendered programmatically -->
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- CATEGORIES LEGEND & FILTERS -->
+                <div class="uh-card p-3 mb-4 bg-body btn-no-print">
+                  <h6 class="font-title fw-bold mb-3 text-main">Categories Filter</h6>
+                  <div class="d-flex flex-column gap-2" id="categories-filter-list">
+                    <!-- Dynamic check lists -->
+                  </div>
+                </div>
+
+                <!-- AGENT AVAILABILITY -->
+                <div class="uh-card p-3 mb-4 bg-body">
+                  <h6 class="font-title fw-bold mb-3 text-main">Agent Rota Status</h6>
+                  <div class="d-flex flex-column gap-2.5">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=60&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="Sarah" />
+                        <span class="small fw-semibold text-main">Sarah Jenkins</span>
+                      </div>
+                      <span class="badge bg-success-subtle text-success px-2 py-0.5" style="font-size: 0.65rem;">Available</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=60&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="Marcus" />
+                        <span class="small fw-semibold text-main">Marcus Vance</span>
+                      </div>
+                      <span class="badge bg-primary-subtle text-primary px-2 py-0.5" style="font-size: 0.65rem;">Meeting</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=60&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="Robert" />
+                        <span class="small fw-semibold text-main">Robert Downey</span>
+                      </div>
+                      <span class="badge bg-danger-subtle text-danger px-2 py-0.5" style="font-size: 0.65rem;">Busy</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=60&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="Emma" />
+                        <span class="small fw-semibold text-main">Emma Watson</span>
+                      </div>
+                      <span class="badge bg-warning-subtle text-warning px-2 py-0.5" style="font-size: 0.65rem;">On Leave</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=60&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="David" />
+                        <span class="small fw-semibold text-main">David Foster</span>
+                      </div>
+                      <span class="badge bg-secondary-subtle text-muted px-2 py-0.5" style="font-size: 0.65rem;">Vacation</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- MEETING ROOMS AVAILABILITY -->
+                <div class="uh-card p-3 mb-4 bg-body">
+                  <h6 class="font-title fw-bold mb-3 text-main">Meeting Rooms Status</h6>
+                  <div class="d-flex flex-column gap-2">
+                    <div class="p-2 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center">
+                      <div>
+                        <div class="small fw-bold text-main">Conference Suite A</div>
+                        <span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-people me-1"></i> Cap: 12 | Projector</span>
+                      </div>
+                      <span class="badge bg-danger-subtle text-danger" style="font-size: 0.65rem;">In Use</span>
+                    </div>
+                    <div class="p-2 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center">
+                      <div>
+                        <div class="small fw-bold text-main">Discussion Room B</div>
+                        <span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-people me-1"></i> Cap: 6 | Whiteboard</span>
+                      </div>
+                      <span class="badge bg-success-subtle text-success" style="font-size: 0.65rem;">Available</span>
+                    </div>
+                    <div class="p-2 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center">
+                      <div>
+                        <div class="small fw-bold text-main">Boardroom C</div>
+                        <span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-people me-1"></i> Cap: 20 | TV Screen</span>
+                      </div>
+                      <span class="badge bg-success-subtle text-success" style="font-size: 0.65rem;">Available</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- TASK SUMMARY WIDGET -->
+                <div class="uh-card p-3 mb-4 bg-body">
+                  <h6 class="font-title fw-bold mb-3 text-main">Task Summary Status</h6>
+                  <div class="row g-2 text-center">
+                    <div class="col-6">
+                      <div class="p-2 bg-danger-subtle rounded border border-danger-subtle">
+                        <div class="h5 mb-0 font-title fw-bold text-danger">4</div>
+                        <div class="text-muted" style="font-size: 0.65rem;">Due Today</div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="p-2 bg-info-subtle rounded border border-info-subtle">
+                        <div class="h5 mb-0 font-title fw-bold text-info">12</div>
+                        <div class="text-muted" style="font-size: 0.65rem;">Upcoming</div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="p-2 bg-success-subtle rounded border border-success-subtle">
+                        <div class="h5 mb-0 font-title fw-bold text-success">45</div>
+                        <div class="text-muted" style="font-size: 0.65rem;">Completed</div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="p-2 bg-warning-subtle rounded border border-warning-subtle">
+                        <div class="h5 mb-0 font-title fw-bold text-warning">1</div>
+                        <div class="text-muted" style="font-size: 0.65rem;">Overdue</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- QUICK ACTIONS -->
+                <div class="uh-card p-3 bg-body btn-no-print">
+                  <h6 class="font-title fw-bold mb-2.5 text-main">Quick Actions</h6>
+                  <div class="d-flex flex-column gap-2">
+                    <button class="btn btn-xs btn-outline-primary text-start w-100 py-1.5 px-2.5" onclick="openCreateModal()"><i class="bi bi-plus-circle me-1.5"></i> Create New Event</button>
+                    <button class="btn btn-xs btn-outline-secondary text-start w-100 py-1.5 px-2.5" onclick="openCreateModal('Property Visit')"><i class="bi bi-house me-1.5"></i> Schedule Property Visit</button>
+                    <button class="btn btn-xs btn-outline-secondary text-start w-100 py-1.5 px-2.5" onclick="openReminderModal()"><i class="bi bi-bell me-1.5"></i> Create Reminder Alert</button>
+                    <button class="btn btn-xs btn-outline-secondary text-start w-100 py-1.5 px-2.5" onclick="window.print()"><i class="bi bi-printer me-1.5"></i> Print Full Schedule</button>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- MAIN CALENDAR AND WORKSPACE -->
+              <div class="col-12 col-xl-9" data-aos="fade-left">
+                
+                <!-- MAIN CALENDAR PANEL -->
+                <div class="uh-card p-3 mb-4 bg-body">
+                  <div id="calendar"></div>
+                </div>
+
+                <!-- TIMELINE & UPCOMING EVENT SPLIT GRID -->
+                <div class="row g-4">
+                  <!-- TODAY'S SCHEDULE TIMELINE -->
+                  <div class="col-12 col-md-5">
+                    <div class="uh-card p-3 bg-body h-100">
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="font-title fw-bold mb-0 text-main">Today's Schedule</h6>
+                        <span class="badge-custom bg-primary-subtle text-primary">July 10, 2026</span>
+                      </div>
+                      <div class="timeline-container">
+                        <div class="timeline-line"></div>
+                        <div class="timeline-item">
+                          <div class="timeline-time">09:00</div>
+                          <div class="timeline-node"></div>
+                          <div class="small fw-bold text-main">Internal Review</div>
+                          <p class="text-muted small mb-0" style="font-size: 0.7rem;">Discussion on Miami beach penthouse listings with Sarah.</p>
+                        </div>
+                        <div class="timeline-item">
+                          <div class="timeline-time">11:30</div>
+                          <div class="timeline-node pulsing"></div>
+                          <div class="small fw-bold text-primary">Negotiation Deal</div>
+                          <p class="text-muted small mb-0" style="font-size: 0.7rem;">Meeting with David Foster on Suite 404 contract.</p>
+                        </div>
+                        <div class="timeline-item">
+                          <div class="timeline-time">14:00</div>
+                          <div class="timeline-node"></div>
+                          <div class="small fw-bold text-main">Property Inspection</div>
+                          <p class="text-muted small mb-0" style="font-size: 0.7rem;">Assigned Agent Marcus visiting 12 Brickell Ave site.</p>
+                        </div>
+                        <div class="timeline-item">
+                          <div class="timeline-time">16:00</div>
+                          <div class="timeline-node"></div>
+                          <div class="small fw-bold text-main">Lead Follow-up Call</div>
+                          <p class="text-muted small mb-0" style="font-size: 0.7rem;">Telephone follow-up regarding luxury loft floor plans.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- UPCOMING EVENTS LIST -->
+                  <div class="col-12 col-md-7">
+                    <div class="uh-card p-3 bg-body h-100">
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="font-title fw-bold mb-0 text-main">Upcoming Itinerary</h6>
+                        <a href="appointments.html" class="small text-primary text-decoration-none">View All Itinerary <i class="bi bi-chevron-right"></i></a>
+                      </div>
+                      <div class="d-flex flex-column gap-2.5" id="upcoming-itinerary-list">
+                        <!-- Rendered dynamically -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SECOND ROW OF METRICS AND ACTIVITY LOGS -->
+                <div class="row g-4 mt-1">
+                  <!-- SYSTEM REMINDERS AND ALERTS -->
+                  <div class="col-12 col-md-6">
+                    <div class="uh-card p-3 bg-body h-100">
+                      <h6 class="font-title fw-bold mb-3 text-main">Direct Reminders</h6>
+                      <div class="d-flex flex-column gap-2" id="direct-reminders-list">
+                        <div class="p-2.5 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center">
+                          <div class="d-flex align-items-center gap-2.5">
+                            <span class="badge bg-danger text-white px-1.5 py-1" style="font-size: 0.55rem; font-weight: bold;">HIGH</span>
+                            <div>
+                              <div class="small fw-bold text-main">Send structural inspection documentation</div>
+                              <span class="text-muted" style="font-size: 0.65rem;">Due in 2 hours | Marcus Vance</span>
+                            </div>
+                          </div>
+                          <button class="btn btn-xs btn-outline-success p-1" onclick="dismissReminder(this)" title="Complete Task"><i class="bi bi-check2"></i></button>
+                        </div>
+                        <div class="p-2.5 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center">
+                          <div class="d-flex align-items-center gap-2.5">
+                            <span class="badge bg-warning text-dark px-1.5 py-1" style="font-size: 0.55rem; font-weight: bold;">MED</span>
+                            <div>
+                              <div class="small fw-bold text-main">Verify escrow account deposit confirmation</div>
+                              <span class="text-muted" style="font-size: 0.65rem;">Due tomorrow | Finance Dept</span>
+                            </div>
+                          </div>
+                          <button class="btn btn-xs btn-outline-success p-1" onclick="dismissReminder(this)" title="Complete Task"><i class="bi bi-check2"></i></button>
+                        </div>
+                        <div class="p-2.5 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center">
+                          <div class="d-flex align-items-center gap-2.5">
+                            <span class="badge bg-secondary text-muted px-1.5 py-1" style="font-size: 0.55rem; font-weight: bold;">LOW</span>
+                            <div>
+                              <div class="small fw-bold text-main">Upload floor plans blueprints update</div>
+                              <span class="text-muted" style="font-size: 0.65rem;">Due in 3 days | Tech Architect</span>
+                            </div>
+                          </div>
+                          <button class="btn btn-xs btn-outline-success p-1" onclick="dismissReminder(this)" title="Complete Task"><i class="bi bi-check2"></i></button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- RECENT ACTIVITY LOGS -->
+                  <div class="col-12 col-md-6">
+                    <div class="uh-card p-3 bg-body h-100">
+                      <h6 class="font-title fw-bold mb-3 text-main">Scheduler Activity Log</h6>
+                      <div class="d-flex flex-column gap-2.5">
+                        <div class="d-flex align-items-start gap-2">
+                          <div class="p-1 bg-success-subtle text-success rounded-circle" style="font-size: 0.75rem;"><i class="bi bi-check-circle"></i></div>
+                          <div>
+                            <div class="small fw-semibold text-main">Property Visit Completed</div>
+                            <span class="text-muted d-block" style="font-size: 0.65rem;">Marcus Vance logged visit report for 450 Ocean Dr | 42m ago</span>
+                          </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                          <div class="p-1 bg-primary-subtle text-primary rounded-circle" style="font-size: 0.75rem;"><i class="bi bi-calendar-plus"></i></div>
+                          <div>
+                            <div class="small fw-semibold text-main">New Office Meeting Created</div>
+                            <span class="text-muted d-block" style="font-size: 0.65rem;">Sarah Jenkins scheduled "Quarterly Sales Alignment" | 2h ago</span>
+                          </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                          <div class="p-1 bg-warning-subtle text-warning rounded-circle" style="font-size: 0.75rem;"><i class="bi bi-pencil"></i></div>
+                          <div>
+                            <div class="small fw-semibold text-main">Meeting Time Updated</div>
+                            <span class="text-muted d-block" style="font-size: 0.65rem;">Emma Watson shifted "Contract Suite 404" to 11:30 AM | 4h ago</span>
+                          </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                          <div class="p-1 bg-info-subtle text-info rounded-circle" style="font-size: 0.75rem;"><i class="bi bi-person-check"></i></div>
+                          <div>
+                            <div class="small fw-semibold text-main">Agent Assigned to Task</div>
+                            <span class="text-muted d-block" style="font-size: 0.65rem;">Sarah Jenkins assigned Robert Downey to escrow follow-up | Yesterday</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- CREATE EVENT MODAL -->
+    <div class="modal fade" id="createEventModal" tabindex="-1" aria-labelledby="createEventModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-body border border-light-subtle">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h5 class="modal-title font-title fw-bold text-main" id="createEventModalLabel">Schedule Itinerary Event</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="create-event-form" onsubmit="handleFormSubmit(event)">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="event-title" class="form-label text-muted small fw-semibold">Event Title / Name</label>
+                <input type="text" class="form-control bg-body border-light-subtle text-main" id="event-title" placeholder="e.g. Penthouse Exclusive Tour" required />
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label for="event-category" class="form-label text-muted small fw-semibold">Itinerary Category</label>
+                  <select class="form-select bg-body border-light-subtle text-main" id="event-category" required>
+                    <option value="Property Visit">Property Visit</option>
+                    <option value="Office Meeting">Office Meeting</option>
+                    <option value="Customer Meeting">Customer Meeting</option>
+                    <option value="Lead Follow-up">Lead Follow-up</option>
+                    <option value="Inspection">Inspection</option>
+                    <option value="Task Deadline">Task Deadline</option>
+                    <option value="Payment Reminder">Payment Reminder</option>
+                    <option value="Property Handover">Property Handover</option>
+                    <option value="Contract Signing">Contract Signing</option>
+                    <option value="Personal Event">Personal Event</option>
+                  </select>
+                </div>
+                <div class="col-6">
+                  <label for="event-agent" class="form-label text-muted small fw-semibold">Assigned Host Agent</label>
+                  <select class="form-select bg-body border-light-subtle text-main" id="event-agent">
+                    <option value="Sarah Jenkins">Sarah Jenkins</option>
+                    <option value="Marcus Vance">Marcus Vance</option>
+                    <option value="Robert Downey">Robert Downey</option>
+                    <option value="Emma Watson">Emma Watson</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label for="event-date" class="form-label text-muted small fw-semibold">Date</label>
+                  <input type="date" class="form-control bg-body border-light-subtle text-main" id="event-date" required />
+                </div>
+                <div class="col-6">
+                  <label for="event-time" class="form-label text-muted small fw-semibold">Time</label>
+                  <input type="time" class="form-control bg-body border-light-subtle text-main" id="event-time" required />
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="event-location" class="form-label text-muted small fw-semibold">Physical Location / Room</label>
+                <input type="text" class="form-control bg-body border-light-subtle text-main" id="event-location" placeholder="e.g. Suite 404 / 450 Ocean Dr" />
+              </div>
+              <div class="mb-3">
+                <label for="event-property" class="form-label text-muted small fw-semibold">Connected Property Asset</label>
+                <input type="text" class="form-control bg-body border-light-subtle text-main" id="event-property" placeholder="e.g. Luxury Seaside Penthouse" />
+              </div>
+              <div class="mb-3">
+                <label for="event-customer" class="form-label text-muted small fw-semibold">CRM Customer / Client Reference</label>
+                <input type="text" class="form-control bg-body border-light-subtle text-main" id="event-customer" placeholder="e.g. David Foster" />
+              </div>
+              <div class="mb-3">
+                <label for="event-description" class="form-label text-muted small fw-semibold">Detailed Schedule Notes</label>
+                <textarea class="form-control bg-body border-light-subtle text-main" id="event-description" rows="3" placeholder="Specify additional details regarding this itinerary node..."></textarea>
+              </div>
+            </div>
+            <div class="modal-footer border-top border-light-subtle">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-sm btn-primary">Schedule Event</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVENT DETAILS MODAL -->
+    <div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-body border border-light-subtle">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h5 class="modal-title font-title fw-bold text-main d-flex align-items-center gap-2" id="eventDetailsModalLabel">
+              <span id="detail-category-badge" class="badge bg-secondary" style="font-size: 0.7rem;">Category</span>
+              <span id="detail-title">Event Title</span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="d-flex flex-column gap-3">
+              <div class="row g-2">
+                <div class="col-6">
+                  <div class="p-2 rounded bg-body border border-light-subtle text-center">
+                    <span class="text-muted d-block" style="font-size: 0.65rem;">DATE</span>
+                    <strong class="text-main small" id="detail-date">July 10, 2026</strong>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="p-2 rounded bg-body border border-light-subtle text-center">
+                    <span class="text-muted d-block" style="font-size: 0.65rem;">TIME</span>
+                    <strong class="text-main small" id="detail-time">10:00 AM</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-2.5 rounded bg-body border border-light-subtle">
+                <div class="text-muted mb-1" style="font-size: 0.65rem;"><i class="bi bi-info-circle me-1"></i> SCHEDULE DESCRIPTION</div>
+                <p class="text-main mb-0 small" id="detail-desc" style="line-height: 1.4;">No custom notes supplied for this schedule block.</p>
+              </div>
+
+              <div class="row g-2">
+                <div class="col-12 col-sm-6">
+                  <div class="p-2 rounded bg-body border border-light-subtle d-flex align-items-center gap-2">
+                    <div class="p-1.5 bg-primary-subtle text-primary rounded-circle" style="font-size: 0.85rem;"><i class="bi bi-person"></i></div>
+                    <div>
+                      <span class="text-muted d-block" style="font-size: 0.65rem;">Assigned Agent</span>
+                      <strong class="text-main small" id="detail-agent">Sarah Jenkins</strong>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <div class="p-2 rounded bg-body border border-light-subtle d-flex align-items-center gap-2">
+                    <div class="p-1.5 bg-success-subtle text-success rounded-circle" style="font-size: 0.85rem;"><i class="bi bi-house"></i></div>
+                    <div>
+                      <span class="text-muted d-block" style="font-size: 0.65rem;">Asset Property</span>
+                      <strong class="text-main small text-truncate d-inline-block" style="max-width: 140px;" id="detail-property">-</strong>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <div class="p-2 rounded bg-body border border-light-subtle d-flex align-items-center gap-2">
+                    <div class="p-1.5 bg-info-subtle text-info rounded-circle" style="font-size: 0.85rem;"><i class="bi bi-person-badge"></i></div>
+                    <div>
+                      <span class="text-muted d-block" style="font-size: 0.65rem;">Customer Client</span>
+                      <strong class="text-main small text-truncate d-inline-block" style="max-width: 140px;" id="detail-customer">-</strong>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <div class="p-2 rounded bg-body border border-light-subtle d-flex align-items-center gap-2">
+                    <div class="p-1.5 bg-secondary-subtle text-muted rounded-circle" style="font-size: 0.85rem;"><i class="bi bi-geo-alt"></i></div>
+                    <div>
+                      <span class="text-muted d-block" style="font-size: 0.65rem;">Location Room</span>
+                      <strong class="text-main small text-truncate d-inline-block" style="max-width: 140px;" id="detail-location">-</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-light-subtle d-flex justify-content-between">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="triggerDeleteConfirmation()"><i class="bi bi-trash me-1"></i> Delete Event</button>
+            <div class="d-flex gap-1.5">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-sm btn-primary" onclick="editEventAlert()"><i class="bi bi-pencil me-1"></i> Edit Event</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REMINDER ACTION MODAL -->
+    <div class="modal fade" id="createReminderModal" tabindex="-1" aria-labelledby="createReminderModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-body border border-light-subtle">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h6 class="modal-title font-title fw-bold text-main" id="createReminderModalLabel">Create Reminder Node</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="create-reminder-form" onsubmit="handleReminderSubmit(event)">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="reminder-text" class="form-label text-muted small fw-semibold">Reminder Action</label>
+                <input type="text" class="form-control bg-body border-light-subtle text-main" id="reminder-text" placeholder="e.g. Call client Jane regarding deposit" required />
+              </div>
+              <div class="mb-3">
+                <label for="reminder-priority" class="form-label text-muted small fw-semibold">Priority Level</label>
+                <select class="form-select bg-body border-light-subtle text-main" id="reminder-priority" required>
+                  <option value="HIGH">HIGH</option>
+                  <option value="MED">MED</option>
+                  <option value="LOW">LOW</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="reminder-assign" class="form-label text-muted small fw-semibold">Assigned Agent</label>
+                <select class="form-select bg-body border-light-subtle text-main" id="reminder-assign" required>
+                  <option value="Marcus Vance">Marcus Vance</option>
+                  <option value="Sarah Jenkins">Sarah Jenkins</option>
+                  <option value="Emma Watson">Emma Watson</option>
+                  <option value="Robert Downey">Robert Downey</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer border-top border-light-subtle">
+              <button type="button" class="btn btn-xs btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-xs btn-primary">Add Reminder</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-body border border-danger">
+          <div class="modal-body text-center p-4">
+            <i class="bi bi-exclamation-triangle text-danger mb-3" style="font-size: 2.5rem;"></i>
+            <h5 class="font-title fw-bold text-main mb-2">Delete Itinerary Event?</h5>
+            <p class="text-muted small mb-4">Are you absolutely sure you wish to delete this scheduled block? This cannot be undone.</p>
+            <div class="d-flex justify-content-center gap-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-sm btn-danger px-3" onclick="confirmDeleteEvent()">Yes, Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <!-- AOS Animation Library JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Main JS Script -->
+    <script src="/assets/js/main.js"></script>
+
+    <!-- Interactive JS Functionality Block -->
+    <script>
+      // 1. Color palettes for categories
+      const categoryColors = {
+        'Property Visit': { bg: 'rgba(16, 185, 129, 0.15)', text: '#10B981', border: '#10B981' },
+        'Office Meeting': { bg: 'rgba(59, 130, 246, 0.15)', text: '#3B82F6', border: '#3B82F6' },
+        'Customer Meeting': { bg: 'rgba(99, 102, 241, 0.15)', text: '#6366F1', border: '#6366F1' },
+        'Lead Follow-up': { bg: 'rgba(236, 72, 153, 0.15)', text: '#EC4899', border: '#EC4899' },
+        'Inspection': { bg: 'rgba(245, 158, 11, 0.15)', text: '#F59E0B', border: '#F59E0B' },
+        'Task Deadline': { bg: 'rgba(239, 68, 68, 0.15)', text: '#EF4444', border: '#EF4444' },
+        'Payment Reminder': { bg: 'rgba(234, 179, 8, 0.15)', text: '#EAB308', border: '#EAB308' },
+        'Property Handover': { bg: 'rgba(20, 184, 166, 0.15)', text: '#14B8A6', border: '#14B8A6' },
+        'Contract Signing': { bg: 'rgba(5, 150, 105, 0.15)', text: '#059669', border: '#059669' },
+        'Personal Event': { bg: 'rgba(100, 116, 139, 0.15)', text: '#64748B', border: '#64748B' }
+      };
+
+      // 2. Default Seed Events List
+      let globalEvents = [
+        { id: '1', title: 'Luxury Villa Tour - 450 Ocean Dr', start: '2026-07-12T10:00:00', end: '2026-07-12T11:30:00', category: 'Property Visit', agent: 'Marcus Vance', location: '450 Ocean Drive', property: 'Oceanview Elite Villa', customer: 'David Foster', desc: 'Tour of secondary guest quarters and structural layouts with VIP client.' },
+        { id: '2', title: 'Quarterly Sales Alignment', start: '2026-07-15T14:00:00', end: '2026-07-15T15:30:00', category: 'Office Meeting', agent: 'Sarah Jenkins', location: 'Discussion Room B', property: '-', customer: '-', desc: 'Quarterly targets revision and strategic budget distribution discussion.' },
+        { id: '3', title: 'Negotiation with David Foster', start: '2026-07-11T11:30:00', end: '2026-07-11T13:00:00', category: 'Customer Meeting', agent: 'Emma Watson', location: 'Suite 404 Office', property: 'Seaside Suite 404', customer: 'David Foster', desc: 'Fine tuning of structural clauses and downpayment deadlines.' },
+        { id: '4', title: 'Call Jane Doe regarding Penthouse', start: '2026-07-10T16:00:00', end: '2026-07-10T16:30:00', category: 'Lead Follow-up', agent: 'Sarah Jenkins', location: 'Phone Outbound', property: 'Miami Penthouse Loft', customer: 'Jane Doe', desc: 'Providing updated structural blueprints and interior drafts.' },
+        { id: '5', title: 'Structural Inspection - Brickell Ave', start: '2026-07-14T09:00:00', end: '2026-07-14T11:00:00', category: 'Inspection', agent: 'Marcus Vance', location: '12 Brickell Ave', property: 'Brickell Commercial Block', customer: 'Central Corp', desc: 'Full architectural check of load-bearing pillars and basement plumbing systems.' },
+        { id: '6', title: 'Upload Escrow Contract docs', start: '2026-07-10T18:00:00', end: '2026-07-10T18:30:00', category: 'Task Deadline', agent: 'Robert Downey', location: 'Digital Portal', property: 'Suite 404', customer: 'David Foster', desc: 'Mandatory escrow validation logs to comply with central compliance regulations.' },
+        { id: '7', title: 'Escrow Deposit Due', start: '2026-07-13T17:00:00', end: '2026-07-13T18:00:00', category: 'Payment Reminder', agent: 'Robert Downey', location: 'Wire Transfer Portal', property: 'Suite 404', customer: 'David Foster', desc: 'Verify incoming wire transfer coordinates with Finance node.' },
+        { id: '8', title: 'Keys Handover - 88 Marina Blvd', start: '2026-07-16T15:00:00', end: '2026-07-16T16:00:00', category: 'Property Handover', agent: 'Emma Watson', location: '88 Marina Boulevard', property: 'Marina Luxury Residence', customer: 'Jessica Alba', desc: 'Handover ceremony including smart lock coordinates and amenities keys.' },
+        { id: '9', title: 'Closing Agreement - Suite 404', start: '2026-07-12T13:00:00', end: '2026-07-12T14:30:00', category: 'Contract Signing', agent: 'Sarah Jenkins', location: 'Suite 404', property: 'Seaside Suite 404', customer: 'David Foster', desc: 'Final execution signatures and notary verification on-site.' },
+        { id: '10', title: 'Dentist Appointment', start: '2026-07-17T08:30:00', end: '2026-07-17T09:30:00', category: 'Personal Event', agent: 'Sarah Jenkins', location: 'Miami Dental Care', property: '-', customer: '-', desc: 'Bi-annual checkup.' }
+      ];
+
+      // Current active calendar view reference
+      let calendarInstance = null;
+      let currentMiniMonth = new Date(2026, 6, 1); // July 2026
+      let selectedEventId = null;
+
+      // 3. Document Loader Entry Point
+      document.addEventListener('DOMContentLoaded', () => {
+        // Initialize Categories filters checkboxes dynamically
+        renderCategoriesCheckboxes();
+        // Initialize Mini calendar sidebar widget
+        renderMiniCalendar();
+        // Initialize Large FullCalendar
+        initializeFullCalendar();
+        // Render Itinerary upcoming items
+        renderUpcomingItinerary();
+      });
+
+      // 4. FullCalendar Initialization with Theme adaptation
+      function initializeFullCalendar() {
+        const calendarEl = document.getElementById('calendar');
+        if (!calendarEl) return;
+
+        // Map events to FullCalendar formats with theme colors
+        const formattedEvents = getFilteredEvents().map(evt => {
+          const colorMeta = categoryColors[evt.category] || { bg: '#64748B', text: '#fff' };
+          return {
+            id: evt.id,
+            title: evt.title,
+            start: evt.start,
+            end: evt.end,
+            backgroundColor: colorMeta.bg,
+            textColor: colorMeta.text,
+            borderColor: colorMeta.border,
+            extendedProps: {
+              category: evt.category,
+              agent: evt.agent,
+              location: evt.location,
+              property: evt.property,
+              customer: evt.customer,
+              desc: evt.desc
+            }
+          };
+        });
+
+        // Instantiate
+        calendarInstance = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'dayGridMonth',
+          initialDate: '2026-07-10',
+          headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+          },
+          events: formattedEvents,
+          height: 'auto',
+          eventClick: function(info) {
+            openEventDetails(info.event);
+          },
+          themeSystem: 'standard'
+        });
+
+        calendarInstance.render();
+      }
+
+      // 5. Category Checkbox Legend Render
+      function renderCategoriesCheckboxes() {
+        const filterContainer = document.getElementById('categories-filter-list');
+        if (!filterContainer) return;
+
+        let html = '';
+        Object.keys(categoryColors).forEach(cat => {
+          const colors = categoryColors[cat];
+          html += `
+            <div class="form-check d-flex align-items-center justify-content-between">
+              <div>
+                <input class="form-check-input" type="checkbox" value="${cat}" id="chk-${cat.replace(/\s+/g, '-')}" checked onchange="handleCategoryFilterChange()">
+                <label class="form-check-label small text-main ms-1" for="chk-${cat.replace(/\s+/g, '-')}">
+                  <span class="category-dot" style="background-color: ${colors.text};"></span>${cat}
+                </label>
+              </div>
+              <span class="badge rounded-pill bg-body border border-light-subtle text-muted" style="font-size: 0.65rem;">
+                ${globalEvents.filter(e => e.category === cat).length}
+              </span>
+            </div>
+          `;
+        });
+        filterContainer.innerHTML = html;
+      }
+
+      // Recalculates and refreshes when category selections change
+      function handleCategoryFilterChange() {
+        if (!calendarInstance) return;
+        
+        // Remove all events first
+        calendarInstance.removeAllEvents();
+        
+        // Filter events and map
+        const activeEvents = getFilteredEvents();
+        const mapped = activeEvents.map(evt => {
+          const colorMeta = categoryColors[evt.category] || { bg: '#64748B', text: '#fff' };
+          return {
+            id: evt.id,
+            title: evt.title,
+            start: evt.start,
+            end: evt.end,
+            backgroundColor: colorMeta.bg,
+            textColor: colorMeta.text,
+            borderColor: colorMeta.border,
+            extendedProps: {
+              category: evt.category,
+              agent: evt.agent,
+              location: evt.location,
+              property: evt.property,
+              customer: evt.customer,
+              desc: evt.desc
+            }
+          };
+        });
+
+        // Add each
+        mapped.forEach(evt => calendarInstance.addEvent(evt));
+        // Also refresh the upcoming list
+        renderUpcomingItinerary();
+      }
+
+      // Gets active categories based on checkboxes
+      function getActiveCategories() {
+        const categories = [];
+        Object.keys(categoryColors).forEach(cat => {
+          const el = document.getElementById(`chk-${cat.replace(/\s+/g, '-')}`);
+          if (el && el.checked) {
+            categories.push(cat);
+          }
+        });
+        return categories;
+      }
+
+      // Filter events by Search input and Checkboxes
+      function getFilteredEvents() {
+        const activeCats = getActiveCategories();
+        const searchInput = document.getElementById('global-search-input');
+        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+        return globalEvents.filter(evt => {
+          const catMatches = activeCats.includes(evt.category);
+          const searchMatches = searchTerm === '' || 
+                                evt.title.toLowerCase().includes(searchTerm) || 
+                                evt.category.toLowerCase().includes(searchTerm) || 
+                                evt.agent.toLowerCase().includes(searchTerm) || 
+                                evt.location.toLowerCase().includes(searchTerm);
+          return catMatches && searchMatches;
+        });
+      }
+
+      // Handler for Search bar in real-time
+      function handleToolbarSearch(val) {
+        handleCategoryFilterChange();
+      }
+
+      // 6. Mini Calendar Sidebar Implementation
+      function renderMiniCalendar() {
+        const year = currentMiniMonth.getFullYear();
+        const month = currentMiniMonth.getMonth();
+        
+        // Month names
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        document.getElementById('mini-cal-month-label').innerText = `${monthNames[month]} ${year}`;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const prevMonthDays = new Date(year, month, 0).getDate();
+
+        const bodyContainer = document.getElementById('mini-cal-body');
+        if (!bodyContainer) return;
+
+        let html = '<tr>';
+        let dayCounter = 1;
+        let nextMonthDayCounter = 1;
+
+        // Render previous month's trailing days
+        for (let i = firstDay - 1; i >= 0; i--) {
+          html += `<td class="other-month">${prevMonthDays - i}</td>`;
+        }
+
+        // Render current month days
+        const totalCells = daysInMonth + firstDay;
+        const totalRows = Math.ceil(totalCells / 7) * 7;
+
+        for (let i = firstDay; i < totalRows; i++) {
+          if (dayCounter <= daysInMonth) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayCounter).padStart(2, '0')}`;
+            const hasEvent = globalEvents.some(evt => evt.start.startsWith(dateStr));
+            const isToday = year === 2026 && month === 6 && dayCounter === 10; // July 10, 2026
+
+            let classList = '';
+            if (isToday) classList += ' today';
+            if (hasEvent) classList += ' has-event text-primary';
+
+            html += `<td class="${classList}" onclick="navigateCalendarToDate('${dateStr}')">${dayCounter}</td>`;
+            dayCounter++;
+          } else {
+            // Render next month's trailing days
+            html += `<td class="other-month">${nextMonthDayCounter}</td>`;
+            nextMonthDayCounter++;
+          }
+
+          if ((i + 1) % 7 === 0 && dayCounter <= daysInMonth) {
+            html += '</tr><tr>';
+          }
+        }
+        html += '</tr>';
+        bodyContainer.innerHTML = html;
+      }
+
+      function changeMiniMonth(offset) {
+        currentMiniMonth.setMonth(currentMiniMonth.getMonth() + offset);
+        renderMiniCalendar();
+      }
+
+      function navigateCalendarToDate(dateStr) {
+        if (calendarInstance) {
+          calendarInstance.gotoDate(dateStr);
+        }
+      }
+
+      // 7. Render Upcoming Itinerary Cards
+      function renderUpcomingItinerary() {
+        const container = document.getElementById('upcoming-itinerary-list');
+        if (!container) return;
+
+        // Get future events from July 10 onwards sorted
+        const filtered = getFilteredEvents().sort((a, b) => new Date(a.start) - new Date(b.start)).slice(0, 4);
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+              <i class="bi bi-calendar2-minus d-block mb-2" style="font-size: 1.5rem;"></i>
+              <span class="small">No filtered items on itinerary</span>
+            </div>
+          `;
+          return;
+        }
+
+        let html = '';
+        filtered.forEach(evt => {
+          const colors = categoryColors[evt.category] || { text: '#fff' };
+          const formattedDate = new Date(evt.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const formattedTime = new Date(evt.start).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+          html += `
+            <div class="p-2.5 rounded bg-body border border-light-subtle card-lift-hover" onclick="openDetailsById('${evt.id}')" style="cursor: pointer;">
+              <div class="d-flex justify-content-between align-items-start mb-1.5">
+                <span class="badge-custom" style="background-color: rgba(var(--uh-primary-rgb), 0.08); color: ${colors.text}; font-size: 0.65rem; padding: 0.2rem 0.5rem;">
+                  <span class="category-dot" style="background-color: ${colors.text};"></span>${evt.category}
+                </span>
+                <span class="text-muted" style="font-size: 0.65rem; font-family: var(--font-mono);">${formattedDate} @ ${formattedTime}</span>
+              </div>
+              <div class="small fw-bold text-main text-truncate mb-1">${evt.title}</div>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-geo-alt me-1"></i>${evt.location}</span>
+                <span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-person me-1"></i>${evt.agent}</span>
+              </div>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
+      }
+
+      // 8. Event Details Actions
+      function openEventDetails(fcEvent) {
+        selectedEventId = fcEvent.id;
+        const category = fcEvent.extendedProps.category;
+        const colors = categoryColors[category] || { text: '#fff' };
+
+        document.getElementById('detail-title').innerText = fcEvent.title;
+        document.getElementById('detail-category-badge').innerText = category;
+        document.getElementById('detail-category-badge').style.backgroundColor = colors.text;
+        document.getElementById('detail-category-badge').style.color = '#fff';
+
+        const start = fcEvent.start;
+        document.getElementById('detail-date').innerText = start.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('detail-time').innerText = start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        
+        document.getElementById('detail-desc').innerText = fcEvent.extendedProps.desc || 'No schedule notes specified.';
+        document.getElementById('detail-agent').innerText = fcEvent.extendedProps.agent || '-';
+        document.getElementById('detail-property').innerText = fcEvent.extendedProps.property || '-';
+        document.getElementById('detail-customer').innerText = fcEvent.extendedProps.customer || '-';
+        document.getElementById('detail-location').innerText = fcEvent.extendedProps.location || '-';
+
+        const myModal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+        myModal.show();
+      }
+
+      function openDetailsById(id) {
+        const found = globalEvents.find(e => e.id === id);
+        if (!found) return;
+
+        // Simulate FullCalendar event mock
+        const fcMock = {
+          id: found.id,
+          title: found.title,
+          start: new Date(found.start),
+          extendedProps: {
+            category: found.category,
+            agent: found.agent,
+            location: found.location,
+            property: found.property,
+            customer: found.customer,
+            desc: found.desc
+          }
+        };
+        openEventDetails(fcMock);
+      }
+
+      // 9. Forms Action Callbacks
+      function openCreateModal(defaultCategory = '') {
+        if (defaultCategory) {
+          document.getElementById('event-category').value = defaultCategory;
+        }
+        document.getElementById('event-date').value = '2026-07-10';
+        document.getElementById('event-time').value = '10:00';
+        const myModal = new bootstrap.Modal(document.getElementById('createEventModal'));
+        myModal.show();
+      }
+
+      function handleFormSubmit(e) {
+        e.preventDefault();
+        
+        const title = document.getElementById('event-title').value;
+        const category = document.getElementById('event-category').value;
+        const agent = document.getElementById('event-agent').value;
+        const date = document.getElementById('event-date').value;
+        const time = document.getElementById('event-time').value;
+        const location = document.getElementById('event-location').value || 'Office Conference';
+        const property = document.getElementById('event-property').value || '-';
+        const customer = document.getElementById('event-customer').value || '-';
+        const desc = document.getElementById('event-description').value || '';
+
+        const startISO = `${date}T${time}:00`;
+        const newEventObj = {
+          id: String(globalEvents.length + 1),
+          title,
+          start: startISO,
+          category,
+          agent,
+          location,
+          property,
+          customer,
+          desc
+        };
+
+        globalEvents.push(newEventObj);
+
+        // Hide Modal
+        bootstrap.Modal.getInstance(document.getElementById('createEventModal')).hide();
+
+        // Refresh widgets
+        handleCategoryFilterChange();
+        renderCategoriesCheckboxes();
+        renderMiniCalendar();
+
+        // Show a brief bootstrap toast/alert simulation
+        alert(`Success! Scheduled new event: "${title}" successfully.`);
+        document.getElementById('create-event-form').reset();
+      }
+
+      // Reminders workflow
+      function openReminderModal() {
+        const rModal = new bootstrap.Modal(document.getElementById('createReminderModal'));
+        rModal.show();
+      }
+
+      function handleReminderSubmit(e) {
+        e.preventDefault();
+        const text = document.getElementById('reminder-text').value;
+        const priority = document.getElementById('reminder-priority').value;
+        const agent = document.getElementById('reminder-assign').value;
+
+        const list = document.getElementById('direct-reminders-list');
+        const badgeClass = priority === 'HIGH' ? 'bg-danger text-white' : (priority === 'MED' ? 'bg-warning text-dark' : 'bg-secondary text-muted');
+
+        const div = document.createElement('div');
+        div.className = 'p-2.5 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center';
+        div.innerHTML = `
+          <div class="d-flex align-items-center gap-2.5">
+            <span class="badge ${badgeClass} px-1.5 py-1" style="font-size: 0.55rem; font-weight: bold;">${priority}</span>
+            <div>
+              <div class="small fw-bold text-main">${text}</div>
+              <span class="text-muted" style="font-size: 0.65rem;">Assigned | ${agent}</span>
+            </div>
+          </div>
+          <button class="btn btn-xs btn-outline-success p-1" onclick="dismissReminder(this)" title="Complete Task"><i class="bi bi-check2"></i></button>
+        `;
+
+        list.prepend(div);
+        bootstrap.Modal.getInstance(document.getElementById('createReminderModal')).hide();
+        document.getElementById('create-reminder-form').reset();
+      }
+
+      function dismissReminder(btn) {
+        btn.closest('.p-2.5').remove();
+      }
+
+      function triggerDeleteConfirmation() {
+        // Dismiss active details modal first
+        bootstrap.Modal.getInstance(document.getElementById('eventDetailsModal')).hide();
+        // Open deletion alert
+        setTimeout(() => {
+          const delModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+          delModal.show();
+        }, 400);
+      }
+
+      function confirmDeleteEvent() {
+        if (selectedEventId) {
+          globalEvents = globalEvents.filter(e => e.id !== selectedEventId);
+          bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
+          handleCategoryFilterChange();
+          renderCategoriesCheckboxes();
+          renderMiniCalendar();
+          alert('Event deleted successfully.');
+        }
+      }
+
+      function editEventAlert() {
+        alert('Edit Event flow is simulated. Form values can be modified in the database view.');
+      }
+
+      function triggerExport() {
+        alert('Database export compiled! Calendar events downloaded to CSV/ICS exchange logs.');
+      }
+
+      // 10. Reusable UI States Simulator Controller
+      function switchSimulatorState(state) {
+        // Update tabs active state
+        document.querySelectorAll('.state-simulator-bar button').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`sim-btn-${state}`).classList.add('active');
+
+        // Hide all major screens
+        document.getElementById('state-loading-skeleton').classList.add('skeleton-hidden');
+        document.getElementById('state-empty').classList.add('skeleton-hidden');
+        document.getElementById('state-error').classList.add('skeleton-hidden');
+        document.getElementById('state-success-content').classList.add('skeleton-hidden');
+
+        if (state === 'loading') {
+          document.getElementById('state-loading-skeleton').classList.remove('skeleton-hidden');
+        } else if (state === 'empty') {
+          document.getElementById('state-empty').classList.remove('skeleton-hidden');
+        } else if (state === 'error') {
+          document.getElementById('state-error').classList.remove('skeleton-hidden');
+        } else {
+          document.getElementById('state-success-content').classList.remove('skeleton-hidden');
+          // Refresh views to align
+          setTimeout(() => {
+            if (calendarInstance) {
+              calendarInstance.updateSize();
+            }
+          }, 100);
+        }
+      }
+
+      function triggerRefresh() {
+        switchSimulatorState('loading');
+        setTimeout(() => {
+          switchSimulatorState('success');
+        }, 800);
+      }
+    </script>
+  </body>
+</html>

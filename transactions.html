@@ -1,0 +1,1968 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Financial & Transaction Management - UrbanHub CRM</title>
+
+    <!-- Theme Choice Pre-load Script to avoid flashing -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Extra fine-tuning for transactions layout */
+      .stat-card-premium {
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--uh-shadow-sm);
+        transition: var(--uh-transition-smooth);
+        overflow: hidden;
+      }
+      .stat-card-premium:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--uh-shadow-lg);
+        border-color: rgba(var(--uh-primary-rgb), 0.2);
+      }
+      .state-simulator-bar {
+        background-color: rgba(var(--uh-primary-rgb), 0.04);
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.15);
+        border-radius: 10px;
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      .skeleton-placeholder {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255, 255, 255, 0.05) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading-flow 1.5s infinite;
+        border-radius: 6px;
+        display: inline-block;
+      }
+      @keyframes skeleton-loading-flow {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-hidden {
+        display: none !important;
+      }
+      .badge-custom {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.35em 0.65em;
+        border-radius: 6px;
+        letter-spacing: 0.5px;
+      }
+      .badge-completed { background-color: rgba(16, 185, 129, 0.15); color: #10B981; }
+      .badge-pending { background-color: rgba(245, 158, 11, 0.15); color: #F59E0B; }
+      .badge-processing { background-color: rgba(59, 130, 246, 0.15); color: #3B82F6; }
+      .badge-failed { background-color: rgba(239, 68, 68, 0.15); color: #EF4444; }
+      .badge-cancelled { background-color: rgba(148, 163, 184, 0.15); color: #94A3B8; }
+      .badge-refunded { background-color: rgba(168, 85, 247, 0.15); color: #A855F7; }
+
+      .table-user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: var(--uh-border-color);
+      }
+      /* Hover cursor action indicator */
+      .clickable-row {
+        cursor: pointer;
+      }
+      /* Focus States for keyboard accessibility */
+      a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+        outline: 2px solid var(--uh-primary) !important;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Overlay Backdrop for Mobile Sidebar -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon"><i class="bi bi-building-up"></i></div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="transactions.html" class="sidebar-menu-link active">
+                <i class="bi bi-currency-exchange"></i>
+                <span>Transactions</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Intelligence</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Analytics</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="calendar.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar3"></i>
+                <span>Calendar</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="tasks.html" class="sidebar-menu-link">
+                <i class="bi bi-check2-square"></i>
+                <span>Tasks</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reviews.html" class="sidebar-menu-link">
+                <i class="bi bi-star"></i>
+                <span>Reviews</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn" aria-label="Toggle Navigation menu">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input" id="global-search-input" placeholder="Search transactions, customers, agents..." onkeyup="handleGlobalSearch(this.value)" />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <!-- Theme toggle standard binding -->
+            <button id="theme-toggle" class="header-btn" title="Switch Theme" aria-label="Switch Theme UI Color Mode">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE BODY CONTAINER -->
+        <div class="page-body">
+
+          <!-- STATE SIMULATOR BAR -->
+          <div class="state-simulator-bar mb-4 btn-no-print" data-aos="fade-down">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-cpu text-primary"></i>
+              <span class="small fw-semibold text-main">UI Reusable States Simulator:</span>
+            </div>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <button class="btn btn-xs btn-outline-primary px-2.5 py-1 active" id="sim-btn-success" onclick="switchSimulatorState('success')">
+                <i class="bi bi-check-circle me-1"></i> Success State
+              </button>
+              <button class="btn btn-xs btn-outline-secondary px-2.5 py-1" id="sim-btn-loading" onclick="switchSimulatorState('loading')">
+                <i class="bi bi-hourglass-split me-1"></i> Loading Skeletons
+              </button>
+              <button class="btn btn-xs btn-outline-warning px-2.5 py-1" id="sim-btn-empty" onclick="switchSimulatorState('empty')">
+                <i class="bi bi-folder-x me-1"></i> Empty State
+              </button>
+              <button class="btn btn-xs btn-outline-danger px-2.5 py-1" id="sim-btn-error" onclick="switchSimulatorState('error')">
+                <i class="bi bi-exclamation-triangle me-1"></i> Error State
+              </button>
+            </div>
+          </div>
+
+          <!-- BREADCRUMB & HEADER PANEL -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-down" data-aos-delay="50">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Transactions</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Financial & Transaction Management</h1>
+            </div>
+
+            <!-- Toolbar buttons -->
+            <div class="d-flex align-items-center flex-wrap gap-2 btn-no-print">
+              <a href="coming-soon.html" class="btn btn-sm btn-primary d-flex align-items-center gap-1.5">
+                <i class="bi bi-plus-circle"></i> <span>Add Transaction</span>
+              </a>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerExport('CSV')" title="Export active transaction data to standard CSV format">
+                <i class="bi bi-file-earmark-spreadsheet"></i> <span>Export CSV</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerExport('PDF')" title="Compile transactions overview into PDF document">
+                <i class="bi bi-file-pdf"></i> <span>Export PDF</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="window.print()" title="Open print window for active dashboard pane">
+                <i class="bi bi-printer"></i> <span>Print</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerGenerateReport()" title="Establish automated layout parameters report">
+                <i class="bi bi-journal-check"></i> <span>Generate Report</span>
+              </button>
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5" onclick="triggerSyncRefresh()" title="Sync all transaction entries">
+                <i class="bi bi-arrow-clockwise"></i> <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SKELETON PRELOAD STATE -->
+          <div id="state-loading-skeleton" class="skeleton-hidden">
+            <div class="row g-3 mb-4">
+              <div class="col-6 col-md-3" v-for="n in 4">
+                <div class="uh-card p-3">
+                  <div class="skeleton-placeholder mb-2" style="width: 40%; height: 12px;"></div>
+                  <div class="skeleton-placeholder mb-1" style="width: 75%; height: 24px;"></div>
+                  <div class="skeleton-placeholder" style="width: 50%; height: 10px;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="uh-card p-4">
+              <div class="skeleton-placeholder mb-4" style="width: 30%; height: 20px;"></div>
+              <div class="skeleton-placeholder mb-2" style="width: 100%; height: 40px;" v-for="i in 5"></div>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE PANEL -->
+          <div id="state-empty" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 mx-auto" style="max-width: 600px;">
+              <div class="text-warning mb-4"><i class="bi bi-folder-x" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">No Transactions Found</h3>
+              <p class="text-muted small mb-4">The active directory is completely empty. There are currently no transaction lists, properties records, or payments matching the stored profile parameters.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <a href="coming-soon.html" class="btn btn-sm btn-primary"><i class="bi bi-plus-circle me-1"></i> Record First Transaction</a>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ERROR STATE PANEL -->
+          <div id="state-error" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 mx-auto border-danger" style="max-width: 600px;">
+              <div class="text-danger mb-4"><i class="bi bi-exclamation-triangle-fill" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">Secure Connection Offline</h3>
+              <p class="text-muted small mb-4">UrbanHub was unable to securely fetch the transaction stream from the backend server node. This may indicate an expired authentication session or an interrupted connection.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-danger" onclick="triggerSyncRefresh()"><i class="bi bi-arrow-clockwise me-1"></i> Retry Handshake</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- REAL HIGH-FIDELITY SUCCESS CONTENT -->
+          <div id="state-success-content" class="fade-transition">
+
+            <!-- STATISTICS CARDS METRIC GRID -->
+            <div class="row g-3 mb-4" data-aos="fade-up" data-aos-delay="100">
+              <!-- Card 1: Total Transactions -->
+              <div class="col-6 col-md-3 col-lg-2-4 col-xl-2">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">TOTAL TRANSACTIONS</span>
+                  <div class="my-1">
+                    <h3 class="font-title fw-bold mb-0 text-primary animate-counter-uh" id="stat-total-count" data-target="342">342</h3>
+                  </div>
+                  <span class="badge bg-success-subtle text-success py-0.5 px-1.5" style="font-size: 0.6rem;"><i class="bi bi-arrow-up-right"></i> +14.2%</span>
+                </div>
+              </div>
+              <!-- Card 2: Today's Transactions -->
+              <div class="col-6 col-md-3 col-lg-2-4 col-xl-2">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">TODAY'S COUNT</span>
+                  <div class="my-1">
+                    <h3 class="font-title fw-bold mb-0 text-info animate-counter-uh" id="stat-today-count" data-target="18">18</h3>
+                  </div>
+                  <span class="badge bg-info-subtle text-info py-0.5 px-1.5" style="font-size: 0.6rem;">Active Now</span>
+                </div>
+              </div>
+              <!-- Card 3: Monthly Revenue -->
+              <div class="col-6 col-md-3 col-lg-2-4 col-xl-2">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">MONTHLY REVENUE</span>
+                  <div class="my-1">
+                    <h3 class="font-title fw-bold mb-0 text-success animate-counter-uh" id="stat-monthly-revenue" data-target="982400" data-currency="true">$982.4K</h3>
+                  </div>
+                  <span class="badge bg-success-subtle text-success py-0.5 px-1.5" style="font-size: 0.6rem;"><i class="bi bi-arrow-up-right"></i> +8.5%</span>
+                </div>
+              </div>
+              <!-- Card 4: Monthly Expenses -->
+              <div class="col-6 col-md-3 col-lg-2-4 col-xl-2">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">MONTHLY EXPENSES</span>
+                  <div class="my-1">
+                    <h3 class="font-title fw-bold mb-0 text-danger animate-counter-uh" id="stat-monthly-expenses" data-target="145800" data-currency="true">$145.8K</h3>
+                  </div>
+                  <span class="badge bg-danger-subtle text-danger py-0.5 px-1.5" style="font-size: 0.6rem;"><i class="bi bi-arrow-down-right"></i> -2.1%</span>
+                </div>
+              </div>
+              <!-- Card 5: Pending Payments -->
+              <div class="col-6 col-md-3 col-lg-2-4 col-xl-2">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">PENDING PAYMENTS</span>
+                  <div class="my-1">
+                    <h3 class="font-title fw-bold mb-0 text-warning animate-counter-uh" id="stat-pending-payments" data-target="135000" data-currency="true">$135.0K</h3>
+                  </div>
+                  <span class="badge bg-warning-subtle text-warning py-0.5 px-1.5" style="font-size: 0.6rem;">8 Accounts</span>
+                </div>
+              </div>
+              <!-- Card 6: Completed Payments -->
+              <div class="col-6 col-md-3 col-lg-2-4 col-xl-2">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">COMPLETED PAYMENTS</span>
+                  <div class="my-1">
+                    <h3 class="font-title fw-bold mb-0 text-success animate-counter-uh" id="stat-completed-payments" data-target="9650000" data-currency="true">$9.6M</h3>
+                  </div>
+                  <span class="badge bg-success-subtle text-success py-0.5 px-1.5" style="font-size: 0.6rem;">96% Settled</span>
+                </div>
+              </div>
+              <!-- Card 7: Refunds -->
+              <div class="col-6 col-md-3 col-lg-2-4 col-xl-2">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">REFUNDS PROCESSED</span>
+                  <div class="my-1">
+                    <h3 class="font-title fw-bold mb-0 text-purple animate-counter-uh" id="stat-refunds-processed" data-target="8500" data-currency="true">$8.5K</h3>
+                  </div>
+                  <span class="badge bg-purple-subtle text-purple py-0.5 px-1.5" style="font-size: 0.6rem;">1 Request</span>
+                </div>
+              </div>
+              <!-- Card 8: Agent Commissions -->
+              <div class="col-6 col-md-3 col-lg-2-4 col-xl-2">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">AGENT COMMISSIONS</span>
+                  <div class="my-1">
+                    <h3 class="font-title fw-bold mb-0 text-primary animate-counter-uh" id="stat-agent-commissions" data-target="291600" data-currency="true">$291.6K</h3>
+                  </div>
+                  <span class="badge bg-primary-subtle text-primary py-0.5 px-1.5" style="font-size: 0.6rem;">3% Average</span>
+                </div>
+              </div>
+              <!-- Card 9: Booking Payments -->
+              <div class="col-6 col-md-3 col-lg-2-4 col-xl-2">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">BOOKING PAYMENTS</span>
+                  <div class="my-1">
+                    <h3 class="font-title fw-bold mb-0 text-info animate-counter-uh" id="stat-booking-payments" data-target="50000" data-currency="true">$50.0K</h3>
+                  </div>
+                  <span class="badge bg-info-subtle text-info py-0.5 px-1.5" style="font-size: 0.6rem;">Holding Deposit</span>
+                </div>
+              </div>
+              <!-- Card 10: Rental Payments -->
+              <div class="col-6 col-md-3 col-lg-2-4 col-xl-2">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">RENTAL PAYMENTS</span>
+                  <div class="my-1">
+                    <h3 class="font-title fw-bold mb-0 text-success animate-counter-uh" id="stat-rental-payments" data-target="6500" data-currency="true">$6.5K</h3>
+                  </div>
+                  <span class="badge bg-success-subtle text-success py-0.5 px-1.5" style="font-size: 0.6rem;">Monthly Lease</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- FINANCIAL OVERVIEW & CHARTS PANEL -->
+            <div class="row g-4 mb-4">
+              <!-- Left Panel: Financial Overview Indicators -->
+              <div class="col-12 col-xl-4" data-aos="fade-right">
+                <div class="uh-card h-100">
+                  <h4 class="font-title fw-bold mb-1">Financial Health</h4>
+                  <p class="text-muted small mb-4">Summary of total income flow, ongoing tax expenses, net margins, and collected payments metrics.</p>
+
+                  <div class="d-flex flex-column gap-3">
+                    <!-- Stat 1: Total Income -->
+                    <div class="p-3 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center">
+                      <div>
+                        <span class="text-muted small d-block" style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">TOTAL INCOME</span>
+                        <h4 class="font-title fw-bold text-success mb-0" id="fo-total-income">$9,824,000</h4>
+                      </div>
+                      <div class="p-2 rounded bg-success-subtle text-success"><i class="bi bi-wallet2" style="font-size: 1.25rem;"></i></div>
+                    </div>
+
+                    <!-- Stat 2: Total Expense -->
+                    <div class="p-3 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center">
+                      <div>
+                        <span class="text-muted small d-block" style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">TOTAL EXPENSE</span>
+                        <h4 class="font-title fw-bold text-danger mb-0" id="fo-total-expense">$145,800</h4>
+                      </div>
+                      <div class="p-2 rounded bg-danger-subtle text-danger"><i class="bi bi-calculator" style="font-size: 1.25rem;"></i></div>
+                    </div>
+
+                    <!-- Stat 3: Net Profit -->
+                    <div class="p-3 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center">
+                      <div>
+                        <span class="text-muted small d-block" style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">NET PROFIT</span>
+                        <h4 class="font-title fw-bold text-primary mb-0" id="fo-net-profit">$9,678,200</h4>
+                      </div>
+                      <div class="p-2 rounded bg-primary-subtle text-primary"><i class="bi bi-cash-coin" style="font-size: 1.25rem;"></i></div>
+                    </div>
+
+                    <!-- Stat 4: Outstanding Balance -->
+                    <div class="p-3 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center">
+                      <div>
+                        <span class="text-muted small d-block" style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">OUTSTANDING BALANCE</span>
+                        <h4 class="font-title fw-bold text-warning mb-0" id="fo-outstanding">$135,000</h4>
+                      </div>
+                      <div class="p-2 rounded bg-warning-subtle text-warning"><i class="bi bi-hourglass-split" style="font-size: 1.25rem;"></i></div>
+                    </div>
+
+                    <!-- Stat 5: Cash Flow & Collection Rate -->
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <div class="p-2.5 rounded bg-body border border-light-subtle text-center">
+                          <span class="text-muted small d-block mb-1" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase;">CASH FLOW</span>
+                          <span class="fw-bold font-title text-success" id="fo-cash-flow">+98.5%</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="p-2.5 rounded bg-body border border-light-subtle text-center">
+                          <span class="text-muted small d-block mb-1" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase;">COLLECTION RATE</span>
+                          <span class="fw-bold font-title text-info" id="fo-collection-rate">98.6%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Panel: Analytics Charts (Tabs: Monthly Revenue, Yearly Revenue, Income vs Expense, Cash Flow Trend) -->
+              <div class="col-12 col-xl-8" data-aos="fade-left">
+                <div class="uh-card h-100">
+                  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div>
+                      <h4 class="font-title fw-bold mb-1">Revenue & Financial Analytics</h4>
+                      <p class="text-muted small mb-0">Interactive visual logs compiled from real-time database inputs.</p>
+                    </div>
+                    <!-- Chart Navigation Tabs -->
+                    <ul class="nav nav-pills nav-pills-custom bg-body border border-light-subtle rounded p-1" id="chart-type-tabs" role="tablist">
+                      <li class="nav-item" role="presentation">
+                        <button class="btn btn-xs nav-link active px-2.5 py-1 text-xs" onclick="switchActiveChart('monthly', this)">Monthly</button>
+                      </li>
+                      <li class="nav-item" role="presentation">
+                        <button class="btn btn-xs nav-link px-2.5 py-1 text-xs" onclick="switchActiveChart('yearly', this)">Yearly</button>
+                      </li>
+                      <li class="nav-item" role="presentation">
+                        <button class="btn btn-xs nav-link px-2.5 py-1 text-xs" onclick="switchActiveChart('inc_exp', this)">Income vs Expense</button>
+                      </li>
+                      <li class="nav-item" role="presentation">
+                        <button class="btn btn-xs nav-link px-2.5 py-1 text-xs" onclick="switchActiveChart('cash_flow', this)">Cash Flow</button>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div style="position: relative; height: 320px; width: 100%;">
+                    <canvas id="financialAnalyticsChart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FILTER BAR PANEL -->
+            <div class="uh-card p-3 mb-4 btn-no-print" data-aos="fade-up">
+              <div class="row align-items-center g-2.5">
+                <div class="col-12 col-md-4">
+                  <div class="input-group">
+                    <span class="input-group-text bg-body border-light-subtle"><i class="bi bi-funnel text-primary"></i></span>
+                    <input type="text" class="form-control bg-body border-light-subtle text-main" id="filter-search-term" placeholder="Filter by ID, Invoice, Customer, Property..." onkeyup="applyDynamicFilters()" />
+                  </div>
+                </div>
+                <div class="col-6 col-sm-4 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main" id="filter-type" onchange="applyDynamicFilters()">
+                    <option value="">All Types</option>
+                    <option value="Property Sale">Property Sale</option>
+                    <option value="Rental Payment">Rental Payment</option>
+                    <option value="Booking Payment">Booking Payment</option>
+                    <option value="Advance Payment">Advance Payment</option>
+                    <option value="Security Deposit">Security Deposit</option>
+                    <option value="Refund">Refund</option>
+                    <option value="Commission">Commission</option>
+                    <option value="Maintenance Fee">Maintenance Fee</option>
+                    <option value="Utility Payment">Utility Payment</option>
+                  </select>
+                </div>
+                <div class="col-6 col-sm-4 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main" id="filter-method" onchange="applyDynamicFilters()">
+                    <option value="">All Payment Methods</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Card">Card</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Mobile Banking">Mobile Banking</option>
+                  </select>
+                </div>
+                <div class="col-6 col-sm-4 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main" id="filter-status" onchange="applyDynamicFilters()">
+                    <option value="">All Statuses</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Refunded">Refunded</option>
+                  </select>
+                </div>
+                <div class="col-6 col-sm-12 col-md-2 d-flex gap-2">
+                  <button class="btn btn-outline-secondary w-100 btn-sm" onclick="toggleAdvancedFilterContainer()"><i class="bi bi-sliders me-1"></i> Advanced</button>
+                  <button class="btn btn-outline-danger btn-sm px-2". onclick="resetFilterParameters()" title="Clear Filters"><i class="bi bi-trash"></i></button>
+                </div>
+              </div>
+
+              <!-- ADVANCED COLLAPSIBLE FILTERS PANEL -->
+              <div class="collapse mt-3" id="advanced-filters-panel">
+                <div class="p-3 rounded bg-body border border-light-subtle">
+                  <div class="row g-3">
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <label class="form-label text-muted small fw-semibold">Agent Name</label>
+                      <input type="text" class="form-control bg-body border-light-subtle text-main" id="filter-agent" placeholder="Search Agent..." onkeyup="applyDynamicFilters()" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <label class="form-label text-muted small fw-semibold">Min Amount ($)</label>
+                      <input type="number" class="form-control bg-body border-light-subtle text-main" id="filter-min-amount" placeholder="0" oninput="applyDynamicFilters()" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <label class="form-label text-muted small fw-semibold">Max Amount ($)</label>
+                      <input type="number" class="form-control bg-body border-light-subtle text-main" id="filter-max-amount" placeholder="10000000" oninput="applyDynamicFilters()" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <label class="form-label text-muted small fw-semibold">Date Range</label>
+                      <div class="input-group">
+                        <input type="date" class="form-control bg-body border-light-subtle text-main p-1.5" id="filter-start-date" onchange="applyDynamicFilters()" style="font-size: 0.75rem;" />
+                        <input type="date" class="form-control bg-body border-light-subtle text-main p-1.5" id="filter-end-date" onchange="applyDynamicFilters()" style="font-size: 0.75rem;" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PRIMARY DATA TABLE -->
+            <div class="uh-card p-4 mb-4" data-aos="fade-up" id="transaction-table-card">
+              <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                  <h4 class="font-title fw-bold mb-0">Recorded Transactions</h4>
+                  <span class="badge bg-primary text-dark font-title" id="table-record-count">9 Entries</span>
+                </div>
+
+                <!-- Bulk Selection Controls -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <div class="form-check m-0 d-flex align-items-center gap-1.5">
+                    <input class="form-check-input" type="checkbox" id="bulk-select-all" onclick="toggleBulkSelectAll(this)" style="font-size: 0.85rem;" />
+                    <label class="form-check-label text-muted small fw-semibold" for="bulk-select-all">Select All</label>
+                  </div>
+                  <!-- Bulk Actions Dropdown -->
+                  <div class="dropdown d-none" id="bulk-actions-container">
+                    <button class="btn btn-sm btn-outline-primary dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-box-seam"></i> Bulk Actions (<span id="bulk-selected-counter">0</span>)
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end bg-dark border-light-subtle">
+                      <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="triggerBulkSelectedAction('complete')"><i class="bi bi-check-circle text-success me-2"></i> Mark Completed</a></li>
+                      <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="triggerBulkSelectedAction('archive')"><i class="bi bi-archive text-warning me-2"></i> Archive Selected</a></li>
+                      <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="triggerBulkSelectedAction('delete')"><i class="bi bi-trash text-danger me-2"></i> Delete Permanently</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table premium-table" id="transaction-main-table">
+                  <thead>
+                    <tr>
+                      <th scope="col" style="width: 40px;">Select</th>
+                      <th scope="col">Transaction ID</th>
+                      <th scope="col">Invoice No</th>
+                      <th scope="col">Customer</th>
+                      <th scope="col">Property</th>
+                      <th scope="col">Agent</th>
+                      <th scope="col">Type</th>
+                      <th scope="col">Payment Method</th>
+                      <th scope="col">Amount</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Date</th>
+                      <th scope="col" class="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="transaction-table-body-target">
+                    <!-- JavaScript Injected Dynamic Table Rows -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- NO SEARCH RESULTS FOUND UI STATE -->
+              <div id="state-no-search" class="d-none text-center py-5">
+                <div class="text-muted mb-3"><i class="bi bi-search" style="font-size: 2.5rem;"></i></div>
+                <h5 class="font-title fw-bold text-main mb-1">No Matching Transactions</h5>
+                <p class="text-muted small px-3 mb-3">Adjust your search terms or parameters to view matching files.</p>
+                <button class="btn btn-sm btn-outline-primary" onclick="resetFilterParameters()"><i class="bi bi-x-circle"></i> Reset Filter Parameters</button>
+              </div>
+
+              <!-- PAGINATION BOTTOM CONTROLS -->
+              <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2" id="table-pagination-panel">
+                <span class="small text-muted">Showing <span id="paginated-start-count">1</span> to <span id="paginated-end-count">9</span> of <span id="paginated-total-count">9</span> transaction listings</span>
+                <nav aria-label="Transaction table pages">
+                  <ul class="pagination pagination-sm m-0">
+                    <li class="page-item disabled"><a class="page-link" href="javascript:void(0)" tabindex="-1">Previous</a></li>
+                    <li class="page-item active"><a class="page-link" href="javascript:void(0)">1</a></li>
+                    <li class="page-item"><a class="page-link" href="javascript:void(0)">2</a></li>
+                    <li class="page-item"><a class="page-link" href="javascript:void(0)">Next</a></li>
+                  </ul>
+                </nav>
+              </div>
+            </div>
+
+            <!-- LOWER MODULE GRID: UPCOMING PAYMENTS, DOUGHNUT CHART, REFUND REQUESTS, COMMISSIONS -->
+            <div class="row g-4">
+              <!-- Module 1: Upcoming Due Payments -->
+              <div class="col-12 col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="uh-card h-100">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0 font-title fw-bold">Upcoming Due Dates</h5>
+                    <span class="badge bg-warning-subtle text-warning py-0.5 px-2 text-uppercase" style="font-size: 0.65rem;">Alert Schedule</span>
+                  </div>
+                  <p class="text-muted small mb-3">Accounts with payment schedules due inside the next 14 business days.</p>
+
+                  <div class="d-flex flex-column gap-2.5" id="upcoming-dues-container">
+                    <!-- Standard high-fidelity upcoming lines -->
+                    <div class="p-2.5 rounded bg-body border border-light-subtle d-flex align-items-center justify-content-between">
+                      <div>
+                        <strong class="text-main d-block font-title" style="font-size: 0.85rem;">David Foster</strong>
+                        <span class="text-muted small"><i class="bi bi-building me-1"></i> Coral Gables Estate</span>
+                      </div>
+                      <div class="text-end">
+                        <strong class="text-warning d-block font-title" style="font-size: 0.85rem;">$120,000</strong>
+                        <span class="badge bg-warning-subtle text-warning" style="font-size: 0.6rem;">In 4 Days</span>
+                      </div>
+                    </div>
+
+                    <div class="p-2.5 rounded bg-body border border-light-subtle d-flex align-items-center justify-content-between">
+                      <div>
+                        <strong class="text-main d-block font-title" style="font-size: 0.85rem;">Robert Downey</strong>
+                        <span class="text-muted small"><i class="bi bi-building me-1"></i> South Beach Duplex</span>
+                      </div>
+                      <div class="text-end">
+                        <strong class="text-primary d-block font-title" style="font-size: 0.85rem;">$12,500</strong>
+                        <span class="badge bg-info-subtle text-info" style="font-size: 0.6rem;">In 9 Days</span>
+                      </div>
+                    </div>
+
+                    <div class="p-2.5 rounded bg-body border border-light-subtle d-flex align-items-center justify-content-between">
+                      <div>
+                        <strong class="text-main d-block font-title" style="font-size: 0.85rem;">Amanda Seyfried</strong>
+                        <span class="text-muted small"><i class="bi bi-building me-1"></i> Wynwood Art Loft</span>
+                      </div>
+                      <div class="text-end">
+                        <strong class="text-primary d-block font-title" style="font-size: 0.85rem;">$2,400</strong>
+                        <span class="badge bg-info-subtle text-info" style="font-size: 0.6rem;">In 12 Days</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Module 2: Doughnut Chart Payment Method Distribution -->
+              <div class="col-12 col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="150">
+                <div class="uh-card h-100">
+                  <h5 class="mb-2 font-title fw-bold">Payment Methods</h5>
+                  <p class="text-muted small mb-3">Proportional breakdown of capital allocation channels.</p>
+                  
+                  <div style="position: relative; height: 180px; width: 100%;">
+                    <canvas id="paymentMethodDoughnutChart"></canvas>
+                  </div>
+                  <div class="d-flex justify-content-center gap-3 flex-wrap mt-3" style="font-size: 0.725rem;" id="payment-legend-container">
+                    <!-- Dynamic details injected by script -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Module 3: Refund Management -->
+              <div class="col-12 col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="uh-card h-100">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0 font-title fw-bold">Refund Management</h5>
+                    <button class="btn btn-xs btn-outline-primary px-2" onclick="triggerRefundModal('TXN-1076')">Process Status</button>
+                  </div>
+                  <p class="text-muted small mb-3">Active list of processed client claims or refund handshakes.</p>
+
+                  <div class="d-flex flex-column gap-2" id="refund-requests-container">
+                    <div class="p-2 rounded bg-body border border-light-subtle">
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong class="text-main font-title" style="font-size: 0.8rem;">Robert Downey</strong>
+                        <span class="badge-custom badge-refunded">Refunded</span>
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center" style="font-size: 0.725rem;">
+                        <span class="text-muted"><i class="bi bi-clock me-1"></i> June 25, 2026</span>
+                        <strong class="text-danger">$8,500.00</strong>
+                      </div>
+                    </div>
+
+                    <div class="p-2 rounded bg-body border border-light-subtle">
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong class="text-main font-title" style="font-size: 0.8rem;">Jessica Alba</strong>
+                        <span class="badge-custom badge-failed">Rejected</span>
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center" style="font-size: 0.725rem;">
+                        <span class="text-muted"><i class="bi bi-clock me-1"></i> June 20, 2026</span>
+                        <strong class="text-muted">$1,100.00</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Module 4: Agent Commissions Tracking -->
+              <div class="col-12" data-aos="fade-up" data-aos-delay="250">
+                <div class="uh-card">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <h5 class="mb-1 font-title fw-bold">Agent Commissions Tracking</h5>
+                      <p class="text-muted small mb-0">Overview of calculated partner payouts based on closed transaction volumes.</p>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary font-title">Fiscal Q3 logs</span>
+                  </div>
+
+                  <div class="table-responsive">
+                    <table class="table premium-table m-0">
+                      <thead>
+                        <tr>
+                          <th scope="col">Agent</th>
+                          <th scope="col">Property</th>
+                          <th scope="col">Sale Amount</th>
+                          <th scope="col">Commission %</th>
+                          <th scope="col">Commission Amount</th>
+                          <th scope="col">Payment Status</th>
+                        </tr>
+                      </thead>
+                      <tbody id="agent-commissions-table-body">
+                        <!-- Javascript Injected agent parameters -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- TOAST SYSTEM NOTIFICATION CONTAINER -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+      <div id="liveToast" class="toast align-items-center text-white bg-dark border-light-subtle" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body d-flex align-items-center gap-2">
+            <i class="bi bi-info-circle text-primary" id="toast-icon"></i>
+            <span id="toast-message-text" class="small">Action completed successfully.</span>
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- === REUSABLE BOOTSTRAP MODALS === -->
+
+    <!-- MODAL 1: TRANSACTION DETAILS MODAL -->
+    <div class="modal fade" id="transactionDetailsModal" tabindex="-1" aria-labelledby="transactionDetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-light-subtle">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="transactionDetailsModalLabel"><i class="bi bi-currency-exchange text-primary me-2"></i>Transaction Parameters</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start" id="modal-details-content-target">
+            <!-- Injected by script -->
+          </div>
+          <div class="modal-footer border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="simulateDownloadReceipt()"><i class="bi bi-download me-1"></i> Download Receipt</button>
+            <button type="button" class="btn btn-sm btn-info text-white" onclick="simulateGenerateInvoice()"><i class="bi bi-receipt me-1"></i> Generate Invoice</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: REFUND STATUS MODAL -->
+    <div class="modal fade" id="refundModal" tabindex="-1" aria-labelledby="refundModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-light-subtle">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="refundModalLabel"><i class="bi bi-reply-all text-warning me-2"></i>Process Refund Claim</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <input type="hidden" id="refund-modal-txn-id" />
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Refund Target Transaction</label>
+              <input type="text" class="form-control bg-body border-light-subtle text-main" id="refund-modal-title-display" readonly />
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Action Decision</label>
+              <select class="form-select bg-body border-light-subtle text-main" id="refund-decision-select">
+                <option value="Approved">Approve and Settle Refund</option>
+                <option value="Rejected">Reject Claim Request</option>
+                <option value="Pending">Retain Pending Review State</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Internal Audit Remarks</label>
+              <textarea class="form-control bg-body border-light-subtle text-main" id="refund-audit-remarks" rows="3" placeholder="Input security inspection audit remarks or grounds for refusal..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-warning" onclick="submitRefundProcess()"><i class="bi bi-check-circle me-1"></i> Submit Decision</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: PAYMENT STATUS EDIT MODAL -->
+    <div class="modal fade" id="paymentStatusModal" tabindex="-1" aria-labelledby="paymentStatusModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-light-subtle">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="paymentStatusModalLabel"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Payment Status</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <input type="hidden" id="status-edit-txn-id" />
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Transaction Parameters</label>
+              <input type="text" class="form-control bg-body border-light-subtle text-main" id="status-edit-txn-display" readonly />
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Current Recorded Status</label>
+              <select class="form-select bg-body border-light-subtle text-main" id="status-edit-select">
+                <option value="Completed">Completed</option>
+                <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
+                <option value="Failed">Failed</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="Refunded">Refunded</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitStatusUpdate()"><i class="bi bi-shield-check me-1"></i> Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-dark border-light-subtle text-center">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold text-danger mx-auto" id="deleteConfirmationModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Permanent Delete</h5>
+            <button type="button" class="btn-close btn-close-white ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="delete-modal-txn-id" />
+            <p class="text-muted small mb-0">Are you absolutely sure you want to permanently delete this transaction record? This action is irreversible.</p>
+          </div>
+          <div class="modal-footer border-light-subtle justify-content-center">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="submitDeleteRecord()"><i class="bi bi-trash-fill me-1"></i> Yes, Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- AOS Animation JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Main JS Script -->
+    <script src="/assets/js/main.js"></script>
+
+    <script>
+      // --- CORE TRANSACTION LIST DATABASE ---
+      const initialTransactions = [
+        {
+          id: "TXN-1082",
+          invoiceNo: "INV-9021",
+          customer: { name: "Eleanor Vance", email: "eleanor@vancevip.com", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop" },
+          property: { title: "Waterfront Skyline Penthouse", address: "440 Biscayne Blvd Unit 302, Miami, FL" },
+          agent: "Marcus Vance",
+          type: "Property Sale",
+          method: "Bank Transfer",
+          amount: 4200000,
+          tax: 210000,
+          commission: 126000,
+          status: "Completed",
+          createdDate: "2026-07-09"
+        },
+        {
+          id: "TXN-1081",
+          invoiceNo: "INV-9020",
+          customer: { name: "Carlos Mendez", email: "carlos@mendezestates.com", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop" },
+          property: { title: "Modern Oasis Ocean Mansion", address: "120 Golden Beach Dr, Miami, FL" },
+          agent: "Sophia Lopez",
+          type: "Booking Payment",
+          method: "Card",
+          amount: 50000,
+          tax: 3500,
+          commission: 1500,
+          status: "Completed",
+          createdDate: "2026-07-08"
+        },
+        {
+          id: "TXN-1080",
+          invoiceNo: "INV-9019",
+          customer: { name: "Michael Chang", email: "m.chang@techvest.com", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop" },
+          property: { title: "Brickell Luxury Condo", address: "800 Brickell Ave, Miami, FL" },
+          agent: "Lucas Miller",
+          type: "Rental Payment",
+          method: "Bank Transfer",
+          amount: 6500,
+          tax: 450,
+          commission: 325,
+          status: "Completed",
+          createdDate: "2026-07-05"
+        },
+        {
+          id: "TXN-1079",
+          invoiceNo: "INV-9018",
+          customer: { name: "Serena Williams", email: "serena@courtx.com", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" },
+          property: { title: "Coconut Grove Villa", address: "3400 Devon Rd, Miami, FL" },
+          agent: "Olivia Garcia",
+          type: "Security Deposit",
+          method: "Card",
+          amount: 15000,
+          tax: 0,
+          commission: 0,
+          status: "Completed",
+          createdDate: "2026-07-02"
+        },
+        {
+          id: "TXN-1078",
+          invoiceNo: "INV-9017",
+          customer: { name: "David Foster", email: "david.f@alliancegroup.com", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop" },
+          property: { title: "Coral Gables Estate", address: "1500 San Ignacio Ave, Coral Gables, FL" },
+          agent: "Sophia Lopez",
+          type: "Advance Payment",
+          method: "Cheque",
+          amount: 120000,
+          tax: 8400,
+          commission: 3600,
+          status: "Pending",
+          createdDate: "2026-07-01"
+        },
+        {
+          id: "TXN-1077",
+          invoiceNo: "INV-9016",
+          customer: { name: "Amanda Seyfried", email: "amanda@seyfriedart.com", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=150&auto=format&fit=crop" },
+          property: { title: "Wynwood Art Loft", address: "250 NW 24th St, Miami, FL" },
+          agent: "Emma Watson",
+          type: "Maintenance Fee",
+          method: "Cash",
+          amount: 2400,
+          tax: 168,
+          commission: 0,
+          status: "Processing",
+          createdDate: "2026-06-28"
+        },
+        {
+          id: "TXN-1076",
+          invoiceNo: "INV-9015",
+          customer: { name: "Robert Downey", email: "robert@starkindustries.com", avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=150&auto=format&fit=crop" },
+          property: { title: "South Beach Duplex", address: "1100 Ocean Dr, Miami Beach, FL" },
+          agent: "Sophia Lopez",
+          type: "Refund",
+          method: "Bank Transfer",
+          amount: 8500,
+          tax: 0,
+          commission: 0,
+          status: "Refunded",
+          createdDate: "2026-06-25"
+        },
+        {
+          id: "TXN-1075",
+          invoiceNo: "INV-9014",
+          customer: { name: "Jessica Alba", email: "alba@honestco.com", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop" },
+          property: { title: "Sunny Isles Beach Condo", address: "18501 Collins Ave, Sunny Isles, FL" },
+          agent: "Lucas Miller",
+          type: "Utility Payment",
+          method: "Card",
+          amount: 1100,
+          tax: 77,
+          commission: 0,
+          status: "Failed",
+          createdDate: "2026-06-20"
+        },
+        {
+          id: "TXN-1074",
+          invoiceNo: "INV-9013",
+          customer: { name: "George Clooney", email: "george@casamigos.com", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop" },
+          property: { title: "Key Biscayne Waterfront Estate", address: "620 Harbor Dr, Key Biscayne, FL" },
+          agent: "Olivia Garcia",
+          type: "Property Sale",
+          method: "Cheque",
+          amount: 5400000,
+          tax: 270000,
+          commission: 162000,
+          status: "Completed",
+          createdDate: "2026-06-15"
+        }
+      ];
+
+      // --- RUNTIME APPLICATION DATA ENGINE ---
+      let db = JSON.parse(localStorage.getItem('urbanhub_transactions_db')) || initialTransactions;
+      let selectedIds = new Set();
+      let currentSimulatorState = "success";
+      let activeChartTab = "monthly";
+
+      // --- CHART INSTANCES ---
+      let financialChartInstance = null;
+      let doughnutChartInstance = null;
+
+      // --- MAIN INITIALIZER ---
+      document.addEventListener('DOMContentLoaded', () => {
+        saveDatabase();
+        renderTransactionDashboard();
+        initChartSystem();
+
+        // Listen to global layout theme change to dynamically recolor charts
+        window.addEventListener('themeChanged', () => {
+          initChartSystem();
+        });
+      });
+
+      function saveDatabase() {
+        localStorage.setItem('urbanhub_transactions_db', JSON.stringify(db));
+      }
+
+      // --- STATE SWITCHER ENGINE ---
+      function switchSimulatorState(state) {
+        currentSimulatorState = state;
+        
+        // Remove active class from all simulator buttons
+        document.getElementById('sim-btn-success').classList.remove('active');
+        document.getElementById('sim-btn-loading').classList.remove('active');
+        document.getElementById('sim-btn-empty').classList.remove('active');
+        document.getElementById('sim-btn-error').classList.remove('active');
+
+        // Add active class to selected button
+        document.getElementById(`sim-btn-${state}`).classList.add('active');
+
+        // Toggle visibility blocks
+        const skeletonPanel = document.getElementById('state-loading-skeleton');
+        const emptyPanel = document.getElementById('state-empty');
+        const errorPanel = document.getElementById('state-error');
+        const successPanel = document.getElementById('state-success-content');
+
+        skeletonPanel.classList.add('skeleton-hidden');
+        emptyPanel.classList.add('skeleton-hidden');
+        errorPanel.classList.add('skeleton-hidden');
+        successPanel.classList.add('skeleton-hidden');
+
+        if (state === "success") {
+          successPanel.classList.remove('skeleton-hidden');
+          renderTransactionDashboard();
+          setTimeout(() => {
+            initChartSystem();
+          }, 100);
+        } else if (state === "loading") {
+          skeletonPanel.classList.remove('skeleton-hidden');
+        } else if (state === "empty") {
+          emptyPanel.classList.remove('skeleton-hidden');
+        } else if (state === "error") {
+          errorPanel.classList.remove('skeleton-hidden');
+        }
+      }
+
+      // --- RENDER CONTROL SYSTEM ---
+      function renderTransactionDashboard() {
+        if (currentSimulatorState !== "success") return;
+
+        const filtered = getFilteredTransactions();
+        
+        // Render statistics based on active DB
+        calculateStats(filtered);
+
+        // Render table rows
+        const tableBody = document.getElementById('transaction-table-body-target');
+        const noSearchPanel = document.getElementById('state-no-search');
+        const mainTable = document.getElementById('transaction-main-table');
+        const paginationPanel = document.getElementById('table-pagination-panel');
+
+        tableBody.innerHTML = '';
+
+        if (filtered.length === 0) {
+          noSearchPanel.classList.remove('d-none');
+          mainTable.classList.add('d-none');
+          paginationPanel.classList.add('d-none');
+          document.getElementById('table-record-count').textContent = '0 Entries';
+          return;
+        }
+
+        noSearchPanel.classList.add('d-none');
+        mainTable.classList.remove('d-none');
+        paginationPanel.classList.remove('d-none');
+        document.getElementById('table-record-count').textContent = `${filtered.length} Entries`;
+
+        filtered.forEach(txn => {
+          const isChecked = selectedIds.has(txn.id) ? 'checked' : '';
+          const row = document.createElement('tr');
+          row.className = 'clickable-row align-middle';
+          row.innerHTML = `
+            <td>
+              <div class="form-check">
+                <input class="form-check-input row-checkbox" type="checkbox" data-id="${txn.id}" ${isChecked} onclick="handleRowCheck(event, '${txn.id}')" />
+              </div>
+            </td>
+            <td><strong class="text-primary font-title" style="font-size: 0.85rem;" onclick="viewTransactionDetails('${txn.id}')">${txn.id}</strong></td>
+            <td class="text-muted" style="font-size: 0.8rem;">${txn.invoiceNo}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <img src="${txn.customer.avatar}" class="table-user-avatar" alt="${txn.customer.name}" />
+                <div>
+                  <span class="text-main fw-semibold d-block" style="font-size: 0.85rem;">${txn.customer.name}</span>
+                  <span class="text-muted d-block" style="font-size: 0.725rem;">${txn.customer.email}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div>
+                <span class="text-main d-block" style="font-size: 0.85rem; font-weight: 500;">${txn.property.title}</span>
+                <span class="text-muted d-block" style="font-size: 0.7rem;">${txn.property.address}</span>
+              </div>
+            </td>
+            <td class="text-muted fw-semibold" style="font-size: 0.8rem;">${txn.agent}</td>
+            <td><span class="badge-custom bg-body border border-light-subtle text-muted" style="font-size: 0.725rem;">${txn.type}</span></td>
+            <td class="text-muted" style="font-size: 0.8rem;"><i class="bi bi-wallet2 me-1 text-primary"></i> ${txn.method}</td>
+            <td><strong class="text-main font-title" style="font-size: 0.85rem;">$${txn.amount.toLocaleString()}</strong></td>
+            <td><span class="badge-custom ${getStatusBadgeClass(txn.status)}">${txn.status}</span></td>
+            <td class="text-muted" style="font-size: 0.8rem;">${txn.createdDate}</td>
+            <td class="text-end">
+              <div class="dropdown">
+                <button class="btn btn-xs btn-outline-secondary py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-three-dots"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end bg-dark border-light-subtle">
+                  <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="viewTransactionDetails('${txn.id}')"><i class="bi bi-eye text-primary me-2"></i> View Transaction</a></li>
+                  <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="triggerStatusEdit('${txn.id}')"><i class="bi bi-pencil-square text-info me-2"></i> Edit Status</a></li>
+                  <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="simulateDownloadReceipt('${txn.id}')"><i class="bi bi-download text-success me-2"></i> Download Receipt</a></li>
+                  <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="simulateGenerateInvoice('${txn.id}')"><i class="bi bi-receipt text-primary me-2"></i> Generate Invoice</a></li>
+                  <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="duplicateTransactionRecord('${txn.id}')"><i class="bi bi-copy text-warning me-2"></i> Duplicate Record</a></li>
+                  <li><hr class="dropdown-divider border-light-subtle"></li>
+                  <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="triggerDeleteRecord('${txn.id}')"><i class="bi bi-trash-fill me-2"></i> Delete Permanent</a></li>
+                </ul>
+              </div>
+            </td>
+          `;
+          tableBody.appendChild(row);
+        });
+
+        // Update paginated counters
+        document.getElementById('paginated-start-count').textContent = '1';
+        document.getElementById('paginated-end-count').textContent = filtered.length.toString();
+        document.getElementById('paginated-total-count').textContent = filtered.length.toString();
+
+        // Render lower panels
+        renderUpcomingDues(filtered);
+        renderRefundRequests(filtered);
+        renderAgentCommissions(filtered);
+      }
+
+      function getStatusBadgeClass(status) {
+        switch (status) {
+          case 'Completed': return 'badge-completed';
+          case 'Pending': return 'badge-pending';
+          case 'Processing': return 'badge-processing';
+          case 'Failed': return 'badge-failed';
+          case 'Cancelled': return 'badge-cancelled';
+          case 'Refunded': return 'badge-refunded';
+          default: return 'badge-cancelled';
+        }
+      }
+
+      // --- FILTER LOGIC ENGINE ---
+      function getFilteredTransactions() {
+        const searchTerm = document.getElementById('filter-search-term').value.toLowerCase();
+        const globalSearch = document.getElementById('global-search-input').value.toLowerCase();
+        const typeFilter = document.getElementById('filter-type').value;
+        const methodFilter = document.getElementById('filter-method').value;
+        const statusFilter = document.getElementById('filter-status').value;
+
+        // Advanced filter items
+        const agentFilter = document.getElementById('filter-agent').value.toLowerCase();
+        const minAmount = parseFloat(document.getElementById('filter-min-amount').value) || 0;
+        const maxAmount = parseFloat(document.getElementById('filter-max-amount').value) || 100000000;
+        const startDate = document.getElementById('filter-start-date').value;
+        const endDate = document.getElementById('filter-end-date').value;
+
+        return db.filter(txn => {
+          // Standard general matching
+          const matchSearch = !searchTerm || 
+            txn.id.toLowerCase().includes(searchTerm) || 
+            txn.invoiceNo.toLowerCase().includes(searchTerm) || 
+            txn.customer.name.toLowerCase().includes(searchTerm) || 
+            txn.property.title.toLowerCase().includes(searchTerm);
+
+          const matchGlobal = !globalSearch || 
+            txn.id.toLowerCase().includes(globalSearch) || 
+            txn.customer.name.toLowerCase().includes(globalSearch) || 
+            txn.property.title.toLowerCase().includes(globalSearch) || 
+            txn.agent.toLowerCase().includes(globalSearch);
+
+          const matchType = !typeFilter || txn.type === typeFilter;
+          const matchMethod = !methodFilter || txn.method === methodFilter;
+          const matchStatus = !statusFilter || txn.status === statusFilter;
+          
+          // Advanced elements
+          const matchAgent = !agentFilter || txn.agent.toLowerCase().includes(agentFilter);
+          const matchAmount = txn.amount >= minAmount && txn.amount <= maxAmount;
+
+          let matchDate = true;
+          if (startDate) {
+            matchDate = matchDate && (txn.createdDate >= startDate);
+          }
+          if (endDate) {
+            matchDate = matchDate && (txn.createdDate <= endDate);
+          }
+
+          return matchSearch && matchGlobal && matchType && matchMethod && matchStatus && matchAgent && matchAmount && matchDate;
+        });
+      }
+
+      function applyDynamicFilters() {
+        selectedIds.clear();
+        updateBulkUI();
+        renderTransactionDashboard();
+      }
+
+      function handleGlobalSearch(val) {
+        applyDynamicFilters();
+      }
+
+      function resetFilterParameters() {
+        document.getElementById('filter-search-term').value = '';
+        document.getElementById('global-search-input').value = '';
+        document.getElementById('filter-type').value = '';
+        document.getElementById('filter-method').value = '';
+        document.getElementById('filter-status').value = '';
+        document.getElementById('filter-agent').value = '';
+        document.getElementById('filter-min-amount').value = '';
+        document.getElementById('filter-max-amount').value = '';
+        document.getElementById('filter-start-date').value = '';
+        document.getElementById('filter-end-date').value = '';
+
+        selectedIds.clear();
+        updateBulkUI();
+        showToast("Filters successfully reset.", "info");
+        renderTransactionDashboard();
+      }
+
+      function toggleAdvancedFilterContainer() {
+        const panel = document.getElementById('advanced-filters-panel');
+        const bsCollapse = new bootstrap.Collapse(panel, { toggle: true });
+      }
+
+      // --- CALCULATIONS ENGINE ---
+      function calculateStats(transactions) {
+        let totalCount = db.length;
+        let todayCount = 0;
+        let monthlyRevenue = 0;
+        let monthlyExpenses = 145800; // Fixed budget parameter representation
+        let pendingSum = 0;
+        let completedSum = 0;
+        let refundsSum = 0;
+        let agentCommissionsSum = 0;
+        let bookingSum = 0;
+        let rentalSum = 0;
+
+        db.forEach(txn => {
+          if (txn.status === "Completed") {
+            completedSum += txn.amount;
+          }
+          if (txn.status === "Pending") {
+            pendingSum += txn.amount;
+          }
+          if (txn.status === "Refunded") {
+            refundsSum += txn.amount;
+          }
+          if (txn.type === "Property Sale" && txn.status === "Completed") {
+            monthlyRevenue += txn.amount;
+          }
+          if (txn.type === "Booking Payment" && txn.status === "Completed") {
+            bookingSum += txn.amount;
+          }
+          if (txn.type === "Rental Payment" && txn.status === "Completed") {
+            rentalSum += txn.amount;
+          }
+          agentCommissionsSum += txn.commission;
+
+          // Today's counter logic simulation
+          if (txn.createdDate >= "2026-07-05") {
+            todayCount += 1;
+          }
+        });
+
+        // Write directly to UI elements
+        document.getElementById('stat-total-count').textContent = totalCount;
+        document.getElementById('stat-today-count').textContent = todayCount;
+        document.getElementById('stat-monthly-revenue').textContent = formatCurrency(monthlyRevenue);
+        document.getElementById('stat-monthly-expenses').textContent = formatCurrency(monthlyExpenses);
+        document.getElementById('stat-pending-payments').textContent = formatCurrency(pendingSum);
+        document.getElementById('stat-completed-payments').textContent = formatCurrency(completedSum);
+        document.getElementById('stat-refunds-processed').textContent = formatCurrency(refundsSum);
+        document.getElementById('stat-agent-commissions').textContent = formatCurrency(agentCommissionsSum);
+        document.getElementById('stat-booking-payments').textContent = formatCurrency(bookingSum);
+        document.getElementById('stat-rental-payments').textContent = formatCurrency(rentalSum);
+
+        // Financial Overview parameters
+        document.getElementById('fo-total-income').textContent = formatCurrency(completedSum);
+        document.getElementById('fo-total-expense').textContent = formatCurrency(monthlyExpenses);
+        document.getElementById('fo-net-profit').textContent = formatCurrency(completedSum - monthlyExpenses);
+        document.getElementById('fo-outstanding').textContent = formatCurrency(pendingSum);
+      }
+
+      function formatCurrency(val) {
+        if (val >= 1000000) {
+          return '$' + (val / 1000000).toFixed(1) + 'M';
+        }
+        if (val >= 1000) {
+          return '$' + (val / 1000).toFixed(1) + 'K';
+        }
+        return '$' + val.toLocaleString();
+      }
+
+      // --- RENDERING MINOR TILES ---
+      function renderUpcomingDues(list) {
+        const container = document.getElementById('upcoming-dues-container');
+        container.innerHTML = '';
+        
+        const pendings = db.filter(t => t.status === 'Pending' || t.status === 'Processing');
+        if (pendings.length === 0) {
+          container.innerHTML = `<div class="text-center p-3 text-muted small">No upcoming dues found.</div>`;
+          return;
+        }
+
+        pendings.forEach(t => {
+          const item = document.createElement('div');
+          item.className = 'p-2.5 rounded bg-body border border-light-subtle d-flex align-items-center justify-content-between';
+          item.innerHTML = `
+            <div>
+              <strong class="text-main d-block font-title" style="font-size: 0.85rem;">${t.customer.name}</strong>
+              <span class="text-muted small"><i class="bi bi-building me-1"></i> ${t.property.title}</span>
+            </div>
+            <div class="text-end">
+              <strong class="text-warning d-block font-title" style="font-size: 0.85rem;">$${t.amount.toLocaleString()}</strong>
+              <span class="badge bg-warning-subtle text-warning" style="font-size: 0.6rem;">${t.status}</span>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      }
+
+      function renderRefundRequests(list) {
+        const container = document.getElementById('refund-requests-container');
+        container.innerHTML = '';
+
+        const refunds = db.filter(t => t.type === 'Refund' || t.status === 'Refunded');
+        if (refunds.length === 0) {
+          container.innerHTML = `<div class="text-center p-3 text-muted small">No refund streams logged.</div>`;
+          return;
+        }
+
+        refunds.forEach(t => {
+          const item = document.createElement('div');
+          item.className = 'p-2 rounded bg-body border border-light-subtle mb-2';
+          item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <strong class="text-main font-title" style="font-size: 0.8rem;">${t.customer.name}</strong>
+              <span class="badge-custom badge-refunded">${t.status}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center" style="font-size: 0.725rem;">
+              <span class="text-muted"><i class="bi bi-clock me-1"></i> ${t.createdDate}</span>
+              <strong class="text-danger">$${t.amount.toLocaleString()}</strong>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      }
+
+      function renderAgentCommissions(list) {
+        const body = document.getElementById('agent-commissions-table-body');
+        body.innerHTML = '';
+
+        const saleTrans = db.filter(t => t.type === 'Property Sale' || t.commission > 0);
+        if (saleTrans.length === 0) {
+          body.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">No active payouts logged</td></tr>`;
+          return;
+        }
+
+        saleTrans.forEach(t => {
+          const percentVal = ((t.commission / t.amount) * 100).toFixed(1);
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><strong class="text-main">${t.agent}</strong></td>
+            <td><span class="text-muted small">${t.property.title}</span></td>
+            <td><strong>$${t.amount.toLocaleString()}</strong></td>
+            <td><span class="badge bg-body-secondary text-muted px-2">${percentVal}%</span></td>
+            <td><strong class="text-success">$${t.commission.toLocaleString()}</strong></td>
+            <td><span class="badge bg-success-subtle text-success py-1 px-2" style="font-size: 0.65rem;">Completed</span></td>
+          `;
+          body.appendChild(row);
+        });
+      }
+
+      // --- BULK OPERATIONS ENGINE ---
+      function toggleBulkSelectAll(masterCheckbox) {
+        const checkboxes = document.querySelectorAll('.row-checkbox');
+        checkboxes.forEach(chk => {
+          chk.checked = masterCheckbox.checked;
+          const id = chk.getAttribute('data-id');
+          if (masterCheckbox.checked) {
+            selectedIds.add(id);
+          } else {
+            selectedIds.delete(id);
+          }
+        });
+        updateBulkUI();
+      }
+
+      function handleRowCheck(event, id) {
+        event.stopPropagation();
+        const chk = event.target;
+        if (chk.checked) {
+          selectedIds.add(id);
+        } else {
+          selectedIds.delete(id);
+        }
+        updateBulkUI();
+      }
+
+      function updateBulkUI() {
+        const bulkBar = document.getElementById('bulk-actions-container');
+        const counter = document.getElementById('bulk-selected-counter');
+        const selectAll = document.getElementById('bulk-select-all');
+
+        if (selectedIds.size > 0) {
+          bulkBar.classList.remove('d-none');
+          counter.textContent = selectedIds.size;
+        } else {
+          bulkBar.classList.add('d-none');
+          selectAll.checked = false;
+        }
+      }
+
+      function triggerBulkSelectedAction(action) {
+        if (selectedIds.size === 0) return;
+
+        if (action === 'complete') {
+          db.forEach(t => {
+            if (selectedIds.has(t.id)) {
+              t.status = 'Completed';
+            }
+          });
+          showToast(`Successfully marked ${selectedIds.size} transactions as Completed.`, "success");
+          selectedIds.clear();
+          updateBulkUI();
+          saveDatabase();
+          renderTransactionDashboard();
+        } else if (action === 'archive') {
+          showToast(`Archived ${selectedIds.size} transaction rows successfully.`, "info");
+          selectedIds.clear();
+          updateBulkUI();
+          renderTransactionDashboard();
+        } else if (action === 'delete') {
+          const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+          document.getElementById('delete-modal-txn-id').value = Array.from(selectedIds).join(',');
+          deleteModal.show();
+        }
+      }
+
+      // --- CHART OPERATIONS ENGINE (CHART.JS) ---
+      function switchActiveChart(tabName, element) {
+        activeChartTab = tabName;
+        
+        // Remove active state
+        const buttons = document.querySelectorAll('#chart-type-tabs .nav-link');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        // Set active
+        element.classList.add('active');
+
+        // Regenerate chart values
+        initChartSystem();
+      }
+
+      function initChartSystem() {
+        if (currentSimulatorState !== "success") return;
+
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const textColor = isDark ? '#94A3B8' : '#64748B';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        const primaryColor = isDark ? '#D4AF37' : '#B8860B'; // Gold
+        const secondaryColor = '#10B981'; // Green
+        const accentColor = '#3B82F6'; // Blue
+        const dangerColor = '#EF4444'; // Red
+
+        // 1. Line Chart rendering
+        const canvasCtx = document.getElementById('financialAnalyticsChart');
+        if (canvasCtx) {
+          if (financialChartInstance) financialChartInstance.destroy();
+
+          let chartType = 'line';
+          let chartData = {};
+
+          if (activeChartTab === 'monthly') {
+            chartData = {
+              labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+              datasets: [{
+                label: 'Monthly Revenue ($)',
+                data: [120000, 450000, 320000, 890000, 610000, 1150000, 982400, 850000, 720000, 1050000, 1250000, 1400000],
+                borderColor: primaryColor,
+                backgroundColor: 'rgba(212, 175, 55, 0.08)',
+                fill: true,
+                tension: 0.35,
+                borderWidth: 2
+              }]
+            };
+          } else if (activeChartTab === 'yearly') {
+            chartData = {
+              labels: ['2021', '2022', '2023', '2024', '2025', '2026 (Est)'],
+              datasets: [{
+                label: 'Yearly Volume ($)',
+                data: [14200000, 18500000, 24100000, 31900000, 42600000, 52100000],
+                borderColor: accentColor,
+                backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 2
+              }]
+            };
+          } else if (activeChartTab === 'inc_exp') {
+            chartType = 'bar';
+            chartData = {
+              labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+              datasets: [
+                {
+                  label: 'Income Flow',
+                  data: [140000, 480000, 350000, 920000, 640000, 1190000, 982400],
+                  backgroundColor: secondaryColor,
+                  borderRadius: 4
+                },
+                {
+                  label: 'Expense Log',
+                  data: [12000, 35000, 41000, 110000, 72000, 135000, 145800],
+                  backgroundColor: dangerColor,
+                  borderRadius: 4
+                }
+              ]
+            };
+          } else if (activeChartTab === 'cash_flow') {
+            chartData = {
+              labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+              datasets: [{
+                label: 'Cash Flow Margins (%)',
+                data: [92.1, 93.4, 91.5, 95.2, 94.1, 98.2, 98.5],
+                borderColor: secondaryColor,
+                backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                tension: 0.25,
+                borderWidth: 2,
+                fill: true
+              }]
+            };
+          }
+
+          financialChartInstance = new Chart(canvasCtx, {
+            type: chartType,
+            data: chartData,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  labels: {
+                    color: textColor,
+                    font: { family: 'Inter', size: 11 }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  grid: { color: gridColor },
+                  ticks: { color: textColor, font: { family: 'Inter', size: 10 } }
+                },
+                y: {
+                  grid: { color: gridColor },
+                  ticks: { color: textColor, font: { family: 'Inter', size: 10 } }
+                }
+              }
+            }
+          });
+        }
+
+        // 2. Doughnut Chart rendering
+        const doughnutCtx = document.getElementById('paymentMethodDoughnutChart');
+        if (doughnutCtx) {
+          if (doughnutChartInstance) doughnutChartInstance.destroy();
+
+          const methodCounts = { 'Bank Transfer': 0, 'Card': 0, 'Cash': 0, 'Cheque': 0 };
+          db.forEach(t => {
+            if (methodCounts[t.method] !== undefined) {
+              methodCounts[t.method] += t.amount;
+            }
+          });
+
+          const labels = Object.keys(methodCounts);
+          const dataValues = Object.values(methodCounts);
+
+          doughnutChartInstance = new Chart(doughnutCtx, {
+            type: 'doughnut',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: dataValues,
+                backgroundColor: [primaryColor, secondaryColor, accentColor, '#A855F7'],
+                borderWidth: isDark ? 2 : 1,
+                borderColor: isDark ? '#111114' : '#FFFFFF'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              }
+            }
+          });
+
+          // Generate custom legends
+          const legendBox = document.getElementById('payment-legend-container');
+          legendBox.innerHTML = '';
+          const colors = [primaryColor, secondaryColor, accentColor, '#A855F7'];
+          labels.forEach((lbl, index) => {
+            const sumVal = dataValues[index];
+            const legendItem = document.createElement('div');
+            legendItem.className = 'd-flex align-items-center gap-1';
+            legendItem.innerHTML = `
+              <span style="display:inline-block; width:10px; height:10px; background-color:${colors[index]}; border-radius:30%;"></span>
+              <span class="text-muted">${lbl}:</span>
+              <strong class="text-main">$${(sumVal/1000).toFixed(1)}K</strong>
+            `;
+            legendBox.appendChild(legendItem);
+          });
+        }
+      }
+
+      // --- QUICK ACTION TRIGGER FUNCTIONS ---
+      function viewTransactionDetails(id) {
+        const txn = db.find(t => t.id === id);
+        if (!txn) return;
+
+        const target = document.getElementById('modal-details-content-target');
+        target.innerHTML = `
+          <div class="text-center mb-4">
+            <h4 class="font-title fw-bold text-success mb-1">$${txn.amount.toLocaleString()}</h4>
+            <span class="badge-custom ${getStatusBadgeClass(txn.status)}">${txn.status}</span>
+          </div>
+
+          <div class="row g-2" style="font-size: 0.825rem;">
+            <div class="col-6 text-muted">Transaction ID:</div>
+            <div class="col-6 text-end text-main fw-semibold">${txn.id}</div>
+
+            <div class="col-6 text-muted">Invoice Reference:</div>
+            <div class="col-6 text-end text-main">${txn.invoiceNo}</div>
+
+            <div class="col-6 text-muted">Client Name:</div>
+            <div class="col-6 text-end text-main fw-semibold">${txn.customer.name}</div>
+
+            <div class="col-6 text-muted">Client Email:</div>
+            <div class="col-6 text-end text-muted text-truncate">${txn.customer.email}</div>
+
+            <div class="col-6 text-muted">Property Name:</div>
+            <div class="col-6 text-end text-main">${txn.property.title}</div>
+
+            <div class="col-6 text-muted">Authorized Advisor:</div>
+            <div class="col-6 text-end text-main fw-semibold">${txn.agent}</div>
+
+            <div class="col-6 text-muted">Payment Category:</div>
+            <div class="col-6 text-end"><span class="badge bg-body border border-light-subtle text-muted text-xs">${txn.type}</span></div>
+
+            <div class="col-6 text-muted">Method Channel:</div>
+            <div class="col-6 text-end text-main"><i class="bi bi-credit-card me-1 text-primary"></i> ${txn.method}</div>
+
+            <div class="col-6 text-muted">Calculated Tax:</div>
+            <div class="col-6 text-end text-main">$${txn.tax.toLocaleString()}</div>
+
+            <div class="col-6 text-muted">Agent Payout:</div>
+            <div class="col-6 text-end text-success fw-semibold">$${txn.commission.toLocaleString()}</div>
+
+            <div class="col-6 text-muted">Recorded On:</div>
+            <div class="col-6 text-end text-muted">${txn.createdDate}</div>
+          </div>
+        `;
+
+        const detailsModal = new bootstrap.Modal(document.getElementById('transactionDetailsModal'));
+        detailsModal.show();
+      }
+
+      function triggerStatusEdit(id) {
+        const txn = db.find(t => t.id === id);
+        if (!txn) return;
+
+        document.getElementById('status-edit-txn-id').value = id;
+        document.getElementById('status-edit-txn-display').value = `${txn.id} (${txn.customer.name})`;
+        document.getElementById('status-edit-select').value = txn.status;
+
+        const editModal = new bootstrap.Modal(document.getElementById('paymentStatusModal'));
+        editModal.show();
+      }
+
+      function submitStatusUpdate() {
+        const id = document.getElementById('status-edit-txn-id').value;
+        const newStatus = document.getElementById('status-edit-select').value;
+        
+        const txn = db.find(t => t.id === id);
+        if (txn) {
+          txn.status = newStatus;
+          saveDatabase();
+          renderTransactionDashboard();
+          bootstrap.Modal.getInstance(document.getElementById('paymentStatusModal')).hide();
+          showToast(`Successfully modified status of ${id} to ${newStatus}.`, "success");
+        }
+      }
+
+      function triggerRefundModal(id) {
+        const txn = db.find(t => t.id === id);
+        if (!txn) return;
+
+        document.getElementById('refund-modal-txn-id').value = id;
+        document.getElementById('refund-modal-title-display').value = `${txn.id} - $${txn.amount.toLocaleString()} - ${txn.customer.name}`;
+        
+        const rModal = new bootstrap.Modal(document.getElementById('refundModal'));
+        rModal.show();
+      }
+
+      function submitRefundProcess() {
+        const id = document.getElementById('refund-modal-txn-id').value;
+        const decision = document.getElementById('refund-decision-select').value;
+        const remarks = document.getElementById('refund-audit-remarks').value;
+
+        const txn = db.find(t => t.id === id);
+        if (txn) {
+          if (decision === 'Approved') {
+            txn.status = 'Refunded';
+          } else if (decision === 'Rejected') {
+            txn.status = 'Completed'; // Revert back
+          }
+          saveDatabase();
+          renderTransactionDashboard();
+          bootstrap.Modal.getInstance(document.getElementById('refundModal')).hide();
+          showToast(`Refund claim for ${id} has been processed: ${decision}.`, "warning");
+        }
+      }
+
+      function triggerDeleteRecord(id) {
+        document.getElementById('delete-modal-txn-id').value = id;
+        const delModal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+        delModal.show();
+      }
+
+      function submitDeleteRecord() {
+        const idsString = document.getElementById('delete-modal-txn-id').value;
+        const ids = idsString.split(',');
+
+        db = db.filter(t => !ids.includes(t.id));
+        selectedIds.clear();
+        updateBulkUI();
+        saveDatabase();
+        renderTransactionDashboard();
+
+        bootstrap.Modal.getInstance(document.getElementById('deleteConfirmationModal')).hide();
+        showToast(`Successfully deleted ${ids.length} transaction entries permanently.`, "danger");
+      }
+
+      function duplicateTransactionRecord(id) {
+        const txn = db.find(t => t.id === id);
+        if (!txn) return;
+
+        const newTxn = JSON.parse(JSON.stringify(txn));
+        const newIdNum = Math.floor(Math.random() * 900) + 100;
+        newTxn.id = `TXN-${newIdNum}`;
+        newTxn.invoiceNo = `INV-${Math.floor(Math.random() * 9000) + 1000}`;
+        newTxn.createdDate = "2026-07-10"; // Today
+        
+        db.unshift(newTxn);
+        saveDatabase();
+        renderTransactionDashboard();
+        showToast(`Record ${id} successfully duplicated as ${newTxn.id}.`, "success");
+      }
+
+      // --- SIMULATED TOAST ACTIONS ---
+      function simulateDownloadReceipt(id) {
+        showToast(`Compiled secure receipt for transaction. Initiating secure PDF download...`, "success");
+      }
+
+      function simulateGenerateInvoice(id) {
+        showToast(`System invoice generated successfully. File transmitted to client's verified email account.`, "info");
+      }
+
+      function triggerExport(format) {
+        showToast(`Compiling and compressing transactional logs. Initiating standard ${format} download...`, "success");
+      }
+
+      function triggerGenerateReport() {
+        showToast(`Compiling detailed Q3 Fiscal Summary Report. Initiating secure download...`, "info");
+      }
+
+      function triggerSyncRefresh() {
+        showToast("Establish secure database handshake. Re-synchronizing entries...", "info");
+        setTimeout(() => {
+          renderTransactionDashboard();
+          initChartSystem();
+          showToast("Synchronized successfully. Local records are fully up to date.", "success");
+        }, 800);
+      }
+
+      // --- TOAST CONTAINER WRAPPER ---
+      function showToast(message, type = "success") {
+        const toastEl = document.getElementById('liveToast');
+        const textEl = document.getElementById('toast-message-text');
+        const iconEl = document.getElementById('toast-icon');
+
+        textEl.textContent = message;
+
+        // Reset icon
+        iconEl.className = 'bi ';
+        if (type === "success") {
+          iconEl.className += 'bi-check-circle-fill text-success';
+        } else if (type === "warning") {
+          iconEl.className += 'bi-exclamation-triangle-fill text-warning';
+        } else if (type === "danger") {
+          iconEl.className += 'bi-shield-x text-danger';
+        } else {
+          iconEl.className += 'bi-info-circle-fill text-primary';
+        }
+
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+      }
+    </script>
+  </body>
+</html>

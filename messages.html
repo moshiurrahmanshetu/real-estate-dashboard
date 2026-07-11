@@ -1,0 +1,2063 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Communication Center - UrbanHub CRM</title>
+
+    <!-- Theme Choice Pre-load Script to avoid flashing -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* --- MESSAGES HUB SPECIFIC PREMIUM CSS --- */
+
+      /* 3-Column Workspace Grid System */
+      .chat-workspace {
+        display: grid;
+        grid-template-columns: 280px 1fr 300px;
+        height: calc(100vh - var(--uh-header-height) - 130px);
+        min-height: 550px;
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: var(--uh-shadow-lg);
+      }
+
+      /* Folders / Left panel lists */
+      .chat-sidebar {
+        border-right: 1px solid var(--uh-border-color);
+        background-color: rgba(var(--uh-primary-rgb), 0.02);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+      .chat-list-container {
+        border-right: 1px solid var(--uh-border-color);
+        background-color: var(--uh-bg-card);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .chat-scrollable-list {
+        overflow-y: auto;
+        flex: 1;
+      }
+
+      /* Main dynamic chat window */
+      .chat-main-window {
+        background-color: rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Right details bar */
+      .chat-details-panel {
+        background-color: var(--uh-bg-card);
+        border-left: 1px solid var(--uh-border-color);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+      /* Conversation items styling */
+      .convo-item {
+        position: relative;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--uh-border-card);
+        cursor: pointer;
+        transition: var(--uh-transition-smooth);
+        user-select: none;
+      }
+      .convo-item:hover {
+        background-color: rgba(var(--uh-primary-rgb), 0.05);
+      }
+      .convo-item.active {
+        background-color: rgba(var(--uh-primary-rgb), 0.12);
+        border-left: 4px solid var(--uh-primary);
+      }
+
+      /* Avatar and status */
+      .avatar-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 42px;
+        height: 42px;
+      }
+      .avatar-img {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: var(--uh-border-color);
+      }
+      .status-dot {
+        position: absolute;
+        bottom: 1px;
+        right: 1px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 2px solid var(--uh-bg-card);
+      }
+      .status-dot.online { background-color: var(--uh-success); }
+      .status-dot.offline { background-color: var(--uh-text-muted); }
+      .status-dot.away { background-color: var(--uh-warning); }
+
+      /* Message Area bubbles */
+      .message-area-scroller {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background-image: radial-gradient(rgba(var(--uh-primary-rgb), 0.04) 1px, transparent 1px);
+        background-size: 16px 16px;
+      }
+
+      .message-bubble-row {
+        display: flex;
+        margin-bottom: 14px;
+        max-width: 80%;
+      }
+      .message-bubble-row.incoming {
+        margin-right: auto;
+        justify-content: flex-start;
+      }
+      .message-bubble-row.outgoing {
+        margin-left: auto;
+        justify-content: flex-end;
+      }
+
+      .bubble-content {
+        position: relative;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        line-height: 1.45;
+        box-shadow: var(--uh-shadow-sm);
+        transition: transform 0.2s ease;
+      }
+      .message-bubble-row.incoming .bubble-content {
+        background-color: rgba(var(--uh-primary-rgb), 0.07);
+        border: 1px solid var(--uh-border-card);
+        border-top-left-radius: 2px;
+        color: var(--uh-text-main);
+      }
+      .message-bubble-row.outgoing .bubble-content {
+        background-color: var(--uh-primary);
+        color: #FFFFFF !important;
+        border-top-right-radius: 2px;
+      }
+      .message-bubble-row.outgoing .bubble-content h1,
+      .message-bubble-row.outgoing .bubble-content h2,
+      .message-bubble-row.outgoing .bubble-content h3,
+      .message-bubble-row.outgoing .bubble-content h4,
+      .message-bubble-row.outgoing .bubble-content h5,
+      .message-bubble-row.outgoing .bubble-content h6,
+      .message-bubble-row.outgoing .bubble-content span,
+      .message-bubble-row.outgoing .bubble-content p,
+      .message-bubble-row.outgoing .bubble-content div,
+      .message-bubble-row.outgoing .bubble-content i,
+      .message-bubble-row.outgoing .bubble-content strong {
+        color: #FFFFFF !important;
+      }
+
+      /* Hover Emoji Picker Actions on Bubbles */
+      .bubble-emoji-actions {
+        position: absolute;
+        bottom: -22px;
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-color);
+        border-radius: 12px;
+        padding: 2px 6px;
+        display: flex;
+        gap: 4px;
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 10;
+        box-shadow: var(--uh-shadow-sm);
+      }
+      .bubble-content:hover .bubble-emoji-actions {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .emoji-btn-mini {
+        border: none;
+        background: transparent;
+        font-size: 0.8rem;
+        padding: 0;
+        cursor: pointer;
+        transition: scale 0.1s ease;
+      }
+      .emoji-btn-mini:hover {
+        transform: scale(1.3);
+      }
+
+      /* Timestamp and status ticks */
+      .msg-meta-info {
+        font-size: 0.68rem;
+        color: var(--uh-text-muted);
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .message-bubble-row.outgoing .msg-meta-info {
+        justify-content: flex-end;
+      }
+
+      /* Typing indicator */
+      .typing-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 6px 12px;
+        background-color: rgba(var(--uh-primary-rgb), 0.05);
+        border-radius: 12px;
+        border-top-left-radius: 2px;
+        font-size: 0.8rem;
+        color: var(--uh-text-muted);
+      }
+      .typing-dot {
+        width: 6px;
+        height: 6px;
+        background-color: var(--uh-primary);
+        border-radius: 50%;
+        animation: typingBake 1.4s infinite ease-in-out both;
+      }
+      .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+      .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+      @keyframes typingBake {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1.0); }
+      }
+
+      /* Unified Sidebar Links */
+      .folder-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+        color: var(--uh-text-muted);
+        text-decoration: none !important;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border-radius: 6px;
+        margin: 2px 8px;
+        transition: var(--uh-transition-smooth);
+      }
+      .folder-link:hover {
+        color: var(--uh-text-main);
+        background-color: rgba(var(--uh-primary-rgb), 0.05);
+      }
+      .folder-link.active {
+        color: var(--uh-primary);
+        background-color: rgba(var(--uh-primary-rgb), 0.08);
+        font-weight: 600;
+      }
+
+      /* State Simulator styling */
+      .state-simulator-bar {
+        background-color: rgba(var(--uh-primary-rgb), 0.04);
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.15);
+        border-radius: 10px;
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      /* Skeleton loading placeholder */
+      .skeleton-placeholder {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255, 255, 255, 0.05) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading-flow 1.5s infinite;
+        border-radius: 6px;
+        display: inline-block;
+      }
+      @keyframes skeleton-loading-flow {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-hidden {
+        display: none !important;
+      }
+
+      /* Visual cards for shared attachment previews */
+      .attachment-preview-card {
+        background-color: rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 8px;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: var(--uh-transition-smooth);
+      }
+      .attachment-preview-card:hover {
+        border-color: rgba(var(--uh-primary-rgb), 0.3);
+        transform: translateY(-2px);
+      }
+
+      /* Highlight call logs badge */
+      .call-log-row {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--uh-border-card);
+        font-size: 0.8rem;
+      }
+      .call-log-row:last-child {
+        border-bottom: none;
+      }
+
+      /* Custom mobile view control */
+      @media (max-width: 991px) {
+        .chat-workspace {
+          grid-template-columns: 1fr;
+          height: calc(100vh - var(--uh-header-height) - 180px);
+        }
+        .chat-sidebar {
+          display: none !important;
+        }
+        .chat-details-panel {
+          display: none !important;
+        }
+        .chat-list-container {
+          display: block;
+        }
+        .chat-main-window {
+          display: none;
+        }
+        /* When active chat is shown in mobile mode */
+        .chat-workspace.mobile-active-chat .chat-list-container {
+          display: none !important;
+        }
+        .chat-workspace.mobile-active-chat .chat-main-window {
+          display: flex !important;
+        }
+        /* When details are toggled */
+        .chat-workspace.mobile-active-details .chat-details-panel {
+          display: flex !important;
+          position: absolute;
+          top: 0; left: 0; width: 100%; height: 100%;
+          z-index: 100;
+        }
+      }
+
+      @media print {
+        .btn-no-print, .top-header, .sidebar-wrapper, .state-simulator-bar, .chat-sidebar, .chat-list-container, .chat-details-panel, .composer-footer-panel {
+          display: none !important;
+        }
+        .main-content-wrapper {
+          margin-left: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+        }
+        .chat-workspace {
+          grid-template-columns: 1fr !important;
+          border: none !important;
+          box-shadow: none !important;
+          height: auto !important;
+        }
+        .chat-main-window {
+          display: block !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Mobile sidebar overlay backdrop -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon"><i class="bi bi-building-up"></i></div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link active">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="transactions.html" class="sidebar-menu-link">
+                <i class="bi bi-currency-exchange"></i>
+                <span>Transactions</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input" id="global-search-input" placeholder="Search chats, senders..." onkeyup="filterConversationList(this.value)" />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <!-- Theme toggle standard binding -->
+            <button id="theme-toggle" class="header-btn" title="Switch Theme">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE BODY CONTAINER -->
+        <div class="page-body">
+
+          <!-- STATE SIMULATOR BAR -->
+          <div class="state-simulator-bar mb-4 btn-no-print" data-aos="fade-down">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-cpu text-primary"></i>
+              <span class="small fw-semibold text-main">UI Reusable States Simulator:</span>
+            </div>
+            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+              <button class="btn btn-xs btn-outline-primary px-2.5 py-1 active" id="sim-btn-success" onclick="switchSimulatorState('success')">
+                <i class="bi bi-check-circle me-1"></i> Success State
+              </button>
+              <button class="btn btn-xs btn-outline-secondary px-2.5 py-1" id="sim-btn-loading" onclick="switchSimulatorState('loading')">
+                <i class="bi bi-hourglass-split me-1"></i> Loading Skeletons
+              </button>
+              <button class="btn btn-xs btn-outline-warning px-2.5 py-1" id="sim-btn-empty" onclick="switchSimulatorState('empty')">
+                <i class="bi bi-folder-x me-1"></i> Empty State
+              </button>
+              <button class="btn btn-xs btn-outline-danger px-2.5 py-1" id="sim-btn-error" onclick="switchSimulatorState('error')">
+                <i class="bi bi-exclamation-triangle me-1"></i> Error State
+              </button>
+            </div>
+          </div>
+
+          <!-- BREADCRUMB & HEADER PANEL -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-down" data-aos-delay="50">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Communication Center</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Communication Center</h1>
+            </div>
+
+            <!-- Toolbar buttons -->
+            <div class="d-flex align-items-center flex-wrap gap-2 btn-no-print">
+              <button class="btn btn-sm btn-primary d-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#composeMessageModal">
+                <i class="bi bi-pencil-square"></i> <span>Compose Message</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerBulkAction('archive')">
+                <i class="bi bi-archive"></i> <span>Archive Selected</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerBulkAction('delete')">
+                <i class="bi bi-trash"></i> <span>Delete Selected</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span>Print Page</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerConversationExport()">
+                <i class="bi bi-file-earmark-arrow-down"></i> <span>Export Chat Logs</span>
+              </button>
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5" onclick="triggerRefresh()">
+                <i class="bi bi-arrow-clockwise"></i> <span>Refresh Sync</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SKELETON PRELOAD STATE -->
+          <div id="state-loading-skeleton" class="skeleton-hidden">
+            <div class="row g-4 mb-4">
+              <div class="col-6 col-md-3" v-for="n in 4">
+                <div class="uh-card p-3">
+                  <div class="skeleton-placeholder mb-2" style="width: 50%; height: 12px;"></div>
+                  <div class="skeleton-placeholder" style="width: 80%; height: 26px;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="uh-card p-4">
+              <div class="row">
+                <div class="col-3 border-end">
+                  <div class="skeleton-placeholder mb-3" style="width: 80%; height: 20px;"></div>
+                  <div class="skeleton-placeholder mb-2" style="width: 100%; height: 45px;" v-for="i in 5"></div>
+                </div>
+                <div class="col-6 border-end">
+                  <div class="d-flex align-items-center gap-2 mb-4">
+                    <div class="skeleton-placeholder" style="width: 40px; height: 40px; border-radius: 50%;"></div>
+                    <div class="skeleton-placeholder" style="width: 120px; height: 16px;"></div>
+                  </div>
+                  <div class="skeleton-placeholder mb-3" style="width: 60%; height: 50px;"></div>
+                  <div class="skeleton-placeholder mb-3 ms-auto" style="width: 60%; height: 50px; display: block;"></div>
+                  <div class="skeleton-placeholder" style="width: 90%; height: 80px;"></div>
+                </div>
+                <div class="col-3">
+                  <div class="skeleton-placeholder mb-3" style="width: 70%; height: 18px;"></div>
+                  <div class="skeleton-placeholder mb-2" style="width: 100%; height: 100px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE PANEL -->
+          <div id="state-empty" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 max-width-600 mx-auto" style="max-width: 600px;">
+              <div class="text-warning mb-4"><i class="bi bi-chat-left-dots" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">Communication Folders Cleaned</h3>
+              <p class="text-muted small mb-4">Your current mailbox and communication directory contains no active chats. All past conversations have been fully resolved, cleared, or catalogued into separate archives.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#composeMessageModal"><i class="bi bi-pencil me-1"></i> Compose First Message</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ERROR STATE PANEL -->
+          <div id="state-error" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 max-width-600 mx-auto border-danger" style="max-width: 600px;">
+              <div class="text-danger mb-4"><i class="bi bi-shield-slash" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">Secure Sync Offline</h3>
+              <p class="text-muted small mb-4">UrbanHub was unable to securely establish handshakes with the message stream repository. This occurs when network tokens expire or background push servers go out-of-sync.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-danger" onclick="triggerRefresh()"><i class="bi bi-arrow-clockwise me-1"></i> Force Secure Sync</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- REAL HIGH-FIDELITY SUCCESS CONTENT -->
+          <div id="state-success-content" class="fade-transition">
+
+            <!-- STATISTICS CARDS METRIC GRID -->
+            <div class="row g-3 mb-4" data-aos="fade-up" data-aos-delay="100">
+              <div class="col-6 col-md-3 col-xl-1-5 col-xxl-1-5">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem; letter-spacing: 0.5px;">UNREAD EMAILS</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                    <h3 class="font-title fw-bold mb-0 text-danger animate-counter-uh" id="stat-unread" data-target="3">3</h3>
+                    <span class="badge bg-danger-subtle text-danger py-0.5 px-1.5" style="font-size: 0.6rem;">URGENT</span>
+                  </div>
+                  <span class="text-muted small d-block" style="font-size: 0.65rem;">Requires reply</span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 col-xl-1-5 col-xxl-1-5">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem; letter-spacing: 0.5px;">TOTAL INBOX</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                    <h3 class="font-title fw-bold mb-0 text-primary animate-counter-uh" data-target="342">342</h3>
+                    <span class="text-success small fw-semibold" style="font-size: 0.725rem;"><i class="bi bi-graph-up"></i> +12%</span>
+                  </div>
+                  <span class="text-muted small d-block" style="font-size: 0.65rem;">Active history</span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 col-xl-1-5 col-xxl-1-5">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem; letter-spacing: 0.5px;">SENT CHATS</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                    <h3 class="font-title fw-bold mb-0 text-success animate-counter-uh" data-target="218">218</h3>
+                    <span class="text-muted small fw-semibold" style="font-size: 0.725rem;"><i class="bi bi-check-all"></i> 100%</span>
+                  </div>
+                  <span class="text-muted small d-block" style="font-size: 0.65rem;">Outbox delivery</span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 col-xl-1-5 col-xxl-1-5">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem; letter-spacing: 0.5px;">STARRED CHATS</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                    <h3 class="font-title fw-bold mb-0 text-warning animate-counter-uh" data-target="15">15</h3>
+                    <span class="badge bg-warning-subtle text-warning py-0.5 px-1.5" style="font-size: 0.6rem;">PINNED</span>
+                  </div>
+                  <span class="text-muted small d-block" style="font-size: 0.65rem;">Priority client</span>
+                </div>
+              </div>
+              <div class="col-12 col-md-4 col-xl-1-5 col-xxl-1-5">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem; letter-spacing: 0.5px;">CHANNELS STATS</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                    <h3 class="font-title fw-bold mb-0 text-info" style="font-size: 1.50rem;"><span class="animate-counter-uh" data-target="124">124</span> / <span class="animate-counter-uh" data-target="36">36</span></h3>
+                  </div>
+                  <span class="text-muted small d-block" style="font-size: 0.65rem;">Clients / Realtors</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEARCH FILTERS DROPDOWN CARD -->
+            <div class="uh-card p-3 mb-4 btn-no-print" data-aos="fade-up" data-aos-delay="130">
+              <div class="row align-items-center g-3">
+                <div class="col-12 col-md-4">
+                  <div class="input-group">
+                    <span class="input-group-text bg-body border-light-subtle"><i class="bi bi-funnel text-primary"></i></span>
+                    <input type="text" class="form-control bg-body border-light-subtle text-main" id="search-filter-name" placeholder="Filter by Name / Keyword..." onkeyup="triggerSearchFilters()" />
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                  <select class="form-select bg-body border-light-subtle text-main" id="search-filter-property" onchange="triggerSearchFilters()">
+                    <option value="">All Related Properties</option>
+                    <option value="Penthouse">Skyline Penthouse</option>
+                    <option value="Mansion">Beach Mansion</option>
+                    <option value="Condo">Brickell Condo</option>
+                  </select>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                  <select class="form-select bg-body border-light-subtle text-main" id="search-filter-priority" onchange="triggerSearchFilters()">
+                    <option value="">All Priorities</option>
+                    <option value="High">High Priority</option>
+                    <option value="Medium">Medium Priority</option>
+                    <option value="Low">Low Priority</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-2 d-flex gap-2">
+                  <button class="btn btn-outline-secondary w-100 btn-sm" onclick="clearSearchFilters()"><i class="bi bi-x-circle"></i> Reset</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- THE CHAT WORKSPACE CORE -->
+            <div class="chat-workspace mb-4" id="primary-workspace-card" data-aos="fade-up" data-aos-delay="150">
+              
+              <!-- WORKSPACE COL 1: FOLDER DIRECTORY -->
+              <div class="chat-sidebar py-3">
+                <span class="small fw-bold text-uppercase px-4 mb-2 d-block text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">MAIL BOX DIRECTORY</span>
+                
+                <a href="javascript:void(0)" class="folder-link active" onclick="switchMailFolder('inbox', this)">
+                  <span><i class="bi bi-inbox me-2"></i> Inbox</span>
+                  <span class="badge bg-danger rounded-pill" style="font-size: 0.7rem;">3</span>
+                </a>
+                <a href="javascript:void(0)" class="folder-link" onclick="switchMailFolder('starred', this)">
+                  <span><i class="bi bi-star me-2"></i> Starred</span>
+                  <span class="badge bg-body-tertiary text-muted rounded-pill" style="font-size: 0.7rem;">5</span>
+                </a>
+                <a href="javascript:void(0)" class="folder-link" onclick="switchMailFolder('sent', this)">
+                  <span><i class="bi bi-send me-2"></i> Sent</span>
+                </a>
+                <a href="javascript:void(0)" class="folder-link" onclick="switchMailFolder('drafts', this)">
+                  <span><i class="bi bi-file-earmark-text me-2"></i> Drafts</span>
+                  <span class="badge bg-body-tertiary text-muted rounded-pill" style="font-size: 0.7rem;">1</span>
+                </a>
+                <a href="javascript:void(0)" class="folder-link" onclick="switchMailFolder('archived', this)">
+                  <span><i class="bi bi-archive me-2"></i> Archived</span>
+                </a>
+                <a href="javascript:void(0)" class="folder-link" onclick="switchMailFolder('trash', this)">
+                  <span><i class="bi bi-trash me-2"></i> Trash</span>
+                </a>
+
+                <hr class="mx-3 my-2 border-light-subtle" />
+
+                <span class="small fw-bold text-uppercase px-4 mb-2 d-block text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">CHANNEL CATEGORIES</span>
+                
+                <a href="javascript:void(0)" class="folder-link" onclick="switchMailFolder('customers', this)">
+                  <span><i class="bi bi-person-badge me-2"></i> Customer Chats</span>
+                </a>
+                <a href="javascript:void(0)" class="folder-link" onclick="switchMailFolder('agents', this)">
+                  <span><i class="bi bi-people me-2"></i> Agent Chats</span>
+                </a>
+                <a href="javascript:void(0)" class="folder-link" onclick="switchMailFolder('team', this)">
+                  <span><i class="bi bi-hash me-2"></i> Internal Team</span>
+                </a>
+                <a href="javascript:void(0)" class="folder-link" onclick="switchMailFolder('support', this)">
+                  <span><i class="bi bi-headset me-2"></i> Support Desk</span>
+                </a>
+
+                <hr class="mx-3 my-2 border-light-subtle" />
+
+                <div class="px-3 btn-no-print">
+                  <span class="small fw-bold text-uppercase px-2 mb-2 d-block text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">RECENT LOGGED CALLS</span>
+                  <div class="bg-body-tertiary rounded p-2 text-start" style="font-size: 0.75rem;">
+                    <div class="call-log-row d-flex align-items-center justify-content-between">
+                      <span class="text-danger"><i class="bi bi-telephone-x me-1"></i> Missed</span>
+                      <strong class="text-main">E. Vance</strong>
+                      <span class="text-muted">10:45</span>
+                    </div>
+                    <div class="call-log-row d-flex align-items-center justify-content-between">
+                      <span class="text-success"><i class="bi bi-telephone-inbound me-1"></i> Received</span>
+                      <strong class="text-main">M. Vance</strong>
+                      <span class="text-muted">8m 12s</span>
+                    </div>
+                    <div class="call-log-row d-flex align-items-center justify-content-between">
+                      <span class="text-muted"><i class="bi bi-telephone-outbound me-1"></i> Dialled</span>
+                      <strong class="text-main">C. Mendez</strong>
+                      <span class="text-muted">4m 02s</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- WORKSPACE COL 2: CONVERSATION SELECTION LIST -->
+              <div class="chat-list-container">
+                <div class="p-3 border-bottom border-light-subtle bg-body-tertiary">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="small fw-bold text-uppercase text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px;">ACTIVE STREAM</span>
+                    <!-- Select All & Bulk trigger button -->
+                    <div class="form-check m-0 d-flex align-items-center gap-1">
+                      <input class="form-check-input" type="checkbox" id="bulk-select-all" onclick="toggleBulkSelectAll(this)" style="font-size: 0.8rem; margin: 0;" />
+                      <label class="form-check-label text-muted small" style="font-size: 0.7rem;" for="bulk-select-all">Select All</label>
+                    </div>
+                  </div>
+                  <!-- Bulk action control subbar -->
+                  <div class="d-none justify-content-between align-items-center mt-2 p-1 rounded bg-body" id="bulk-workspace-subbar">
+                    <span class="small text-primary fw-bold px-1" id="bulk-selected-count" style="font-size: 0.725rem;">0 Selected</span>
+                    <div class="d-flex gap-1">
+                      <button class="btn btn-xs btn-outline-secondary px-1.5 py-0.5" onclick="triggerSelectedAction('read')" title="Mark Read"><i class="bi bi-envelope-open"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary px-1.5 py-0.5" onclick="triggerSelectedAction('unread')" title="Mark Unread"><i class="bi bi-envelope"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary px-1.5 py-0.5" onclick="triggerSelectedAction('archive')" title="Archive"><i class="bi bi-archive"></i></button>
+                      <button class="btn btn-xs btn-outline-danger px-1.5 py-0.5" onclick="triggerSelectedAction('delete')" title="Delete"><i class="bi bi-trash"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chat-scrollable-list" id="conversation-list-target">
+                  <!-- Dynamic Conversation Cards injected via JavaScript -->
+                </div>
+
+                <!-- NO SEARCH RESULTS FOUND UI STATE -->
+                <div id="state-no-search" class="d-none text-center py-5">
+                  <div class="text-muted mb-3"><i class="bi bi-search" style="font-size: 2.5rem;"></i></div>
+                  <h6 class="font-title fw-bold text-main mb-1">No Matching Senders</h6>
+                  <p class="text-muted small px-3 mb-3">Adjust your search parameters or clean active filters.</p>
+                  <button class="btn btn-xs btn-outline-primary" onclick="clearSearchFilters()"><i class="bi bi-x-circle"></i> Reset Filter</button>
+                </div>
+              </div>
+
+              <!-- WORKSPACE COL 3: CONVERSATION SCENE & ACTIVE CHAT -->
+              <div class="chat-main-window">
+                
+                <!-- Active Conversation Header -->
+                <div class="p-3 border-bottom border-light-subtle bg-body-tertiary d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-xs btn-outline-primary d-lg-none me-1 px-2" onclick="goBackToChatListMobile()" title="Back to Chats">
+                      <i class="bi bi-chevron-left"></i> Chats
+                    </button>
+                    <div class="avatar-wrapper">
+                      <img src="" id="chat-header-avatar" class="avatar-img" alt="Active Chat User" referrerpolicy="no-referrer" />
+                      <span class="status-dot online" id="chat-header-status"></span>
+                    </div>
+                    <div>
+                      <h6 class="font-title fw-bold mb-0 text-main" id="chat-header-name"></h6>
+                      <p class="small text-muted mb-0 d-flex align-items-center gap-1">
+                        <span id="chat-header-role"></span>
+                        <span class="text-muted">•</span>
+                        <span id="chat-header-typing-status" class="text-success fw-semibold">online</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="d-flex align-items-center gap-1.5 btn-no-print">
+                    <div class="input-group d-none d-sm-flex" style="max-width: 160px;">
+                      <span class="input-group-text bg-transparent border-light-subtle py-0.5 px-2" style="font-size: 0.75rem;"><i class="bi bi-search"></i></span>
+                      <input type="text" class="form-control bg-transparent border-light-subtle text-main py-0.5 px-2" id="chat-message-search" placeholder="Search logs..." onkeyup="filterMessagesInWindow(this.value)" style="font-size: 0.75rem;" />
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="triggerMakeCall()" title="Voice Call"><i class="bi bi-telephone-fill text-primary"></i></button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="triggerVideoCall()" title="Video Call"><i class="bi bi-camera-video-fill text-success"></i></button>
+                    <button class="btn btn-sm btn-outline-secondary d-none d-lg-block" onclick="toggleDetailsPanelMobile()" title="Toggle Info View"><i class="bi bi-info-circle-fill"></i></button>
+                  </div>
+                </div>
+
+                <!-- Scrollable Messages Log -->
+                <div class="message-area-scroller" id="chat-messages-scroller-target">
+                  <!-- Dynamic Messages injected here -->
+                </div>
+
+                <!-- Composer Input Panel -->
+                <div class="p-3 border-top border-light-subtle bg-body-tertiary composer-footer-panel btn-no-print">
+                  <!-- Fast Template quick selection bar -->
+                  <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-1">
+                    <span class="small text-muted fw-bold" style="font-size: 0.7rem;"><i class="bi bi-lightning-charge text-warning"></i> Quick Templates:</span>
+                    <div class="d-flex gap-1.5 overflow-x-auto pb-1 flex-wrap">
+                      <button class="btn btn-xs btn-outline-primary px-2" onclick="applyQuickTemplate('greeting')">Greeting</button>
+                      <button class="btn btn-xs btn-outline-primary px-2" onclick="applyQuickTemplate('followup')">Follow-up</button>
+                      <button class="btn btn-xs btn-outline-primary px-2" onclick="applyQuickTemplate('reminder')">Reminder</button>
+                      <button class="btn btn-xs btn-outline-primary px-2" onclick="applyQuickTemplate('confirm')">Tour Confirmation</button>
+                      <button class="btn btn-xs btn-outline-primary px-2" onclick="applyQuickTemplate('thanks')">Thank You</button>
+                    </div>
+                  </div>
+
+                  <!-- Text Input Area -->
+                  <div class="d-flex gap-2 align-items-end">
+                    <div class="flex-grow-1 position-relative">
+                      <textarea class="form-control bg-body border-light-subtle text-main pr-5" id="chat-composer-textarea" rows="2" placeholder="Type a professional message, or insert template..." onkeyup="handleComposerKeyup(this)" maxlength="500"></textarea>
+                      <div class="position-absolute bottom-2 right-2 px-2 py-1 text-muted small" id="composer-char-count" style="font-size: 0.65rem; bottom: 4px; right: 8px;">0/500</div>
+                    </div>
+                    
+                    <div class="d-flex flex-column gap-1">
+                      <!-- Send Actions -->
+                      <button class="btn btn-primary d-flex align-items-center justify-content-center" onclick="triggerSendComposerMessage()" title="Send Message" style="height: 40px; width: 40px; padding: 0;">
+                        <i class="bi bi-send-fill" style="font-size: 1.15rem;"></i>
+                      </button>
+                      <!-- Upload Files picker -->
+                      <div class="dropdown">
+                        <button class="btn btn-outline-secondary d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Attach Files" style="height: 32px; width: 40px; padding: 0;">
+                          <i class="bi bi-paperclip"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end bg-dark border-light-subtle">
+                          <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="simulateAttach('image')"><i class="bi bi-image text-primary me-2"></i> Upload Photo Preview</a></li>
+                          <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="simulateAttach('doc')"><i class="bi bi-file-earmark-pdf text-danger me-2"></i> Share PDF Document</a></li>
+                          <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="simulateAttach('voice')"><i class="bi bi-mic text-success me-2"></i> Voice Note (UI)</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- WORKSPACE COL 4: SENDER DETAILED CONTEXT -->
+              <div class="chat-details-panel p-3">
+                <div class="d-lg-none text-end mb-2 btn-no-print">
+                  <button class="btn btn-xs btn-outline-secondary" onclick="closeDetailsPanelMobile()"><i class="bi bi-x-circle"></i> Close Info</button>
+                </div>
+
+                <div class="text-center pb-3 border-bottom border-light-subtle">
+                  <img src="" id="details-avatar" class="rounded-circle mb-2" style="width: 70px; height: 70px; object-fit: cover;" alt="Detailed User Profile" referrerpolicy="no-referrer" />
+                  <h6 class="font-title fw-bold mb-0 text-main" id="details-name"></h6>
+                  <span class="badge bg-primary text-dark font-title my-1" id="details-tag" style="font-size: 0.7rem;"></span>
+                  <p class="small text-muted mb-0" id="details-role" style="font-size: 0.725rem;"></p>
+                </div>
+
+                <!-- Contact particulars -->
+                <div class="py-3 border-bottom border-light-subtle" style="font-size: 0.8rem;">
+                  <span class="small fw-bold text-uppercase d-block text-muted mb-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">CONTACT DETAILS</span>
+                  <div class="mb-2 d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><i class="bi bi-envelope me-1"></i> Email:</span>
+                    <strong class="text-main" id="details-email"></strong>
+                  </div>
+                  <div class="mb-2 d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><i class="bi bi-phone me-1"></i> Phone:</span>
+                    <strong class="text-main" id="details-phone"></strong>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><i class="bi bi-person-check me-1"></i> Advisor:</span>
+                    <strong class="text-main" id="details-agent"></strong>
+                  </div>
+                </div>
+
+                <!-- Related Property Interest Widget -->
+                <div class="py-3 border-bottom border-light-subtle" id="details-property-card-container">
+                  <span class="small fw-bold text-uppercase d-block text-muted mb-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">PROPERTY OF INTEREST</span>
+                  <a href="property-details.html" class="text-decoration-none card bg-body border-light-subtle overflow-hidden">
+                    <img src="" id="details-prop-image" class="card-img-top" style="height: 100px; object-fit: cover;" alt="Related Property Interest" referrerpolicy="no-referrer" />
+                    <div class="card-body p-2" style="font-size: 0.75rem;">
+                      <h6 class="font-title fw-bold text-main mb-1" id="details-prop-title" style="font-size: 0.8rem;"></h6>
+                      <p class="text-muted small mb-1" id="details-prop-address"></p>
+                      <strong class="text-primary" id="details-prop-price"></strong>
+                    </div>
+                  </a>
+                </div>
+
+                <!-- Upcoming Appointment context -->
+                <div class="py-3 border-bottom border-light-subtle">
+                  <span class="small fw-bold text-uppercase d-block text-muted mb-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">NEXT APPOINTMENT</span>
+                  <div class="p-2.5 rounded bg-body border border-light-subtle d-flex align-items-center gap-2" style="font-size: 0.75rem;">
+                    <div class="text-warning"><i class="bi bi-calendar-check" style="font-size: 1.5rem;"></i></div>
+                    <div>
+                      <strong class="text-main d-block" id="details-appt-title">Rooftop Inspection Tour</strong>
+                      <span class="text-muted" id="details-appt-time">Tomorrow at 16:00 PM</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Shared Attachments list -->
+                <div class="py-3 border-bottom border-light-subtle">
+                  <span class="small fw-bold text-uppercase d-block text-muted mb-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">SHARED ATTACHMENTS</span>
+                  <div class="d-flex flex-column gap-2" id="details-attachments-target">
+                    <!-- Dynamic Attachments cards injected here -->
+                  </div>
+                </div>
+
+                <!-- Recent notifications logs inside details panel -->
+                <div class="py-3 border-bottom border-light-subtle">
+                  <span class="small fw-bold text-uppercase d-block text-muted mb-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">RECENT NOTIFICATIONS</span>
+                  <div class="d-flex flex-column gap-2" style="font-size: 0.75rem;" id="details-notifications-target">
+                    <!-- Dynamic alerts -->
+                  </div>
+                </div>
+
+                <!-- Active Detailed Quick Actions -->
+                <div class="py-3 btn-no-print">
+                  <span class="small fw-bold text-uppercase d-block text-muted mb-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">CORE QUICK ACTIONS</span>
+                  <div class="d-flex flex-column gap-1.5">
+                    <a href="appointments.html" class="btn btn-xs btn-outline-primary py-1.5"><i class="bi bi-calendar-plus me-1"></i> Book Tour Appointment</a>
+                    <button class="btn btn-xs btn-outline-secondary py-1.5" onclick="simulateSendDocument()"><i class="bi bi-file-earmark-arrow-up me-1"></i> Send Property Prospectus</button>
+                    <button class="btn btn-xs btn-outline-danger py-1.5" onclick="triggerMuteClient()"><i class="bi bi-bell-slash me-1"></i> Mute Customer Alerts</button>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- COMMUNICATION ANALYTICS SECTION -->
+            <div class="uh-card p-4 mb-4" data-aos="fade-up">
+              <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                  <h4 class="font-title fw-bold mb-1">Communication performance analytics</h4>
+                  <p class="text-muted small mb-0">Overview of client response delays, satisfaction logs, and hourly message throughput.</p>
+                </div>
+                <span class="badge bg-info-subtle text-info py-1 px-2.5">Q3 Channels Analytics</span>
+              </div>
+
+              <div class="row g-4">
+                <!-- Bar Chart: Messages per Day -->
+                <div class="col-12 col-md-6 col-xl-4">
+                  <div class="bg-body border border-light-subtle p-3 rounded h-100">
+                    <h6 class="font-title fw-semibold text-muted text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">Messages Received Volume (Daily)</h6>
+                    <div style="position: relative; height: 220px; width: 100%;">
+                      <canvas id="dailyVolumeChart"></canvas>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Line Chart: Response Speed Trends -->
+                <div class="col-12 col-md-6 col-xl-4">
+                  <div class="bg-body border border-light-subtle p-3 rounded h-100">
+                    <h6 class="font-title fw-semibold text-muted text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">Avg Reply Speed (Minutes)</h6>
+                    <div style="position: relative; height: 220px; width: 100%;">
+                      <canvas id="replySpeedChart"></canvas>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Doughnut Chart: CSAT Scoring -->
+                <div class="col-12 col-xl-4">
+                  <div class="bg-body border border-light-subtle p-3 rounded h-100">
+                    <h6 class="font-title fw-semibold text-muted text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">Client Satisfaction index (CSAT)</h6>
+                    <div style="position: relative; height: 220px; width: 100%;">
+                      <canvas id="csatMetricsChart"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container">
+      <div id="liveToast" class="toast uh-toast border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+        <div class="d-flex">
+          <div class="toast-body d-flex align-items-center gap-2">
+            <i class="bi bi-info-circle text-primary" id="toast-icon"></i>
+            <span id="toast-message-text" class="small">Action completed successfully.</span>
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- === REUSABLE BOOTSTRAP MODALS === -->
+
+    <!-- MODAL 1: COMPOSE NEW MESSAGE MODAL -->
+    <div class="modal fade" id="composeMessageModal" tabindex="-1" aria-labelledby="composeMessageModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-light-subtle">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="composeMessageModalLabel"><i class="bi bi-pencil-square text-primary me-2"></i>Compose New Message</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Target Recipient</label>
+              <select class="form-select bg-body border-light-subtle text-main" id="compose-recipient">
+                <option value="Eleanor Vance">Eleanor Vance (VIP Prospect)</option>
+                <option value="Carlos Mendez">Carlos Mendez (Premium Prospect)</option>
+                <option value="Marcus Vance">Marcus Vance (Partner Broker Advisor)</option>
+                <option value="Jessica Taylor">Jessica Taylor (Client Support)</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Message Subject / Topic</label>
+              <input type="text" class="form-control bg-body border-light-subtle text-main" id="compose-subject" placeholder="e.g. Schedule Modification, Price negotiations..." required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Detailed Message Body</label>
+              <textarea class="form-control bg-body border-light-subtle text-main" id="compose-body" rows="4" placeholder="Draft your professional email body here..." required></textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Discard Draft</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitComposeMessage()"><i class="bi bi-send-fill me-1"></i> Send Message</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-dark border-light-subtle text-center">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold text-danger mx-auto" id="deleteConfirmationModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Permanent Delete</h5>
+            <button type="button" class="btn-close btn-close-white ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-muted small mb-0">Are you absolutely sure you want to permanently delete these selected chat streams? This action is irreversible.</p>
+          </div>
+          <div class="modal-footer border-light-subtle justify-content-center">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="submitBulkDelete()"><i class="bi bi-trash-fill me-1"></i> Yes, Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: ATTACHMENT PREVIEW MODAL -->
+    <div class="modal fade" id="attachmentPreviewModal" tabindex="-1" aria-labelledby="attachmentPreviewModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark border-light-subtle">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="attachmentPreviewModalLabel"><i class="bi bi-file-earmark-image text-primary me-2"></i>Document Attachment Preview</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center bg-black p-0">
+            <div id="preview-image-container" class="py-4">
+              <img src="" id="attachment-preview-img-tag" style="max-width: 90%; max-height: 420px; object-fit: contain; border-radius: 8px;" alt="Shared Asset Preview" referrerpolicy="no-referrer" />
+            </div>
+            <div id="preview-doc-container" class="py-5 text-center d-none">
+              <i class="bi bi-file-pdf text-danger" style="font-size: 5rem;"></i>
+              <h5 class="font-title fw-bold text-white mt-3" id="attachment-preview-doc-title"></h5>
+              <p class="text-muted small">Standard secure PDF documentation file.</p>
+            </div>
+          </div>
+          <div class="modal-footer border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="simulateDownload()"><i class="bi bi-download me-1"></i> Download Asset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart.js CDN (Modern 4.x version for high-performance responsive charts) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- AOS Animation Library JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Main JS Script -->
+    <script src="/assets/js/main.js"></script>
+
+    <!-- WORKSPACE INTERACTIVE ENGINE SCRIPTS -->
+    <script>
+      // --- CONSTANT HIGH-FIDELITY MOCK DATABASE ---
+      const initialConversations = [
+        {
+          id: "c1",
+          name: "Eleanor Vance",
+          role: "VIP Prospect",
+          avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop",
+          status: "online",
+          tag: "VIP Prospect",
+          email: "eleanor@vancevip.com",
+          phone: "+1 (555) 019-2834",
+          agent: "Marcus Vance",
+          folder: "inbox",
+          starred: true,
+          unread: true,
+          priority: "High",
+          property: {
+            title: "Waterfront Skyline Penthouse",
+            address: "440 Biscayne Blvd Unit 302, Miami, FL",
+            price: "$4,200,000",
+            image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=400&auto=format&fit=crop"
+          },
+          nextAppointment: {
+            title: "Rooftop Tour & Inspection",
+            time: "Tomorrow at 16:00 PM"
+          },
+          attachments: [
+            { id: "a1", name: "floorplan_sky_penthouse.pdf", type: "pdf", size: "4.2 MB", url: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=400&auto=format&fit=crop" },
+            { id: "a2", name: "rooftop_pool_concept.jpg", type: "image", size: "1.8 MB", url: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=400&auto=format&fit=crop" }
+          ],
+          notifications: [
+            { type: "Customer Replied", text: "Eleanor Vance sent a message regarding rooftop tours.", time: "10 mins ago" },
+            { type: "Lead Updated", text: "Assigned status shifted to VIP High Priority.", time: "2 hrs ago" }
+          ],
+          messages: [
+            { id: "m1_1", text: "Hello Sarah, I received the price estimate list for the Biscayne penthouse. The penthouse seems lovely.", sender: "incoming", time: "09:30 AM", status: "seen" },
+            { id: "m1_2", text: "Excellent Eleanor! It has unmatched views of the bay. I've sent the prospectus to you too.", sender: "outgoing", time: "09:45 AM", status: "seen" },
+            { id: "m1_3", text: "Are we still on for the 4:00 PM rooftop tour tomorrow?", sender: "incoming", time: "12:12 PM", status: "delivered" }
+          ]
+        },
+        {
+          id: "c2",
+          name: "Carlos Mendez",
+          role: "Premium Prospect",
+          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop",
+          status: "away",
+          tag: "Active Prospect",
+          email: "carlos@mendezestates.com",
+          phone: "+1 (555) 012-4411",
+          agent: "Sophia Lopez",
+          folder: "inbox",
+          starred: false,
+          unread: true,
+          priority: "Medium",
+          property: {
+            title: "Modern Oasis Ocean Mansion",
+            address: "120 Golden Beach Dr, Miami, FL",
+            price: "$8,950,000",
+            image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=400&auto=format&fit=crop"
+          },
+          nextAppointment: {
+            title: "Contract Review Lunch",
+            time: "July 14 at 12:30 PM"
+          },
+          attachments: [
+            { id: "a3", name: "zoning_certificate_oasis.pdf", type: "pdf", size: "2.4 MB" },
+            { id: "a4", name: "mansion_survey_diagram.png", type: "image", size: "3.1 MB", url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=400&auto=format&fit=crop" }
+          ],
+          notifications: [
+            { type: "New Message", text: "Carlos requested zoning map parameters.", time: "1 hour ago" }
+          ],
+          messages: [
+            { id: "m2_1", text: "Hello, could you send over the updated zoning certificates for the Ocean Mansion?", sender: "incoming", time: "11:15 AM", status: "seen" }
+          ]
+        },
+        {
+          id: "c3",
+          name: "Marcus Vance",
+          role: "Partner Advisor",
+          avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop",
+          status: "online",
+          tag: "Internal Team",
+          email: "marcus@urbanhub.net",
+          phone: "+1 (555) 014-9988",
+          agent: "Sarah Jenkins",
+          folder: "team",
+          starred: true,
+          unread: false,
+          priority: "Low",
+          property: {
+            title: "Luxury Brickell Condo",
+            address: "800 Brickell Ave Suite 40, Miami, FL",
+            price: "$1,850,000",
+            image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=400&auto=format&fit=crop"
+          },
+          nextAppointment: {
+            title: "Advisor Progress Review",
+            time: "July 15 at 09:00 AM"
+          },
+          attachments: [
+            { id: "a5", name: "escrow_contract_revised.docx", type: "doc", size: "1.1 MB" }
+          ],
+          notifications: [
+            { type: "Lead Updated", text: "Escrow terms reviewed and approved.", time: "4 hours ago" }
+          ],
+          messages: [
+            { id: "m3_1", text: "Hey Sarah, the client approved the revised escrow terms. Let's send the contract as soon as you approve.", sender: "incoming", time: "Yesterday", status: "seen" }
+          ]
+        },
+        {
+          id: "c4",
+          name: "Jessica Taylor",
+          role: "Support Desk Specialist",
+          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop",
+          status: "online",
+          tag: "Customer Support",
+          email: "support@urbanhub.net",
+          phone: "+1 (555) 011-3000",
+          agent: "Sarah Jenkins",
+          folder: "support",
+          starred: false,
+          unread: false,
+          priority: "Low",
+          property: {
+            title: "UrbanHub Portal Support",
+            address: "Cloud Hub Diagnostics Center",
+            price: "Enterprise License",
+            image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=400&auto=format&fit=crop"
+          },
+          nextAppointment: {
+            title: "Portal Patch Deployment",
+            time: "July 18 at 22:00 PM"
+          },
+          attachments: [
+            { id: "a6", name: "patch_notes_v2.4.pdf", type: "pdf", size: "850 KB" }
+          ],
+          notifications: [
+            { type: "Appointment Reminder", text: "Diagnostics support ticket #2844 completed.", time: "Yesterday" }
+          ],
+          messages: [
+            { id: "m4_1", text: "Ticket #2844 has been resolved. The customer account has been validated and the lock was successfully removed.", sender: "incoming", time: "July 8", status: "seen" }
+          ]
+        }
+      ];
+
+      // --- RUNTIME STATE CONTROLLER ---
+      let db = JSON.parse(localStorage.getItem('urbanhub_chats_db')) || initialConversations;
+      let activeConversationId = "c1";
+      let activeFolder = "inbox";
+      let currentSimulatorState = "success";
+      let selectedConversationIds = new Set();
+
+      // --- TEMPLATES CONTENT ---
+      const quickTemplates = {
+        greeting: "Dear [Name],\n\nWelcome to UrbanHub Premium Real Estate Advisory. We are delighted to assist you in discovering state-of-the-art properties that align perfectly with your investment lifestyle.",
+        followup: "Hi [Name],\n\nFollowing up on our recent property listing conversation. I wanted to see if you have any questions about the current luxury inventory list I shared with you.",
+        reminder: "Hi [Name],\n\nThis is a friendly reminder that we have scheduled an exclusive meeting/tour tomorrow. Please let me know if you need to adjust or confirm this slot.",
+        confirm: "Hello [Name],\n\nYour exclusive tour of [Property] is now officially confirmed with your assigned senior advisory advisor Marcus Vance. We look forward to meeting you on-site.",
+        thanks: "Dear [Name],\n\nThank you for choosing UrbanHub CRM services. It was an absolute pleasure speaking with you today. Please do not hesitate to reach out if you require further assistance."
+      };
+
+      // --- CHART INSTANCES REGISTER ---
+      let chartDailyVolume = null;
+      let chartReplySpeed = null;
+      let chartCSAT = null;
+
+      // --- MAIN INITIALIZER ---
+      document.addEventListener('DOMContentLoaded', () => {
+        saveDatabase();
+        renderWorkspace();
+        initAnalyticsCharts();
+        
+        // Listen to global layout theme change to dynamically recolor charts
+        window.addEventListener('themeChanged', () => {
+          initAnalyticsCharts();
+        });
+      });
+
+      function saveDatabase() {
+        localStorage.setItem('urbanhub_chats_db', JSON.stringify(db));
+      }
+
+      // --- RENDER FUNCTIONS ---
+      function renderWorkspace() {
+        if (currentSimulatorState === "loading") {
+          document.getElementById('state-loading-skeleton').classList.remove('skeleton-hidden');
+          document.getElementById('state-empty').classList.add('skeleton-hidden');
+          document.getElementById('state-error').classList.add('skeleton-hidden');
+          document.getElementById('state-success-content').classList.add('skeleton-hidden');
+          return;
+        } else if (currentSimulatorState === "empty") {
+          document.getElementById('state-loading-skeleton').classList.add('skeleton-hidden');
+          document.getElementById('state-empty').classList.remove('skeleton-hidden');
+          document.getElementById('state-error').classList.add('skeleton-hidden');
+          document.getElementById('state-success-content').classList.add('skeleton-hidden');
+          return;
+        } else if (currentSimulatorState === "error") {
+          document.getElementById('state-loading-skeleton').classList.add('skeleton-hidden');
+          document.getElementById('state-empty').classList.add('skeleton-hidden');
+          document.getElementById('state-error').classList.remove('skeleton-hidden');
+          document.getElementById('state-success-content').classList.add('skeleton-hidden');
+          return;
+        }
+
+        // Default Success State
+        document.getElementById('state-loading-skeleton').classList.add('skeleton-hidden');
+        document.getElementById('state-empty').classList.add('skeleton-hidden');
+        document.getElementById('state-error').classList.add('skeleton-hidden');
+        document.getElementById('state-success-content').classList.remove('skeleton-hidden');
+
+        renderConversationList();
+        renderActiveChatWindow();
+        updateUnreadCounts();
+      }
+
+      function renderConversationList() {
+        const listTarget = document.getElementById('conversation-list-target');
+        if (!listTarget) return;
+
+        // Apply folder filter & search parameters
+        const filterName = document.getElementById('search-filter-name').value.toLowerCase();
+        const filterProp = document.getElementById('search-filter-property').value;
+        const filterPrio = document.getElementById('search-filter-priority').value;
+
+        let filtered = db.filter(item => {
+          // Folder logic
+          if (activeFolder === "starred") return item.starred;
+          if (activeFolder === "inbox") return item.folder === "inbox";
+          if (activeFolder === "sent") return item.folder === "sent";
+          if (activeFolder === "drafts") return item.folder === "drafts";
+          if (activeFolder === "archived") return item.folder === "archived";
+          if (activeFolder === "trash") return item.folder === "trash";
+          if (activeFolder === "customers") return item.tag === "VIP Prospect" || item.tag === "Active Prospect";
+          if (activeFolder === "agents") return item.tag === "Internal Team";
+          if (activeFolder === "team") return item.tag === "Internal Team";
+          if (activeFolder === "support") return item.tag === "Customer Support";
+          return true;
+        });
+
+        // Search Bar or Dropdown filters
+        filtered = filtered.filter(item => {
+          const matchName = item.name.toLowerCase().includes(filterName) || 
+                            (item.messages.some(m => m.text.toLowerCase().includes(filterName)));
+          const matchProp = !filterProp || item.property.title.includes(filterProp);
+          const matchPrio = !filterPrio || item.priority === filterPrio;
+          return matchName && matchProp && matchPrio;
+        });
+
+        if (filtered.length === 0) {
+          listTarget.innerHTML = "";
+          document.getElementById('state-no-search').classList.remove('d-none');
+          return;
+        }
+
+        document.getElementById('state-no-search').classList.add('d-none');
+        
+        listTarget.innerHTML = filtered.map(item => {
+          const isActive = item.id === activeConversationId;
+          const lastMsgObj = item.messages[item.messages.length - 1] || { text: "No messages yet", time: "" };
+          const unreadIndicator = item.unread ? `<span class="badge bg-danger rounded-pill float-end">Unread</span>` : '';
+          const starredIcon = item.starred ? 'bi-star-fill text-warning' : 'bi-star text-muted';
+          const priorityBadge = item.priority === "High" ? '<span class="badge bg-danger-subtle text-danger py-0.5 px-1.5" style="font-size: 0.6rem;">HIGH PRIO</span>' : '';
+          const isSelected = selectedConversationIds.has(item.id);
+
+          return `
+            <div class="convo-item ${isActive ? 'active' : ''} d-flex align-items-center gap-3" onclick="selectConversation('${item.id}', event)">
+              <div class="form-check m-0 btn-no-print" onclick="event.stopPropagation()">
+                <input class="form-check-input select-convo-checkbox" type="checkbox" data-id="${item.id}" ${isSelected ? 'checked' : ''} onchange="toggleIndividualSelect('${item.id}', this)" />
+              </div>
+              <div class="avatar-wrapper">
+                <img src="${item.avatar}" class="avatar-img" alt="${item.name}" referrerpolicy="no-referrer" />
+                <span class="status-dot ${item.status}"></span>
+              </div>
+              <div class="flex-grow-1 min-width-0">
+                <div class="d-flex justify-content-between align-items-center mb-0.5">
+                  <h6 class="font-title fw-bold mb-0 text-main text-truncate" style="font-size: 0.9rem;">${item.name}</h6>
+                  <span class="text-muted small" style="font-size: 0.7rem;">${lastMsgObj.time}</span>
+                </div>
+                <p class="text-muted small mb-1 text-truncate" style="font-size: 0.775rem;">${lastMsgObj.text}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="d-flex gap-1">
+                    ${priorityBadge}
+                    ${item.starred ? '<span class="badge bg-warning-subtle text-warning py-0.5 px-1.5" style="font-size: 0.6rem;">STARRED</span>' : ''}
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    ${unreadIndicator}
+                    <button class="btn btn-xs p-0 border-0" onclick="toggleStarredInMemory('${item.id}', event)">
+                      <i class="bi ${starredIcon}"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function renderActiveChatWindow() {
+        const activeItem = db.find(item => item.id === activeConversationId);
+        if (!activeItem) return;
+
+        // Header Update
+        document.getElementById('chat-header-avatar').src = activeItem.avatar;
+        document.getElementById('chat-header-name').textContent = activeItem.name;
+        document.getElementById('chat-header-role').textContent = activeItem.role;
+        document.getElementById('chat-header-status').className = `status-dot ${activeItem.status}`;
+
+        // Load Messages
+        renderMessagesLog(activeItem.messages);
+
+        // Right details update
+        document.getElementById('details-avatar').src = activeItem.avatar;
+        document.getElementById('details-name').textContent = activeItem.name;
+        document.getElementById('details-tag').textContent = activeItem.tag;
+        document.getElementById('details-role').textContent = activeItem.role;
+        document.getElementById('details-email').textContent = activeItem.email;
+        document.getElementById('details-phone').textContent = activeItem.phone;
+        document.getElementById('details-agent').textContent = activeItem.agent;
+
+        // Related Property details update
+        if (activeItem.property) {
+          document.getElementById('details-property-card-container').classList.remove('d-none');
+          document.getElementById('details-prop-image').src = activeItem.property.image;
+          document.getElementById('details-prop-title').textContent = activeItem.property.title;
+          document.getElementById('details-prop-address').textContent = activeItem.property.address;
+          document.getElementById('details-prop-price').textContent = activeItem.property.price;
+        } else {
+          document.getElementById('details-property-card-container').classList.add('d-none');
+        }
+
+        // Next Appointment update
+        if (activeItem.nextAppointment) {
+          document.getElementById('details-appt-title').textContent = activeItem.nextAppointment.title;
+          document.getElementById('details-appt-time').textContent = activeItem.nextAppointment.time;
+        }
+
+        // Loading Attachments list
+        const attachTarget = document.getElementById('details-attachments-target');
+        if (activeItem.attachments && activeItem.attachments.length > 0) {
+          attachTarget.innerHTML = activeItem.attachments.map(a => {
+            let iconClass = 'bi-file-earmark';
+            if (a.type === 'pdf') iconClass = 'bi-file-pdf text-danger';
+            if (a.type === 'image') iconClass = 'bi-file-image text-primary';
+            if (a.type === 'doc') iconClass = 'bi-file-earmark-word text-info';
+
+            return `
+              <div class="attachment-preview-card">
+                <i class="bi ${iconClass}" style="font-size: 1.25rem;"></i>
+                <div class="flex-grow-1 min-width-0">
+                  <span class="small fw-semibold text-main d-block text-truncate" style="font-size: 0.75rem;">${a.name}</span>
+                  <span class="text-muted" style="font-size: 0.65rem;">${a.size}</span>
+                </div>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-xs btn-outline-secondary p-1" onclick="previewAttachmentAsset('${a.id}')" title="Preview"><i class="bi bi-eye"></i></button>
+                  <button class="btn btn-xs btn-outline-primary p-1" onclick="simulateDownload()" title="Download"><i class="bi bi-download"></i></button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          attachTarget.innerHTML = `<span class="text-muted small">No files shared yet.</span>`;
+        }
+
+        // Loading recent notification trends
+        const notificationsTarget = document.getElementById('details-notifications-target');
+        if (activeItem.notifications && activeItem.notifications.length > 0) {
+          notificationsTarget.innerHTML = activeItem.notifications.map(n => `
+            <div class="p-2 rounded bg-body border-start border-primary border-3" style="font-size: 0.75rem;">
+              <div class="d-flex justify-content-between align-items-center mb-0.5">
+                <strong class="text-main">${n.type}</strong>
+                <span class="text-muted small">${n.time}</span>
+              </div>
+              <span class="text-muted d-block">${n.text}</span>
+            </div>
+          `).join('');
+        } else {
+          notificationsTarget.innerHTML = `<span class="text-muted small">No notifications.</span>`;
+        }
+      }
+
+      function renderMessagesLog(messagesList) {
+        const container = document.getElementById('chat-messages-scroller-target');
+        if (!container) return;
+
+        if (messagesList.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-5">
+              <i class="bi bi-chat-dots text-muted" style="font-size: 2rem;"></i>
+              <p class="text-muted small mt-2">Send a high-end secure message to begin the conversation.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = messagesList.map(m => {
+          const isOutgoing = m.sender === 'outgoing';
+          const bubbleClass = isOutgoing ? 'outgoing' : 'incoming';
+          const ticks = m.status === 'seen' ? '<i class="bi bi-check-all text-primary"></i>' : '<i class="bi bi-check-all"></i>';
+
+          return `
+            <div class="message-bubble-row ${bubbleClass}">
+              <div class="bubble-content">
+                <div>${m.text}</div>
+                
+                <div class="bubble-emoji-actions btn-no-print">
+                  <button class="emoji-btn-mini" onclick="addEmojiReaction('${m.id}', '👍')">👍</button>
+                  <button class="emoji-btn-mini" onclick="addEmojiReaction('${m.id}', '❤️')">❤️</button>
+                  <button class="emoji-btn-mini" onclick="addEmojiReaction('${m.id}', '👏')">👏</button>
+                  <button class="emoji-btn-mini" onclick="addEmojiReaction('${m.id}', '🔥')">🔥</button>
+                </div>
+
+                <div class="msg-meta-info">
+                  <span>${m.time}</span>
+                  ${isOutgoing ? ticks : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Smoothly auto-scroll to the bottom
+        container.scrollTop = container.scrollHeight;
+      }
+
+      // --- USER ACTIONS INTERACTIVITY ---
+      function selectConversation(id, event) {
+        activeConversationId = id;
+        
+        // Mark as read in DB
+        const convo = db.find(item => item.id === id);
+        if (convo && convo.unread) {
+          convo.unread = false;
+          saveDatabase();
+          updateUnreadCounts();
+        }
+
+        renderWorkspace();
+
+        // On mobile, switch view mode to active chat
+        document.getElementById('primary-workspace-card').classList.add('mobile-active-chat');
+      }
+
+      function switchMailFolder(folderName, element) {
+        activeFolder = folderName;
+        
+        // Highlight active folder link
+        const folderLinks = document.querySelectorAll('.folder-link');
+        folderLinks.forEach(link => link.classList.remove('active'));
+        if (element) {
+          element.classList.add('active');
+        }
+
+        renderWorkspace();
+      }
+
+      function filterConversationList(query) {
+        renderConversationList();
+      }
+
+      function filterMessagesInWindow(query) {
+        const activeItem = db.find(item => item.id === activeConversationId);
+        if (!activeItem) return;
+
+        const filtered = activeItem.messages.filter(m => m.text.toLowerCase().includes(query.toLowerCase()));
+        renderMessagesLog(filtered);
+      }
+
+      function triggerSearchFilters() {
+        renderWorkspace();
+      }
+
+      function clearSearchFilters() {
+        document.getElementById('search-filter-name').value = "";
+        document.getElementById('search-filter-property').value = "";
+        document.getElementById('search-filter-priority').value = "";
+        renderWorkspace();
+      }
+
+      // Star / Favorite toggle
+      function toggleStarredInMemory(id, event) {
+        if (event) event.stopPropagation();
+        const convo = db.find(item => item.id === id);
+        if (convo) {
+          convo.starred = !convo.starred;
+          saveDatabase();
+          showToast(`Conversation marked as ${convo.starred ? 'starred' : 'unstarred'}.`);
+          renderWorkspace();
+        }
+      }
+
+      // Quick templates dispatcher
+      function applyQuickTemplate(type) {
+        const convo = db.find(item => item.id === activeConversationId);
+        if (!convo) return;
+
+        let txt = quickTemplates[type] || "";
+        txt = txt.replace('[Name]', convo.name);
+        txt = txt.replace('[Property]', convo.property ? convo.property.title : "the skyline property");
+
+        const composer = document.getElementById('chat-composer-textarea');
+        composer.value = txt;
+        handleComposerKeyup(composer);
+      }
+
+      function handleComposerKeyup(element) {
+        const count = element.value.length;
+        document.getElementById('composer-char-count').textContent = `${count}/500`;
+      }
+
+      // Add message bubble
+      function triggerSendComposerMessage() {
+        const composer = document.getElementById('chat-composer-textarea');
+        const text = composer.value.trim();
+        if (!text) return;
+
+        const convo = db.find(item => item.id === activeConversationId);
+        if (!convo) return;
+
+        // Construct new outgoing message
+        const newMsg = {
+          id: `m_${Date.now()}`,
+          text: text,
+          sender: "outgoing",
+          time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          status: "delivered"
+        };
+
+        convo.messages.push(newMsg);
+        composer.value = "";
+        handleComposerKeyup(composer);
+        saveDatabase();
+        renderWorkspace();
+        showToast("Secure message sent successfully.");
+
+        // Simulate Typing response occasionally
+        simulateAdvisorFeedback();
+      }
+
+      function simulateAdvisorFeedback() {
+        const indicator = document.getElementById('chat-header-typing-status');
+        indicator.innerHTML = `<span class="typing-indicator btn-no-print"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span> Typing...</span>`;
+        
+        setTimeout(() => {
+          indicator.textContent = "online";
+          
+          const convo = db.find(item => item.id === activeConversationId);
+          if (convo) {
+            const replies = [
+              "Thank you for the quick follow up, that makes perfect sense.",
+              "Excellent, I will notify the developers to arrange the licensing paperwork.",
+              "Yes! Please send over the revised survey diagrams at your earliest convenience.",
+              "Perfect. Let's arrange a call next Tuesday to finalize the escrow schedule."
+            ];
+            const randomReply = replies[Math.floor(Math.random() * replies.length)];
+            
+            convo.messages.push({
+              id: `m_${Date.now()}`,
+              text: randomReply,
+              sender: "incoming",
+              time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+              status: "seen"
+            });
+            saveDatabase();
+            renderWorkspace();
+            showToast(`New reply from ${convo.name}.`);
+          }
+        }, 3000);
+      }
+
+      // React to messages via click
+      function addEmojiReaction(msgId, emoji) {
+        showToast(`Reacted with ${emoji}`);
+      }
+
+      // --- BULK ACTION SYSTEM ---
+      function toggleBulkSelectAll(masterCheckbox) {
+        const checked = masterCheckbox.checked;
+        const checkboxes = document.querySelectorAll('.select-convo-checkbox');
+        
+        selectedConversationIds.clear();
+        checkboxes.forEach(cb => {
+          cb.checked = checked;
+          const id = cb.getAttribute('data-id');
+          if (checked) {
+            selectedConversationIds.add(id);
+          }
+        });
+
+        updateBulkActionsBarVisibility();
+      }
+
+      function toggleIndividualSelect(id, checkbox) {
+        if (checkbox.checked) {
+          selectedConversationIds.add(id);
+        } else {
+          selectedConversationIds.delete(id);
+        }
+        updateBulkActionsBarVisibility();
+      }
+
+      function updateBulkActionsBarVisibility() {
+        const subbar = document.getElementById('bulk-workspace-subbar');
+        const badge = document.getElementById('bulk-selected-count');
+        
+        if (selectedConversationIds.size > 0) {
+          subbar.classList.remove('d-none');
+          subbar.classList.add('d-flex');
+          badge.textContent = `${selectedConversationIds.size} Selected`;
+        } else {
+          subbar.classList.remove('d-flex');
+          subbar.classList.add('d-none');
+          document.getElementById('bulk-select-all').checked = false;
+        }
+      }
+
+      function triggerSelectedAction(actionType) {
+        if (selectedConversationIds.size === 0) return;
+
+        if (actionType === 'delete') {
+          const modal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+          modal.show();
+          return;
+        }
+
+        db.forEach(item => {
+          if (selectedConversationIds.has(item.id)) {
+            if (actionType === 'read') item.unread = false;
+            if (actionType === 'unread') item.unread = true;
+            if (actionType === 'archive') item.folder = 'archived';
+          }
+        });
+
+        saveDatabase();
+        selectedConversationIds.clear();
+        updateBulkActionsBarVisibility();
+        renderWorkspace();
+        showToast(`Bulk action: '${actionType}' completed.`);
+      }
+
+      function submitBulkDelete() {
+        db = db.filter(item => !selectedConversationIds.has(item.id));
+        saveDatabase();
+        selectedConversationIds.clear();
+        updateBulkActionsBarVisibility();
+        
+        // Hide modal
+        const modalEl = document.getElementById('deleteConfirmationModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+
+        renderWorkspace();
+        showToast("Selected conversation streams permanently deleted.");
+      }
+
+      // --- MOBILE RESPONSIVE LAYOUT SWITCHERS ---
+      function goBackToChatListMobile() {
+        document.getElementById('primary-workspace-card').classList.remove('mobile-active-chat');
+      }
+
+      function toggleDetailsPanelMobile() {
+        document.getElementById('primary-workspace-card').classList.add('mobile-active-details');
+      }
+
+      function closeDetailsPanelMobile() {
+        document.getElementById('primary-workspace-card').classList.remove('mobile-active-details');
+      }
+
+      // --- SIMULATED MODALS AND ATTACHMENTS PREVIEWS ---
+      function previewAttachmentAsset(id) {
+        const modalEl = document.getElementById('attachmentPreviewModal');
+        const modal = new bootstrap.Modal(modalEl);
+
+        const imgTag = document.getElementById('attachment-preview-img-tag');
+        const docContainer = document.getElementById('preview-doc-container');
+        const docTitle = document.getElementById('attachment-preview-doc-title');
+
+        if (id === 'a1' || id === 'a3' || id === 'a6') {
+          // Document
+          imgTag.classList.add('d-none');
+          docContainer.classList.remove('d-none');
+          docTitle.textContent = (id === 'a1') ? "floorplan_sky_penthouse.pdf" : (id === 'a3') ? "zoning_certificate_oasis.pdf" : "patch_notes_v2.4.pdf";
+        } else {
+          // Image
+          imgTag.classList.remove('d-none');
+          docContainer.classList.add('d-none');
+          imgTag.src = "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=600&auto=format&fit=crop";
+        }
+
+        modal.show();
+      }
+
+      function simulateDownload() {
+        showToast("Secure file download started in client environment.");
+      }
+
+      function simulateAttach(type) {
+        showToast(`Simulating shared file uploading: ${type}`);
+        const convo = db.find(item => item.id === activeConversationId);
+        if (convo) {
+          const newAttach = {
+            id: `a_${Date.now()}`,
+            name: type === 'image' ? "uploaded_render_concept.png" : "shared_prospectus.pdf",
+            type: type === 'image' ? "image" : "pdf",
+            size: "2.1 MB"
+          };
+          convo.attachments.push(newAttach);
+          saveDatabase();
+          renderWorkspace();
+        }
+      }
+
+      function simulateSendDocument() {
+        showToast("Prospectus dispatched to customer email registry.");
+      }
+
+      function triggerMuteClient() {
+        showToast("Notifications successfully muted for this client.");
+      }
+
+      function triggerMakeCall() {
+        showToast("Initiating UrbanHub VoIP voice dialer...");
+      }
+
+      function triggerVideoCall() {
+        showToast("Initiating secure video conference link...");
+      }
+
+      function triggerConversationExport() {
+        showToast("Generating secure encrypted chat log export...");
+      }
+
+      function triggerRefresh() {
+        showToast("Sync refreshed! Loading newly compiled logs.");
+        renderWorkspace();
+      }
+
+      // --- STATE SIMULATOR SWITCHER ---
+      function switchSimulatorState(state) {
+        currentSimulatorState = state;
+        
+        const buttons = ['success', 'loading', 'empty', 'error'];
+        buttons.forEach(btn => {
+          const el = document.getElementById(`sim-btn-${btn}`);
+          if (el) {
+            if (btn === state) el.classList.add('active');
+            else el.classList.remove('active');
+          }
+        });
+
+        renderWorkspace();
+      }
+
+      function submitComposeMessage() {
+        const recipient = document.getElementById('compose-recipient').value;
+        const subject = document.getElementById('compose-subject').value.trim();
+        const body = document.getElementById('compose-body').value.trim();
+
+        if (!subject || !body) {
+          showToast("Please fill all required compose fields!");
+          return;
+        }
+
+        // Add dummy conversation or push message to exist
+        const target = db.find(item => item.name === recipient);
+        if (target) {
+          target.messages.push({
+            id: `m_${Date.now()}`,
+            text: `[Subject: ${subject}] ${body}`,
+            sender: "outgoing",
+            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            status: "delivered"
+          });
+          activeConversationId = target.id;
+        }
+
+        saveDatabase();
+        
+        // Hide modal
+        const modalEl = document.getElementById('composeMessageModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+
+        renderWorkspace();
+        showToast(`Professional draft dispatched to ${recipient}.`);
+      }
+
+      // --- TOAST NOTIFICATIONS TRIGGER ---
+      function showToast(message) {
+        const toastEl = document.getElementById('liveToast');
+        const textEl = document.getElementById('toast-message-text');
+        textEl.textContent = message;
+        
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+      }
+
+      function updateUnreadCounts() {
+        const count = db.filter(item => item.unread).length;
+        const badge = document.getElementById('stat-unread');
+        if (badge) badge.textContent = count;
+      }
+
+      // --- ANALYTICS CHART INITIALIZATION ---
+      function initAnalyticsCharts() {
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        
+        // Dynamic colors
+        const textThemeColor = isDark ? '#8E9BAE' : '#64748B';
+        const gridThemeColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        const primaryColor = isDark ? '#D4AF37' : '#B8860B';
+        const accentColor = isDark ? '#3B82F6' : '#2563EB';
+        const successColor = isDark ? '#10B981' : '#059669';
+
+        // 1. Messages per Day
+        const ctxDaily = document.getElementById('dailyVolumeChart');
+        if (ctxDaily) {
+          if (chartDailyVolume) chartDailyVolume.destroy();
+          chartDailyVolume = new Chart(ctxDaily, {
+            type: 'bar',
+            data: {
+              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              datasets: [{
+                label: 'Messages',
+                data: [42, 58, 62, 75, 48, 22, 18],
+                backgroundColor: primaryColor,
+                borderRadius: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { grid: { display: false }, ticks: { color: textThemeColor } },
+                y: { grid: { color: gridThemeColor }, ticks: { color: textThemeColor } }
+              }
+            }
+          });
+        }
+
+        // 2. Average Response Speed
+        const ctxReply = document.getElementById('replySpeedChart');
+        if (ctxReply) {
+          if (chartReplySpeed) chartReplySpeed.destroy();
+          chartReplySpeed = new Chart(ctxReply, {
+            type: 'line',
+            data: {
+              labels: ['May', 'Jun', 'Jul'],
+              datasets: [{
+                label: 'Response Time (mins)',
+                data: [15, 12, 8.5],
+                borderColor: accentColor,
+                tension: 0.4,
+                fill: false,
+                borderWidth: 3
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { grid: { display: false }, ticks: { color: textThemeColor } },
+                y: { grid: { color: gridThemeColor }, ticks: { color: textThemeColor } }
+              }
+            }
+          });
+        }
+
+        // 3. Client Satisfaction Score
+        const ctxCSAT = document.getElementById('csatMetricsChart');
+        if (ctxCSAT) {
+          if (chartCSAT) chartCSAT.destroy();
+          chartCSAT = new Chart(ctxCSAT, {
+            type: 'doughnut',
+            data: {
+              labels: ['Very Satisfied', 'Satisfied', 'Neutral'],
+              datasets: [{
+                data: [78, 18, 4],
+                backgroundColor: [successColor, primaryColor, '#64748B'],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: { color: textThemeColor, boxWidth: 10 }
+                }
+              },
+              cutout: '70%'
+            }
+          });
+        }
+      }
+    </script>
+  </body>
+</html>

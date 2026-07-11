@@ -1,0 +1,2107 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lead Management - UrbanHub CRM</title>
+
+    <!-- Theme Choice Pre-load Script -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Page-specific high-fidelity Leads styles */
+      .glow-card {
+        position: relative;
+        overflow: hidden;
+      }
+      .card-glow-effect {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none;
+        background: radial-gradient(circle 120px at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(var(--uh-primary-rgb), 0.08), transparent 80%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 1;
+      }
+      .glow-card:hover .card-glow-effect {
+        opacity: 1;
+      }
+
+      /* Hover uplift utilities */
+      .lift-on-hover {
+        transition: var(--uh-transition-smooth);
+      }
+      .lift-on-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--uh-shadow-lg) !important;
+      }
+
+      /* Kanban Columns & Drag & Drop */
+      .kanban-board-wrapper {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+        min-height: 600px;
+        align-items: flex-start;
+      }
+      .kanban-column {
+        flex: 0 0 320px;
+        width: 320px;
+        background-color: rgba(var(--uh-primary-rgb), 0.015);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        max-height: 800px;
+        transition: var(--uh-transition-smooth);
+      }
+      .kanban-column.drag-over {
+        background-color: rgba(var(--uh-primary-rgb), 0.05);
+        border-color: var(--uh-primary);
+        box-shadow: 0 0 12px rgba(var(--uh-primary-rgb), 0.2);
+      }
+      .kanban-column-header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--uh-border-card);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: rgba(var(--uh-primary-rgb), 0.02);
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+      }
+      .kanban-cards-container {
+        padding: 0.75rem;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .lead-card {
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: var(--uh-shadow-sm);
+        cursor: grab;
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        position: relative;
+      }
+      .lead-card:active {
+        cursor: grabbing;
+      }
+      .lead-card.dragging {
+        opacity: 0.4;
+        transform: scale(0.95);
+        border-color: var(--uh-primary);
+      }
+      .lead-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--uh-shadow-md);
+        border-color: rgba(var(--uh-primary-rgb), 0.3);
+      }
+
+      /* Custom Circle Progress for Lead Score */
+      .score-circle {
+        position: relative;
+        width: 48px;
+        height: 48px;
+      }
+      .score-circle svg {
+        width: 48px;
+        height: 48px;
+        transform: rotate(-90deg);
+      }
+      .score-circle circle {
+        fill: none;
+        stroke-width: 3.5;
+      }
+      .score-circle .bg-ring {
+        stroke: rgba(255, 255, 255, 0.08);
+      }
+      [data-bs-theme="light"] .score-circle .bg-ring {
+        stroke: rgba(0, 0, 0, 0.06);
+      }
+      .score-circle .score-ring {
+        stroke: var(--uh-primary);
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.5s ease;
+      }
+      .score-text-center {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.75rem;
+        font-weight: 700;
+        font-family: var(--uh-font-title);
+      }
+
+      /* Grid of statistics & sources */
+      .stats-grid-wrapper {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+      }
+      @media (max-width: 1400px) {
+        .stats-grid-wrapper { grid-template-columns: repeat(3, 1fr); }
+      }
+      @media (max-width: 992px) {
+        .stats-grid-wrapper { grid-template-columns: repeat(2, 1fr); }
+      }
+      @media (max-width: 576px) {
+        .stats-grid-wrapper { grid-template-columns: 1fr; }
+      }
+
+      /* Lead Sources cards */
+      .source-card {
+        padding: 1rem;
+        border-radius: 10px;
+        border: 1px solid var(--uh-border-card);
+        background-color: rgba(var(--uh-primary-rgb), 0.01);
+        text-align: center;
+        transition: var(--uh-transition-smooth);
+      }
+      .source-card:hover {
+        background-color: rgba(var(--uh-primary-rgb), 0.04);
+        border-color: var(--uh-primary);
+        transform: translateY(-2px);
+      }
+      .source-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--uh-primary);
+      }
+
+      /* Skeleton styles */
+      .skeleton-placeholder {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255, 255, 255, 0.05) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading-flow 1.5s infinite;
+        border-radius: 6px;
+      }
+      @keyframes skeleton-loading-flow {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-hidden {
+        display: none !important;
+      }
+      .fade-transition {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+
+      /* Sales Funnel Graphics */
+      .funnel-stage {
+        height: 44px;
+        margin-bottom: 6px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1.25rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: transform 0.25s;
+        border: 1px solid var(--uh-border-card);
+      }
+      .funnel-stage:hover {
+        transform: scale(1.02);
+      }
+
+      /* Bulk Actions Floating Bar */
+      .bulk-actions-floating-bar {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%) translateY(120px);
+        background-color: var(--uh-bg-sidebar);
+        border: 1.5px solid var(--uh-primary);
+        border-radius: 12px;
+        box-shadow: var(--uh-shadow-lg);
+        padding: 0.85rem 1.5rem;
+        z-index: 1040;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .bulk-actions-floating-bar.active {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* Print custom stylesheet rules */
+      @media print {
+        .sidebar-wrapper, .top-header, .top-toolbar-actions, .bulk-actions-floating-bar, .modal, .btn-no-print {
+          display: none !important;
+        }
+        .main-content-wrapper {
+          margin-left: 0 !important;
+          padding: 0 !important;
+        }
+        .uh-card {
+          border: 1px solid #ddd !important;
+          box-shadow: none !important;
+          background: #fff !important;
+          color: #000 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar mobile overlay backdrop -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon"><i class="bi bi-building-up"></i></div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link active">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input" id="sidebar-search-leads" placeholder="Quick lead search..." onkeyup="handleQuickLeadSearch(this.value)" />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <!-- Theme toggle standard binding with main.js -->
+            <button id="theme-toggle" class="header-btn" title="Switch Theme">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE BODY CONTAINER -->
+        <div class="page-body">
+          
+          <!-- BREADCRUMB & HEADER PANEL -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-down">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Leads</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Lead Management</h1>
+            </div>
+
+            <!-- Top Toolbar actions -->
+            <div class="d-flex align-items-center flex-wrap gap-2 top-toolbar-actions">
+              <div class="input-group input-group-sm max-width-300 d-none d-lg-flex">
+                <span class="input-group-text bg-body border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" class="form-control bg-body border-start-0" id="toolbar-search-input" placeholder="Search Lead..." onkeyup="handleQuickLeadSearch(this.value)" />
+              </div>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFiltersPanel" aria-expanded="false" aria-controls="advancedFiltersPanel">
+                <i class="bi bi-filter"></i> <span>Advanced Filters</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onclick="triggerImportAction()">
+                <i class="bi bi-file-earmark-arrow-up"></i> <span class="d-none d-sm-inline">Import Leads</span>
+              </button>
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-file-earmark-arrow-down"></i> <span class="d-none d-sm-inline">Export</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium">
+                  <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportData('CSV')"><i class="bi bi-file-spreadsheet me-2 text-success"></i> Export CSV</a></li>
+                  <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportData('PDF')"><i class="bi bi-file-pdf me-2 text-danger"></i> Export PDF</a></li>
+                </ul>
+              </div>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span class="d-none d-sm-inline">Print</span>
+              </button>
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" onclick="triggerRefresh()">
+                <i class="bi bi-arrow-clockwise"></i> <span>Refresh</span>
+              </button>
+              <!-- Link to add-lead.html -->
+              <a href="coming-soon.html" class="btn btn-sm btn-primary d-flex align-items-center gap-1">
+                <i class="bi bi-plus-lg"></i> <span>Add Lead</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- COLLAPSIBLE ADVANCED FILTERS PANEL -->
+          <div class="collapse mb-4" id="advancedFiltersPanel">
+            <div class="uh-card p-4 bg-body border-light-subtle">
+              <h5 class="font-title fw-bold text-main mb-3"><i class="bi bi-sliders text-primary me-2"></i>Advanced Filter Suite</h5>
+              <form id="advanced-filters-form" onsubmit="applyAdvancedFilters(event)">
+                <div class="row g-3">
+                  <div class="col-12 col-md-3">
+                    <label class="form-label text-muted small fw-semibold">Lead Name</label>
+                    <input type="text" class="form-control bg-body border-light-subtle form-control-sm" id="filter-name" placeholder="Filter by Name..." />
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label text-muted small fw-semibold">Lead ID</label>
+                    <input type="text" class="form-control bg-body border-light-subtle form-control-sm" id="filter-id" placeholder="Filter by ID (e.g. LED-1092)..." />
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label text-muted small fw-semibold">Lead Source</label>
+                    <select class="form-select bg-body border-light-subtle form-select-sm" id="filter-source">
+                      <option value="">All Sources</option>
+                      <option value="Website">Website</option>
+                      <option value="Facebook">Facebook</option>
+                      <option value="Google">Google</option>
+                      <option value="Referral">Referral</option>
+                      <option value="Walk-in">Walk-in</option>
+                      <option value="Phone">Phone</option>
+                      <option value="Email Campaign">Email Campaign</option>
+                      <option value="Advertisement">Advertisement</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label text-muted small fw-semibold">Priority Level</label>
+                    <select class="form-select bg-body border-light-subtle form-select-sm" id="filter-priority">
+                      <option value="">All Priorities</option>
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label text-muted small fw-semibold">Pipeline Stage (Status)</label>
+                    <select class="form-select bg-body border-light-subtle form-select-sm" id="filter-status">
+                      <option value="">All Stages</option>
+                      <option value="new">New</option>
+                      <option value="contacted">Contacted</option>
+                      <option value="qualified">Qualified</option>
+                      <option value="site_visit">Site Visit Scheduled</option>
+                      <option value="proposal">Proposal Sent</option>
+                      <option value="negotiation">Negotiation</option>
+                      <option value="won">Won</option>
+                      <option value="lost">Lost</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label text-muted small fw-semibold">Assigned Agent</label>
+                    <select class="form-select bg-body border-light-subtle form-select-sm" id="filter-agent">
+                      <option value="">All Agents</option>
+                      <option value="Marcus Vance">Marcus Vance</option>
+                      <option value="Sophia Lopez">Sophia Lopez</option>
+                      <option value="David Kim">David Kim</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label text-muted small fw-semibold">Budget Maximum</label>
+                    <select class="form-select bg-body border-light-subtle form-select-sm" id="filter-budget">
+                      <option value="">Any Budget</option>
+                      <option value="5000000">Under $5.0M</option>
+                      <option value="10000000">Under $10.0M</option>
+                      <option value="15000000">Under $15.0M</option>
+                      <option value="30000000">Under $30.0M</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-3 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-search me-1"></i> Apply Filters</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="resetAdvancedFilters()"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- SKELETON PRELOAD BLOCK -->
+          <div id="skeleton-loader-container">
+            <div class="row g-3 mb-4">
+              <div class="col-12 col-md-6 col-lg-3" v-for="n in 4">
+                <div class="uh-card p-3">
+                  <div class="skeleton-placeholder mb-2" style="height: 14px; width: 40%;"></div>
+                  <div class="skeleton-placeholder mb-2" style="height: 28px; width: 70%;"></div>
+                  <div class="skeleton-placeholder" style="height: 12px; width: 50%;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="uh-card p-4 mb-4">
+              <div class="skeleton-placeholder mb-3" style="height: 30px; width: 25%;"></div>
+              <div class="row g-3">
+                <div class="col" v-for="n in 5">
+                  <div class="skeleton-placeholder" style="height: 200px; border-radius: 12px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REAL CRM CONTENT BLOCK -->
+          <div id="real-content-container" class="fade-transition skeleton-hidden" style="opacity: 0;">
+            
+            <!-- STATISTICS CARDS GRID -->
+            <div class="stats-grid-wrapper mb-4" data-aos="fade-up">
+              <!-- Total Leads -->
+              <div class="uh-card p-3 lift-on-hover glow-card text-center">
+                <div class="card-glow-effect"></div>
+                <span class="text-muted d-block small uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">TOTAL PIPELINE</span>
+                <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                  <h3 class="font-title fw-bold mb-0 text-main" id="stat-total-leads">0</h3>
+                  <div class="badge bg-primary-subtle text-primary py-0.5 px-2" style="font-size: 0.7rem;"><i class="bi bi-graph-up"></i> +12%</div>
+                </div>
+                <span class="text-muted small" style="font-size: 0.7rem;">Active System Leads</span>
+              </div>
+
+              <!-- Qualified Leads -->
+              <div class="uh-card p-3 lift-on-hover glow-card text-center">
+                <div class="card-glow-effect"></div>
+                <span class="text-muted d-block small uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">QUALIFIED STATUS</span>
+                <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                  <h3 class="font-title fw-bold mb-0 text-success" id="stat-qualified-leads">0</h3>
+                  <div class="badge bg-success-subtle text-success py-0.5 px-2" style="font-size: 0.7rem;"><i class="bi bi-check-circle"></i> High Intent</div>
+                </div>
+                <span class="text-muted small" style="font-size: 0.7rem;">Pre-Qualified Buyers</span>
+              </div>
+
+              <!-- Revenue Potential -->
+              <div class="uh-card p-3 lift-on-hover glow-card text-center">
+                <div class="card-glow-effect"></div>
+                <span class="text-muted d-block small uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">ESTIMATED POTENTIAL</span>
+                <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                  <h3 class="font-title fw-bold mb-0 text-primary" id="stat-revenue-potential">$0M</h3>
+                  <div class="badge bg-warning-subtle text-dark py-0.5 px-2 font-title fw-bold" style="font-size: 0.65rem;">ESCROW</div>
+                </div>
+                <span class="text-muted small" style="font-size: 0.7rem;">Contractual Deal Weight</span>
+              </div>
+
+              <!-- Conversion Rate -->
+              <div class="uh-card p-3 lift-on-hover glow-card text-center">
+                <div class="card-glow-effect"></div>
+                <span class="text-muted d-block small uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">CONVERSION RATE</span>
+                <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                  <h3 class="font-title fw-bold mb-0 text-warning" id="stat-conversion-rate">0%</h3>
+                  <div class="badge bg-info-subtle text-info py-0.5 px-2" style="font-size: 0.7rem;"><i class="bi bi-lightning-fill"></i> +1.8%</div>
+                </div>
+                <span class="text-muted small" style="font-size: 0.7rem;">Won / Pipeline ratio</span>
+              </div>
+
+              <!-- Won/Lost Ledger -->
+              <div class="uh-card p-3 lift-on-hover glow-card text-center">
+                <div class="card-glow-effect"></div>
+                <span class="text-muted d-block small uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">DEALS CLOSED</span>
+                <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                  <span class="text-success fw-bold font-title h4 mb-0" id="stat-won-count">0 Won</span>
+                  <span class="text-muted">/</span>
+                  <span class="text-danger fw-bold font-title h5 mb-0" id="stat-lost-count">0 Lost</span>
+                </div>
+                <span class="text-muted small" style="font-size: 0.7rem;">Closed Ledger Ratio</span>
+              </div>
+            </div>
+
+            <!-- PIPELINE WORKFLOW PROGRESS HEADER -->
+            <div class="uh-card p-3 mb-4" data-aos="fade-up">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <h5 class="font-title fw-bold mb-0"><i class="bi bi-bar-chart-steps text-primary me-2"></i>CRM Funnel stages workflow summary</h5>
+                <span class="text-muted small" style="font-size: 0.75rem;">Interactive stage values update live with card movements</span>
+              </div>
+              <div class="row g-2 text-center" id="workflow-stages-counters">
+                <!-- Javascript will inject workflow summary cards dynamically -->
+              </div>
+            </div>
+
+            <!-- VIEW SWITCHER & CONTROL HEADER -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4" data-aos="fade-up">
+              <div class="nav nav-pills nav-pills-premium bg-body p-1 rounded border border-light-subtle" role="tablist">
+                <button class="nav-link active py-1.5 px-3 rounded text-main border-0 d-flex align-items-center gap-2" id="btn-view-kanban" onclick="switchView('kanban')">
+                  <i class="bi bi-kanban"></i> <span>Pipeline Kanban Board</span>
+                </button>
+                <button class="nav-link py-1.5 px-3 rounded text-main border-0 d-flex align-items-center gap-2" id="btn-view-table" onclick="switchView('table')">
+                  <i class="bi bi-table"></i> <span>Directory List Table</span>
+                </button>
+              </div>
+              <div class="text-muted small d-flex align-items-center gap-2">
+                <i class="bi bi-info-circle text-primary"></i>
+                <span id="view-hint-text">Hold and drag cards to progress them across pipeline stages.</span>
+              </div>
+            </div>
+
+            <!-- KANBAN BOARD CONTAINER -->
+            <div id="view-container-kanban" class="mb-5 animate-fade-in">
+              <div class="kanban-board-wrapper" id="kanban-board">
+                <!-- Kanban Columns inject dynamically -->
+              </div>
+            </div>
+
+            <!-- TABLE VIEW CONTAINER -->
+            <div id="view-container-table" class="mb-5 animate-fade-in skeleton-hidden">
+              <div class="uh-card p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3 border-bottom border-light-subtle pb-3">
+                  <h5 class="font-title fw-bold mb-0 text-main"><i class="bi bi-people-fill text-primary me-2"></i>All Active Leads Directory</h5>
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="exportData('CSV')"><i class="bi bi-cloud-arrow-down me-1"></i> Export Excel</button>
+                  </div>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table align-middle premium-table mb-0" id="leads-data-table">
+                    <thead>
+                      <tr class="small text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        <th style="width: 40px;">
+                          <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllRows(this)" />
+                          </div>
+                        </th>
+                        <th>Lead</th>
+                        <th>Lead ID</th>
+                        <th>Property</th>
+                        <th>Budget</th>
+                        <th>Advisor</th>
+                        <th>Source</th>
+                        <th>Priority</th>
+                        <th>Pipeline Stage</th>
+                        <th>Score</th>
+                        <th>Follow-up</th>
+                        <th class="text-end">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="leads-table-rows">
+                      <!-- Table Rows inject dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Empty State block if filtered to nothing -->
+                <div id="table-empty-state" class="text-center py-5 skeleton-hidden">
+                  <div class="text-muted mb-3"><i class="bi bi-person-fill-slash" style="font-size: 3rem;"></i></div>
+                  <h5 class="font-title fw-bold text-main">No Matchable Leads Found</h5>
+                  <p class="text-muted small mx-auto max-width-400">We couldn't find any leads matching the specified filter variables. Try resetting your search metrics.</p>
+                  <button class="btn btn-sm btn-primary" onclick="resetAdvancedFilters()"><i class="bi bi-arrow-counterclockwise"></i> Reset Filters</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- BULK ACTIONS FLOATING BAR -->
+            <div class="bulk-actions-floating-bar text-start" id="bulkActionsFloatingBar">
+              <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-primary text-dark fw-bold px-2 py-1.5" id="bulk-selection-count">0 Selected</span>
+                <span class="text-muted small">Bulk Actions:</span>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-primary" onclick="triggerBulkAssign()"><i class="bi bi-person-gear"></i> Reassign</button>
+                  <button class="btn btn-outline-secondary" onclick="exportSelected()"><i class="bi bi-file-earmark-arrow-down"></i> Export</button>
+                  <button class="btn btn-outline-warning" onclick="triggerBulkArchive()"><i class="bi bi-archive"></i> Archive</button>
+                  <button class="btn btn-outline-danger" onclick="triggerBulkDelete()"><i class="bi bi-trash3"></i> Purge</button>
+                </div>
+                <button type="button" class="btn-close ms-2 btn-no-print" aria-label="Close" onclick="deselectAllRows()"></button>
+              </div>
+            </div>
+
+            <!-- ANALYTICS, SOURCES & FOLLOW-UPS SEGMENTS -->
+            <div class="row g-4 mb-5">
+              
+              <!-- LEFT INSIGHTS ROW: FUNNEL & CHARTS -->
+              <div class="col-12 col-xl-8">
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-funnel-fill text-primary me-2"></i>Sales &amp; Lead Conversion Funnel</h5>
+                  <p class="text-muted small mb-4">A visual diagram of client progression efficiency from raw outreach visits down to won advisory deals.</p>
+                  <div id="custom-funnel-canvas">
+                    <!-- Funnel graphic -->
+                    <div class="funnel-stage" style="width: 100%; background: rgba(var(--uh-primary-rgb), 0.25); border-color: rgba(var(--uh-primary-rgb), 0.4);">
+                      <span>1. Traffic Inbound</span>
+                      <span class="font-title fw-bold">100% (24.8K Visitors)</span>
+                    </div>
+                    <div class="funnel-stage mx-auto" style="width: 85%; background: rgba(var(--uh-primary-rgb), 0.2); border-color: rgba(var(--uh-primary-rgb), 0.35);">
+                      <span>2. Generated Leads</span>
+                      <span class="font-title fw-bold">85% (3.2K Enquiries)</span>
+                    </div>
+                    <div class="funnel-stage mx-auto" style="width: 70%; background: rgba(var(--uh-primary-rgb), 0.15); border-color: rgba(var(--uh-primary-rgb), 0.3);">
+                      <span>3. Contacted / Engaged</span>
+                      <span class="font-title fw-bold">70% (1.8K Conversed)</span>
+                    </div>
+                    <div class="funnel-stage mx-auto" style="width: 55%; background: rgba(var(--uh-primary-rgb), 0.1); border-color: rgba(var(--uh-primary-rgb), 0.25);">
+                      <span>4. Qualified Buyers</span>
+                      <span class="font-title fw-bold">55% (920 Approved)</span>
+                    </div>
+                    <div class="funnel-stage mx-auto" style="width: 40%; background: rgba(var(--uh-primary-rgb), 0.05); border-color: rgba(var(--uh-primary-rgb), 0.2);">
+                      <span>5. Proposals &amp; Escrow Negotiation</span>
+                      <span class="font-title fw-bold">40% (450 Active)</span>
+                    </div>
+                    <div class="funnel-stage mx-auto" style="width: 25%; background: rgba(var(--uh-primary-rgb), 0.02); border-color: var(--uh-primary);">
+                      <span>6. Handshakes Won (Deals closed)</span>
+                      <span class="font-title text-primary fw-bold">25% (112 Closed)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row g-4">
+                  <div class="col-12 col-md-6">
+                    <div class="uh-card p-4">
+                      <h5 class="font-title fw-bold mb-3"><i class="bi bi-graph-up text-success me-2"></i>Monthly Conversion Rates</h5>
+                      <div style="position: relative; height: 220px; width: 100%;">
+                        <canvas id="conversionChart"></canvas>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <div class="uh-card p-4">
+                      <h5 class="font-title fw-bold mb-3"><i class="bi bi-currency-dollar text-primary me-2"></i>Revenue Potential Expectancy</h5>
+                      <div style="position: relative; height: 220px; width: 100%;">
+                        <canvas id="revenueChart"></canvas>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT INSIGHTS ROW: SCORES, FOLLOW-UPS, ACTIVITIES -->
+              <div class="col-12 col-xl-4">
+                
+                <!-- LEAD SCORE BREAKDOWN -->
+                <div class="uh-card p-4 mb-4 animate-fade-in" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-shield-check text-primary me-2"></i>Engagement Index System</h5>
+                  <div class="d-flex align-items-center gap-3 bg-body p-3 rounded border border-light-subtle mb-3">
+                    <div class="score-circle">
+                      <svg>
+                        <circle class="bg-ring" cx="24" cy="24" r="20" />
+                        <circle class="score-ring" cx="24" cy="24" r="20" stroke-dasharray="125.6" stroke-dashoffset="25.1" />
+                      </svg>
+                      <div class="score-text-center text-primary" id="index-avg-score">80</div>
+                    </div>
+                    <div class="text-start">
+                      <h6 class="font-title fw-bold mb-0">Portfolio Affinity Average</h6>
+                      <span class="text-muted small">High overall engagement and strong verified liquid networth.</span>
+                    </div>
+                  </div>
+                  <div class="text-start" style="font-size: 0.8rem;">
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">High Likelihood (>85 score)</span>
+                      <strong class="text-main">4 Leads</strong>
+                    </div>
+                    <div class="progress mb-2" style="height: 4px;"><div class="progress-bar bg-success" style="width: 50%"></div></div>
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">Nurturing (60-85 score)</span>
+                      <strong class="text-main">3 Leads</strong>
+                    </div>
+                    <div class="progress mb-2" style="height: 4px;"><div class="progress-bar bg-warning" style="width: 38%"></div></div>
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">Cold (<60 score)</span>
+                      <strong class="text-main">1 Lead</strong>
+                    </div>
+                    <div class="progress" style="height: 4px;"><div class="progress-bar bg-danger" style="width: 12%"></div></div>
+                  </div>
+                </div>
+
+                <!-- LEAD SOURCES PANEL -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-diagram-3 text-primary me-2"></i>Lead Acquisition Channels</h5>
+                  <div class="row g-2">
+                    <div class="col-4">
+                      <div class="source-card">
+                        <i class="bi bi-globe source-icon"></i>
+                        <span class="text-muted d-block uppercase" style="font-size: 0.55rem;">Website</span>
+                        <strong class="text-main" style="font-size: 0.8rem;">38%</strong>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="source-card">
+                        <i class="bi bi-facebook source-icon text-info"></i>
+                        <span class="text-muted d-block uppercase" style="font-size: 0.55rem;">Facebook</span>
+                        <strong class="text-main" style="font-size: 0.8rem;">24%</strong>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="source-card">
+                        <i class="bi bi-google source-icon text-warning"></i>
+                        <span class="text-muted d-block uppercase" style="font-size: 0.55rem;">Google</span>
+                        <strong class="text-main" style="font-size: 0.8rem;">16%</strong>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="source-card">
+                        <i class="bi bi-link-45deg source-icon text-success"></i>
+                        <span class="text-muted d-block uppercase" style="font-size: 0.55rem;">Referral</span>
+                        <strong class="text-main" style="font-size: 0.8rem;">12%</strong>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="source-card">
+                        <i class="bi bi-people-fill source-icon text-secondary"></i>
+                        <span class="text-muted d-block uppercase" style="font-size: 0.55rem;">Walk-in</span>
+                        <strong class="text-main" style="font-size: 0.8rem;">6%</strong>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="source-card">
+                        <i class="bi bi-telephone-fill source-icon text-danger"></i>
+                        <span class="text-muted d-block uppercase" style="font-size: 0.55rem;">Phone In</span>
+                        <strong class="text-main" style="font-size: 0.8rem;">4%</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- UPCOMING FOLLOW-UPS -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-bell-fill text-warning me-2"></i>Upcoming Follow-ups Calendar</h5>
+                  <div class="d-flex flex-column gap-2" id="upcoming-follow-ups-container">
+                    <!-- Dynamic follow-ups cards -->
+                  </div>
+                </div>
+
+                <!-- RECENT ACTIONS LOG -->
+                <div class="uh-card p-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-journal-text text-primary me-2"></i>Outreach Recent Logs</h5>
+                  <div class="timeline-uh text-start" style="font-size: 0.8rem;" id="recent-actions-logs">
+                    <!-- Dynamic Activities timeline list -->
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- BOOTSTRAP TOAST COMPONENT FOR USER FEEDBACK -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1060;">
+      <div id="appToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body d-flex align-items-center gap-2" id="toast-message-content">
+            <i class="bi bi-check-circle-fill"></i> Successfully processed action.
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOOTSTRAP MODALS -->
+    
+    <!-- Assign Lead Modal -->
+    <div class="modal fade" id="assignLeadModal" tabindex="-1" aria-labelledby="assignLeadModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main" id="assignLeadModalLabel"><i class="bi bi-person-gear text-primary me-2"></i>Assign Strategic Advisor</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <input type="hidden" id="modal-assign-lead-id" />
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Select Advisor Account</label>
+              <select class="form-select bg-body" id="modal-assign-agent-select">
+                <option value="Marcus Vance">Marcus Vance (Managing Director)</option>
+                <option value="Sophia Lopez">Sophia Lopez (Senior Advisor)</option>
+                <option value="David Kim">David Kim (Luxury Broker)</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitAssignAgent()">Reassign Lead</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule Visit Modal -->
+    <div class="modal fade" id="scheduleVisitModal" tabindex="-1" aria-labelledby="scheduleVisitModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main" id="scheduleVisitModalLabel"><i class="bi bi-calendar-event text-primary me-2"></i>Schedule Luxury Tour / Visit</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <input type="hidden" id="modal-visit-lead-id" />
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Scheduled Target Site</label>
+              <input type="text" class="form-control bg-body text-main" id="modal-visit-property" readonly />
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label text-muted small fw-semibold">Date</label>
+                <input type="date" class="form-control bg-body" id="modal-visit-date" required />
+              </div>
+              <div class="col-6">
+                <label class="form-label text-muted small fw-semibold">Time Hour</label>
+                <input type="time" class="form-control bg-body" id="modal-visit-time" required />
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Select Chauffeur / Host Advisor</label>
+              <select class="form-select bg-body" id="modal-visit-agent">
+                <option value="Marcus Vance">Marcus Vance</option>
+                <option value="Sophia Lopez">Sophia Lopez</option>
+                <option value="David Kim">David Kim</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitScheduleVisit()">Confirm Schedule</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lead Details Preview Modal -->
+    <div class="modal fade" id="leadDetailsModal" tabindex="-1" aria-labelledby="leadDetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main" id="leadDetailsModalLabel"><i class="bi bi-file-earmark-person text-primary me-2"></i>Lead Dossier Blueprint</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start" id="modal-lead-details-body">
+            <!-- Dynamic Blueprint Details injected here -->
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body d-flex justify-content-between">
+            <div class="d-flex gap-2">
+              <button class="btn btn-xs btn-outline-secondary" id="modal-btn-email" onclick=""><i class="bi bi-envelope"></i> Send Email</button>
+              <button class="btn btn-xs btn-outline-primary" id="modal-btn-visit" onclick=""><i class="bi bi-calendar"></i> Book Tour</button>
+            </div>
+            <div>
+              <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">Close</button>
+              <a href="lead-details.html" class="btn btn-sm btn-primary" id="modal-btn-full-details">View Full Details Dossier <i class="bi bi-chevron-right"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border border-danger bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-danger" id="deleteConfirmModalLabel"><i class="bi bi-shield-exclamation text-danger me-2"></i>Confirm Purge</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center text-muted py-4">
+            <i class="bi bi-trash3 text-danger mb-3" style="font-size: 3rem;"></i>
+            <h6 class="font-title fw-bold text-main">Purge Lead Record?</h6>
+            <p class="small">This action is permanent and will completely scrub this record from our directory indices.</p>
+            <input type="hidden" id="modal-delete-lead-id" />
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-xs btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-xs btn-danger" onclick="submitDeleteLead()">Confirm Purge</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Bootstrap 5.3 + Popper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+    <!-- AOS Animation Library -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Main JS -->
+    <script src="/assets/js/main.js"></script>
+
+    <!-- CORE LOGIC AND ENGINE SCRIPT -->
+    <script>
+      // --- CRM CORE SEED MOCK DATA ---
+      let leads = [
+        {
+          id: "LED-1092",
+          name: "Jonathan Sterling",
+          photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop",
+          property: "Penthouse One, Century Plaza",
+          budget: 12400000,
+          agent: "Marcus Vance",
+          agentPhoto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=150&auto=format&fit=crop",
+          priority: "Urgent",
+          score: 88,
+          source: "Website",
+          status: "site_visit",
+          lastContact: "2 hours ago",
+          dueFollowUp: "Tomorrow, 10:00 AM",
+          email: "sterling@sterlingholdings.com",
+          phone: "+1 (310) 555-8930",
+          notes: "Requires a floor-to-ceiling panoramic glass view. Requesting private helicopter landing permissions verification.",
+          timeline: [
+            { date: "July 10, 2026", type: "Created", text: "Acquired via premium digital registration form." },
+            { date: "July 10, 2026", type: "Updated", text: "Assigned to Marcus Vance for elite private review." },
+            { date: "July 10, 2026", type: "Call", text: "Call completed. Disclosed budget variables & security specifications." }
+          ]
+        },
+        {
+          id: "LED-2041",
+          name: "Elena Rostova",
+          photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop",
+          property: "Malibu Cove Estate",
+          budget: 6200000,
+          agent: "Sophia Lopez",
+          agentPhoto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop",
+          priority: "High",
+          score: 72,
+          source: "Advertisement",
+          status: "new",
+          lastContact: "1 day ago",
+          dueFollowUp: "July 12, 11:30 AM",
+          email: "elena@rostovcorp.com",
+          phone: "+1 (310) 555-0144",
+          notes: "Looking for direct sandy beach private easement. Prefers modern architectural styles.",
+          timeline: [
+            { date: "July 09, 2026", type: "Created", text: "Acquired via Premium Instagram Story campaign." }
+          ]
+        },
+        {
+          id: "LED-1102",
+          name: "Liam O'Connor",
+          photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop",
+          property: "Bel Air Ridge Villa",
+          budget: 4500000,
+          agent: "Marcus Vance",
+          agentPhoto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=150&auto=format&fit=crop",
+          priority: "Medium",
+          score: 64,
+          source: "Google",
+          status: "contacted",
+          lastContact: "3 hours ago",
+          dueFollowUp: "July 11, 2:00 PM",
+          email: "liam@oconnorglobal.ie",
+          phone: "+353 (1) 555-9102",
+          notes: "Inquiring about high levels of natural evergreen privacy buffers. Requested an NDA template prior to formal site visit.",
+          timeline: [
+            { date: "July 10, 2026", type: "Created", text: "Acquired via Organic search on Bel Air keyword." },
+            { date: "July 10, 2026", type: "Call", text: "Introduction call made. Standardized privacy disclosures sent." }
+          ]
+        },
+        {
+          id: "LED-3084",
+          name: "Aria Takahashi",
+          photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop",
+          property: "Pacific Heights Mansion",
+          budget: 15000000,
+          agent: "David Kim",
+          agentPhoto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop",
+          priority: "High",
+          score: 85,
+          source: "Referral",
+          status: "qualified",
+          lastContact: "5 hours ago",
+          dueFollowUp: "July 13, 9:00 AM",
+          email: "aria@takahashi.co.jp",
+          phone: "+81 (3) 5555-0988",
+          notes: "Highly liquid cash transfer ready. Prefers zen garden layouts and high seismic building ratings.",
+          timeline: [
+            { date: "July 08, 2026", type: "Created", text: "Referred directly by VIP Customer Arthur Pendelton." },
+            { date: "July 09, 2026", type: "Meeting", text: "Initial Zoom consultation with David Kim." }
+          ]
+        },
+        {
+          id: "LED-4591",
+          name: "Maximilian Vane",
+          photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop",
+          property: "The Ritz Penthouse",
+          budget: 22000000,
+          agent: "Sophia Lopez",
+          agentPhoto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop",
+          priority: "High",
+          score: 91,
+          source: "Walk-in",
+          status: "proposal",
+          lastContact: "Yesterday",
+          dueFollowUp: "July 12, 4:00 PM",
+          email: "max@vaneholding.co.uk",
+          phone: "+44 (20) 7946-0912",
+          notes: "Waiting for legal team feedback on proposed custom tax exemption structures.",
+          timeline: [
+            { date: "July 05, 2026", type: "Created", text: "Walked into Century Plaza Lounge." },
+            { date: "July 06, 2026", type: "Visit", text: "Toured Penthouse with Sophia Lopez." },
+            { date: "July 07, 2026", type: "Proposal", text: "Structured deal draft sent to legal desk." }
+          ]
+        },
+        {
+          id: "LED-5021",
+          name: "Zoe Winters",
+          photo: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=150&auto=format&fit=crop",
+          property: "Beverly Hills Contemporary",
+          budget: 8900000,
+          agent: "David Kim",
+          agentPhoto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop",
+          priority: "Urgent",
+          score: 94,
+          source: "Phone Inbound",
+          status: "negotiation",
+          lastContact: "10 mins ago",
+          dueFollowUp: "Today, 4:30 PM",
+          email: "zoe@wintersadvisory.com",
+          phone: "+1 (310) 555-2011",
+          notes: "Counter-offer submitted. Discussing final interior sculpture retention options.",
+          timeline: [
+            { date: "July 01, 2026", type: "Created", text: "Called inbound on BH property flyer." },
+            { date: "July 02, 2026", type: "Visit", text: "Two separate private tours scheduled." },
+            { date: "July 04, 2026", type: "Proposal", text: "Initial draft contract presented." },
+            { date: "July 10, 2026", type: "Updated", text: "Formal counter negotiation initiated." }
+          ]
+        },
+        {
+          id: "LED-8012",
+          name: "Charles DuPont",
+          photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop",
+          property: "Château de Bellevue",
+          budget: 28500000,
+          agent: "Marcus Vance",
+          agentPhoto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=150&auto=format&fit=crop",
+          priority: "High",
+          score: 98,
+          source: "Email Campaign",
+          status: "won",
+          lastContact: "3 days ago",
+          dueFollowUp: "Completed",
+          email: "charles@dupontventures.com",
+          phone: "+33 (1) 4005-9011",
+          notes: "Transaction completed. Final title deeds transferred to Delaware offshore trust entity.",
+          timeline: [
+            { date: "June 15, 2026", type: "Created", text: "Responded to French Riviera seasonal collection." },
+            { date: "June 20, 2026", type: "Visit", text: "Private jet arrival to tour estate." },
+            { date: "June 25, 2026", type: "Proposal", text: "Wire transfer escrow settlement initialized." },
+            { date: "July 07, 2026", type: "Won", text: "Closed officially. Commission processed." }
+          ]
+        },
+        {
+          id: "LED-9041",
+          name: "Vikram Mehta",
+          photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=150&auto=format&fit=crop",
+          property: "Sunset Boulevard Condo",
+          budget: 3800000,
+          agent: "Sophia Lopez",
+          agentPhoto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop",
+          priority: "Low",
+          score: 35,
+          source: "Advertisement",
+          status: "lost",
+          lastContact: "1 week ago",
+          dueFollowUp: "None",
+          email: "vikram@mehtaindustries.com",
+          phone: "+1 (310) 555-8840",
+          notes: "Withdrew search. Decided to build custom property in Austin, Texas instead.",
+          timeline: [
+            { date: "June 10, 2026", type: "Created", text: "Enquired on custom Zillow ad." },
+            { date: "July 01, 2026", type: "Lost", text: "Closed file. Client redirected focus geographically." }
+          ]
+        }
+      ];
+
+      // --- FLOW CONFIGURATION STAGES ---
+      const stagesConfig = [
+        { id: "new", title: "New Lead", color: "primary", icon: "bi-person-plus-fill" },
+        { id: "contacted", title: "Contacted", color: "info", icon: "bi-telephone-outbound-fill" },
+        { id: "qualified", title: "Qualified", color: "success", icon: "bi-shield-check" },
+        { id: "site_visit", title: "Site Visit Scheduled", color: "warning", icon: "bi-calendar-range-fill" },
+        { id: "proposal", title: "Proposal Sent", color: "secondary", icon: "bi-file-earmark-spreadsheet-fill" },
+        { id: "negotiation", title: "Negotiation", color: "primary", icon: "bi-percent" },
+        { id: "won", title: "Deals Won", color: "success", icon: "bi-award-fill" },
+        { id: "lost", title: "Deals Lost", color: "danger", icon: "bi-x-circle-fill" }
+      ];
+
+      // --- APPLICATION GLOBAL STATE Variables ---
+      let currentView = 'kanban';
+      let filteredLeads = [...leads];
+      let selectedLeadIds = [];
+      let conversionChartInstance = null;
+      let revenueChartInstance = null;
+
+      // --- INITIALIZATION ON DOCUMENT LOAD ---
+      document.addEventListener('DOMContentLoaded', () => {
+        // Run Skeleton Sim for ultra premium feedback
+        setTimeout(() => {
+          document.getElementById('skeleton-loader-container').classList.add('skeleton-hidden');
+          const realContent = document.getElementById('real-content-container');
+          realContent.classList.remove('skeleton-hidden');
+          setTimeout(() => {
+            realContent.style.opacity = '1';
+          }, 50);
+
+          renderDashboard();
+          initCharts();
+          setupMouseGlowTracking();
+        }, 800);
+      });
+
+      // --- CORE RENDER MASTER ROUTINE ---
+      function renderDashboard() {
+        calculateStatsAndWorkflowSummary();
+        renderKanbanView();
+        renderTableView();
+        renderFollowUpsAndRecentLogs();
+        updateSelectedRowsIndicators();
+      }
+
+      // --- DYNAMIC METRICS CALCULATION ENGINE ---
+      function calculateStatsAndWorkflowSummary() {
+        const total = leads.length;
+        const qualified = leads.filter(l => l.status === 'qualified' || l.status === 'proposal' || l.status === 'negotiation' || l.status === 'won').length;
+        const won = leads.filter(l => l.status === 'won').length;
+        const lost = leads.filter(l => l.status === 'lost').length;
+
+        // Cumulative sum of budget values for potential
+        const potentialVal = leads
+          .filter(l => l.status !== 'lost')
+          .reduce((sum, current) => sum + current.budget, 0);
+
+        const convRate = total > 0 ? Math.round((won / total) * 100) : 0;
+
+        // Animate counter values beautifully
+        animateCounterToValue("stat-total-leads", total);
+        animateCounterToValue("stat-qualified-leads", qualified);
+        animateCounterToValue("stat-conversion-rate", convRate, "%");
+        document.getElementById("stat-revenue-potential").textContent = "$" + (potentialVal / 1000000).toFixed(1) + "M";
+        document.getElementById("stat-won-count").textContent = won + " Won";
+        document.getElementById("stat-lost-count").textContent = lost + " Lost";
+
+        // Average engagement score calculation
+        const avgScore = total > 0 ? Math.round(leads.reduce((sum, item) => sum + item.score, 0) / total) : 0;
+        const scoreRing = document.querySelector(".score-ring");
+        const scoreText = document.getElementById("index-avg-score");
+        if (scoreText) scoreText.textContent = avgScore;
+        if (scoreRing) {
+          // Circumference of CX=24 R=20 is 125.6
+          const dashOffset = 125.6 - (125.6 * avgScore) / 100;
+          scoreRing.style.strokeDashoffset = dashOffset;
+        }
+
+        // Render Workflow stage list header summary cards
+        const workflowContainer = document.getElementById("workflow-stages-counters");
+        if (workflowContainer) {
+          let workflowHtml = "";
+          stagesConfig.forEach(stage => {
+            const list = leads.filter(l => l.status === stage.id);
+            const count = list.length;
+            const stagePotential = list.reduce((sum, current) => sum + current.budget, 0);
+            const conversionPercentage = total > 0 ? Math.round((count / total) * 100) : 0;
+
+            workflowHtml += `
+              <div class="col-6 col-md-3 col-xl">
+                <div class="p-2 border rounded bg-body-tertiary">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="small fw-bold font-title text-uppercase" style="font-size:0.6rem; letter-spacing:0.5px;">${stage.title}</span>
+                    <i class="bi ${stage.icon} text-${stage.color}" style="font-size:0.75rem;"></i>
+                  </div>
+                  <div class="d-flex align-items-baseline gap-2">
+                    <span class="h5 fw-bold font-title mb-0">${count}</span>
+                    <span class="text-muted" style="font-size:0.65rem;">$${(stagePotential / 1000000).toFixed(1)}M</span>
+                  </div>
+                  <div class="progress mt-1" style="height: 3px;">
+                    <div class="progress-bar bg-${stage.color}" style="width: ${conversionPercentage}%"></div>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+          workflowContainer.innerHTML = workflowHtml;
+        }
+      }
+
+      // --- GRAPHIC ENGINE CHARTS INITIALIZATION ---
+      function initCharts() {
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        const textMainColor = isDark ? '#E2E8F0' : '#0F172A';
+
+        // 1. Conversion Rate Monthly Chart
+        const ctxConv = document.getElementById('conversionChart');
+        if (ctxConv) {
+          if (conversionChartInstance) conversionChartInstance.destroy();
+          conversionChartInstance = new Chart(ctxConv, {
+            type: 'line',
+            data: {
+              labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+              datasets: [{
+                label: 'Conversion Rate %',
+                data: [18, 22, 21, 26, 24, 29, 32],
+                borderColor: '#D4AF37',
+                backgroundColor: 'rgba(212, 175, 55, 0.05)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { grid: { color: gridColor }, ticks: { color: textMainColor, font: { size: 10 } } },
+                y: { grid: { color: gridColor }, ticks: { color: textMainColor, font: { size: 10 } } }
+              }
+            }
+          });
+        }
+
+        // 2. Revenue Potential Chart
+        const ctxRev = document.getElementById('revenueChart');
+        if (ctxRev) {
+          if (revenueChartInstance) revenueChartInstance.destroy();
+          revenueChartInstance = new Chart(ctxRev, {
+            type: 'bar',
+            data: {
+              labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+              datasets: [{
+                label: 'Potential Revenue ($ Millions)',
+                data: [42, 58, 61, 74, 82, 91, 102],
+                backgroundColor: '#B8860B',
+                borderRadius: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { grid: { color: gridColor }, ticks: { color: textMainColor, font: { size: 10 } } },
+                y: { grid: { color: gridColor }, ticks: { color: textMainColor, font: { size: 10 } } }
+              }
+            }
+          });
+        }
+
+        // Setup Event Listener for Theme Changes to dynamically reload charts with color schemes
+        window.removeEventListener('themeChanged', handleThemeChangeRecharts);
+        window.addEventListener('themeChanged', handleThemeChangeRecharts);
+      }
+
+      function handleThemeChangeRecharts() {
+        initCharts();
+      }
+
+      // --- KANBAN BOARD RENDERING AGENT ---
+      function renderKanbanView() {
+        const board = document.getElementById('kanban-board');
+        if (!board) return;
+
+        let boardHtml = "";
+        stagesConfig.forEach(stage => {
+          const listInStage = filteredLeads.filter(l => l.status === stage.id);
+          const stagePotentialSum = listInStage.reduce((sum, item) => sum + item.budget, 0);
+
+          let cardsHtml = "";
+          listInStage.forEach(lead => {
+            const priorityClass = getPriorityBadgeClass(lead.priority);
+            cardsHtml += `
+              <div class="lead-card" id="lead-card-${lead.id}" draggable="true" ondragstart="handleDragStart(event, '${lead.id}')" ondragend="handleDragEnd(event)" onclick="previewLeadDetails('${lead.id}')">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <span class="badge ${priorityClass} font-title" style="font-size:0.6rem; padding: 0.25em 0.5em;">${lead.priority}</span>
+                  <div class="dropdown" onclick="event.stopPropagation()">
+                    <button class="btn btn-xs text-muted p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="min-width: 160px;">
+                      <li><a class="dropdown-item small" href="javascript:void(0)" onclick="openAssignModal('${lead.id}')"><i class="bi bi-person-gear text-primary me-2"></i> Assign Advisor</a></li>
+                      <li><a class="dropdown-item small" href="javascript:void(0)" onclick="openVisitModal('${lead.id}', '${lead.property}')"><i class="bi bi-calendar-event text-warning me-2"></i> Schedule Tour</a></li>
+                      <li><a class="dropdown-item small" href="javascript:void(0)" onclick="triggerEmailDispatch('${lead.email}')"><i class="bi bi-envelope text-info me-2"></i> Send Mail</a></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item small text-danger" href="javascript:void(0)" onclick="openDeleteModal('${lead.id}')"><i class="bi bi-trash3-fill me-2"></i> Delete Lead</a></li>
+                    </ul>
+                  </div>
+                </div>
+                <h6 class="font-title fw-bold text-main mb-1" style="font-size:0.875rem;">${lead.name}</h6>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <span class="text-primary fw-semibold small" style="font-size:0.75rem;">${lead.id}</span>
+                  <span class="text-muted small">• Score: <strong>${lead.score}</strong></span>
+                </div>
+                
+                <div class="mb-2 p-1.5 rounded bg-body-tertiary border" style="font-size: 0.75rem;">
+                  <div class="text-truncate text-main"><i class="bi bi-houses text-primary me-1"></i> ${lead.property}</div>
+                  <div class="fw-bold text-primary mt-1"><i class="bi bi-currency-dollar me-0.5"></i> ${lead.budget.toLocaleString()}</div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between pt-1 border-top border-light-subtle" style="font-size: 0.7rem;">
+                  <div class="d-flex align-items-center gap-1.5">
+                    <img src="${lead.agentPhoto}" class="rounded-circle border border-light" style="width: 20px; height: 20px; object-fit: cover;" alt="Advisor" />
+                    <span class="text-muted text-truncate" style="max-width: 80px;">${lead.agent}</span>
+                  </div>
+                  <span class="text-muted small text-end" style="font-size: 0.65rem;">Contact: ${lead.lastContact}</span>
+                </div>
+              </div>
+            `;
+          });
+
+          boardHtml += `
+            <div class="kanban-column" id="column-${stage.id}" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event, '${stage.id}')" ondragleave="handleDragLeave(event, '${stage.id}')" ondrop="handleDrop(event, '${stage.id}')">
+              <div class="kanban-column-header">
+                <div>
+                  <h6 class="font-title fw-bold text-main mb-0 d-flex align-items-center gap-2" style="font-size:0.85rem;">
+                    <i class="bi ${stage.icon} text-${stage.color}"></i>
+                    <span>${stage.title}</span>
+                  </h6>
+                  <span class="text-muted small" style="font-size:0.7rem;">Value: $${(stagePotentialSum / 1000000).toFixed(1)}M</span>
+                </div>
+                <span class="badge bg-${stage.color}-subtle text-${stage.color} rounded-pill font-title fw-bold" style="font-size: 0.7rem;">${listInStage.length}</span>
+              </div>
+              <div class="kanban-cards-container" id="cards-container-${stage.id}">
+                ${cardsHtml || `
+                  <div class="text-center text-muted py-4 small d-flex flex-column align-items-center justify-content-center h-100" style="opacity: 0.5;">
+                    <i class="bi bi-inbox mb-1" style="font-size: 1.25rem;"></i>
+                    <span>Stage Empty</span>
+                  </div>
+                `}
+              </div>
+            </div>
+          `;
+        });
+
+        board.innerHTML = boardHtml;
+      }
+
+      // --- TABLE LIST DIRECTORY RENDERING ---
+      function renderTableView() {
+        const tbody = document.getElementById('leads-table-rows');
+        const emptyState = document.getElementById('table-empty-state');
+        if (!tbody) return;
+
+        if (filteredLeads.length === 0) {
+          tbody.innerHTML = "";
+          emptyState.classList.remove('skeleton-hidden');
+          return;
+        }
+
+        emptyState.classList.add('skeleton-hidden');
+        let rowsHtml = "";
+        filteredLeads.forEach(lead => {
+          const isChecked = selectedLeadIds.includes(lead.id) ? "checked" : "";
+          const priorityClass = getPriorityBadgeClass(lead.priority);
+          const stageConf = stagesConfig.find(s => s.id === lead.status) || { title: lead.status, color: "secondary" };
+
+          rowsHtml += `
+            <tr class="align-middle">
+              <td>
+                <div class="form-check">
+                  <input class="form-check-input row-checkbox" type="checkbox" data-id="${lead.id}" ${isChecked} onchange="handleRowCheckboxChange(this, '${lead.id}')" />
+                </div>
+              </td>
+              <td>
+                <div class="d-flex align-items-center gap-2.5 cursor-pointer" onclick="previewLeadDetails('${lead.id}')">
+                  <img src="${lead.photo}" class="rounded-circle border" style="width: 32px; height: 32px; object-fit: cover;" alt="Avatar" />
+                  <div>
+                    <strong class="text-main d-block font-title" style="font-size:0.875rem;">${lead.name}</strong>
+                    <span class="text-muted small" style="font-size:0.75rem;">${lead.email}</span>
+                  </div>
+                </div>
+              </td>
+              <td><span class="text-primary fw-semibold small" style="font-size:0.8rem;">${lead.id}</span></td>
+              <td><span class="text-main fw-medium" style="font-size:0.8rem;"><i class="bi bi-houses me-1 text-primary"></i> ${lead.property}</span></td>
+              <td><strong class="text-primary small">$${lead.budget.toLocaleString()}</strong></td>
+              <td>
+                <div class="d-flex align-items-center gap-1.5" style="font-size:0.8rem;">
+                  <img src="${lead.agentPhoto}" class="rounded-circle" style="width: 20px; height: 20px; object-fit: cover;" alt="Advisor" />
+                  <span class="text-main text-nowrap">${lead.agent}</span>
+                </div>
+              </td>
+              <td><span class="badge bg-secondary-subtle text-light px-2 py-1 small" style="font-size: 0.7rem;">${lead.source}</span></td>
+              <td><span class="badge ${priorityClass} small" style="font-size:0.65rem;">${lead.priority}</span></td>
+              <td><span class="badge bg-${stageConf.color}-subtle text-${stageConf.color} py-1 px-2 fw-semibold" style="font-size: 0.7rem;">${stageConf.title}</span></td>
+              <td>
+                <div class="d-flex align-items-center gap-1.5">
+                  <div class="progress" style="width: 40px; height: 4px;">
+                    <div class="progress-bar bg-primary" style="width: ${lead.score}%"></div>
+                  </div>
+                  <strong class="small text-main" style="font-size:0.75rem;">${lead.score}</strong>
+                </div>
+              </td>
+              <td><span class="text-muted small text-nowrap" style="font-size:0.75rem;"><i class="bi bi-clock me-1"></i> ${lead.dueFollowUp}</span></td>
+              <td class="text-end">
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary py-0.5 px-2 dropdown-toggle border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-chevron-down"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="min-width: 160px;">
+                    <li><a class="dropdown-item small" href="javascript:void(0)" onclick="previewLeadDetails('${lead.id}')"><i class="bi bi-eye text-primary me-2"></i> Preview Blueprint</a></li>
+                    <li><a class="dropdown-item small" href="javascript:void(0)" onclick="openAssignModal('${lead.id}')"><i class="bi bi-person-gear text-primary me-2"></i> Assign Advisor</a></li>
+                    <li><a class="dropdown-item small" href="javascript:void(0)" onclick="openVisitModal('${lead.id}', '${lead.property}')"><i class="bi bi-calendar-event text-warning me-2"></i> Book Site Tour</a></li>
+                    <li><a class="dropdown-item small" href="javascript:void(0)" onclick="triggerEmailDispatch('${lead.email}')"><i class="bi bi-envelope text-info me-2"></i> Email Contact</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item small text-danger" href="javascript:void(0)" onclick="openDeleteModal('${lead.id}')"><i class="bi bi-trash3-fill me-2"></i> Purge Record</a></li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = rowsHtml;
+      }
+
+      // --- UPCOMING FOLLOW-UPS & RECENT ACTIONS RENDERING ---
+      function renderFollowUpsAndRecentLogs() {
+        const containerFollow = document.getElementById("upcoming-follow-ups-container");
+        if (containerFollow) {
+          const followUpLeads = leads.filter(l => l.dueFollowUp !== "Completed" && l.dueFollowUp !== "None").slice(0, 3);
+          let html = "";
+          followUpLeads.forEach(lead => {
+            html += `
+              <div class="p-2 border rounded bg-body-tertiary text-start position-relative glow-card">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <strong class="font-title text-main small text-truncate" style="max-width:130px;">${lead.name}</strong>
+                  <span class="badge bg-primary-subtle text-primary" style="font-size:0.6rem;">${lead.dueFollowUp}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center" style="font-size:0.7rem;">
+                  <span class="text-muted"><i class="bi bi-telephone text-primary me-1"></i> ${lead.phone}</span>
+                  <span class="text-main font-title" style="font-size:0.65rem;">Advisor: ${lead.agent.split(' ')[0]}</span>
+                </div>
+              </div>
+            `;
+          });
+          containerFollow.innerHTML = html || `<p class="text-muted text-center py-3 small">No pending follow-ups</p>`;
+        }
+
+        const logsContainer = document.getElementById("recent-actions-logs");
+        if (logsContainer) {
+          // Accumulate logs from all active leads timelines
+          let allLogs = [];
+          leads.forEach(lead => {
+            lead.timeline.forEach(log => {
+              allLogs.push({
+                leadName: lead.name,
+                leadId: lead.id,
+                date: log.date,
+                type: log.type,
+                text: log.text
+              });
+            });
+          });
+          // Sort by date/type and get top 5
+          allLogs = allLogs.slice(0, 5);
+          let logsHtml = "";
+          allLogs.forEach(log => {
+            let badgeColor = "primary";
+            if (log.type === "Call") badgeColor = "info";
+            if (log.type === "Visit") badgeColor = "warning";
+            if (log.type === "Won") badgeColor = "success";
+            if (log.type === "Lost") badgeColor = "danger";
+
+            logsHtml += `
+              <div class="border-start border-light-subtle ps-3 pb-3 position-relative">
+                <div class="position-absolute" style="left: -4px; top: 4px; width: 8px; height: 8px; border-radius:50%; background-color: var(--uh-${badgeColor});"></div>
+                <div class="d-flex justify-content-between align-items-baseline mb-0.5">
+                  <span class="badge bg-${badgeColor}-subtle text-${badgeColor} uppercase" style="font-size: 0.55rem; letter-spacing:0.5px;">${log.type}</span>
+                  <span class="text-muted small" style="font-size:0.65rem;">${log.date}</span>
+                </div>
+                <strong class="text-main d-block font-title mb-0.5" style="font-size: 0.75rem;">${log.leadName} (${log.leadId})</strong>
+                <p class="text-muted mb-0 small" style="font-size:0.7rem; line-height: 1.35;">${log.text}</p>
+              </div>
+            `;
+          });
+          logsContainer.innerHTML = logsHtml || `<p class="text-muted text-center py-3 small">No actions registered yet</p>`;
+        }
+      }
+
+      // --- DRAG AND DROP API IMPLEMENTATION ---
+      let draggedLeadId = null;
+
+      function handleDragStart(event, leadId) {
+        draggedLeadId = leadId;
+        event.dataTransfer.setData("text/plain", leadId);
+        const card = document.getElementById(`lead-card-${leadId}`);
+        if (card) {
+          // Staggered opacity drag simulation
+          setTimeout(() => {
+            card.classList.add('dragging');
+          }, 0);
+        }
+      }
+
+      function handleDragEnd(event) {
+        if (draggedLeadId) {
+          const card = document.getElementById(`lead-card-${draggedLeadId}`);
+          if (card) card.classList.remove('dragging');
+          draggedLeadId = null;
+        }
+      }
+
+      function handleDragOver(event) {
+        event.preventDefault(); // Required to allow dropping!
+      }
+
+      function handleDragEnter(event, stageId) {
+        event.preventDefault();
+        const col = document.getElementById(`column-${stageId}`);
+        if (col) col.classList.add('drag-over');
+      }
+
+      function handleDragLeave(event, stageId) {
+        const col = document.getElementById(`column-${stageId}`);
+        if (col) col.classList.remove('drag-over');
+      }
+
+      function handleDrop(event, stageId) {
+        event.preventDefault();
+        const col = document.getElementById(`column-${stageId}`);
+        if (col) col.classList.remove('drag-over');
+
+        const leadId = event.dataTransfer.getData("text/plain") || draggedLeadId;
+        if (!leadId) return;
+
+        const leadObj = leads.find(l => l.id === leadId);
+        if (leadObj && leadObj.status !== stageId) {
+          const oldStageTitle = stagesConfig.find(s => s.id === leadObj.status)?.title || leadObj.status;
+          const newStageTitle = stagesConfig.find(s => s.id === stageId)?.title || stageId;
+
+          // Update Status
+          leadObj.status = stageId;
+          leadObj.lastContact = "Just now";
+
+          // Add timeline entry
+          leadObj.timeline.unshift({
+            date: "Today",
+            type: "Updated",
+            text: `Moved lead stage from [${oldStageTitle}] to [${newStageTitle}] via Kanban drop.`
+          });
+
+          showToast(`Successfully moved ${leadObj.name} to ${newStageTitle}`);
+          renderDashboard();
+        }
+      }
+
+      // --- ROW CHECKBOX AND BULK ACTIONS MANAGEMENT ---
+      function handleRowCheckboxChange(checkbox, leadId) {
+        if (checkbox.checked) {
+          if (!selectedLeadIds.includes(leadId)) selectedLeadIds.push(leadId);
+        } else {
+          selectedLeadIds = selectedLeadIds.filter(id => id !== leadId);
+        }
+        updateSelectedRowsIndicators();
+      }
+
+      function toggleSelectAllRows(masterCheckbox) {
+        const checkBoxes = document.querySelectorAll('.row-checkbox');
+        selectedLeadIds = [];
+        checkBoxes.forEach(cb => {
+          cb.checked = masterCheckbox.checked;
+          const leadId = cb.getAttribute('data-id');
+          if (masterCheckbox.checked && leadId) {
+            selectedLeadIds.push(leadId);
+          }
+        });
+        updateSelectedRowsIndicators();
+      }
+
+      function deselectAllRows() {
+        selectedLeadIds = [];
+        const checkBoxes = document.querySelectorAll('.row-checkbox');
+        checkBoxes.forEach(cb => cb.checked = false);
+        const master = document.getElementById('selectAllCheckbox');
+        if (master) master.checked = false;
+        updateSelectedRowsIndicators();
+      }
+
+      function updateSelectedRowsIndicators() {
+        const bar = document.getElementById('bulkActionsFloatingBar');
+        const countTxt = document.getElementById('bulk-selection-count');
+        if (!bar || !countTxt) return;
+
+        const count = selectedLeadIds.length;
+        countTxt.textContent = `${count} Selected`;
+
+        if (count > 0) {
+          bar.classList.add('active');
+        } else {
+          bar.classList.remove('active');
+        }
+      }
+
+      // --- INTERACTIVE SEARCH AND FILTERS CORE MODULE ---
+      function handleQuickLeadSearch(query) {
+        const cleanQuery = query.toLowerCase().trim();
+        // Sync Search fields in both sidebar header and toolbar
+        const sidebarSearch = document.getElementById('sidebar-search-leads');
+        const toolbarSearch = document.getElementById('toolbar-search-input');
+        if (sidebarSearch && sidebarSearch.value !== query) sidebarSearch.value = query;
+        if (toolbarSearch && toolbarSearch.value !== query) toolbarSearch.value = query;
+
+        filteredLeads = leads.filter(lead => {
+          return lead.name.toLowerCase().includes(cleanQuery) ||
+                 lead.id.toLowerCase().includes(cleanQuery) ||
+                 lead.property.toLowerCase().includes(cleanQuery) ||
+                 lead.agent.toLowerCase().includes(cleanQuery) ||
+                 lead.source.toLowerCase().includes(cleanQuery) ||
+                 lead.priority.toLowerCase().includes(cleanQuery);
+        });
+
+        renderDashboard();
+      }
+
+      function applyAdvancedFilters(event) {
+        event.preventDefault();
+        const fName = document.getElementById('filter-name').value.toLowerCase().trim();
+        const fId = document.getElementById('filter-id').value.toLowerCase().trim();
+        const fSource = document.getElementById('filter-source').value;
+        const fPriority = document.getElementById('filter-priority').value;
+        const fStatus = document.getElementById('filter-status').value;
+        const fAgent = document.getElementById('filter-agent').value;
+        const fBudget = document.getElementById('filter-budget').value;
+
+        filteredLeads = leads.filter(lead => {
+          if (fName && !lead.name.toLowerCase().includes(fName)) return false;
+          if (fId && !lead.id.toLowerCase().includes(fId)) return false;
+          if (fSource && lead.source !== fSource) return false;
+          if (fPriority && lead.priority !== fPriority) return false;
+          if (fStatus && lead.status !== fStatus) return false;
+          if (fAgent && lead.agent !== fAgent) return false;
+          if (fBudget && lead.budget > parseInt(fBudget)) return false;
+          return true;
+        });
+
+        // Hide collapsible panel after submission
+        const collapsible = document.getElementById('advancedFiltersPanel');
+        const bsCollapse = bootstrap.Collapse.getInstance(collapsible) || new bootstrap.Collapse(collapsible);
+        bsCollapse.hide();
+
+        showToast("Filtered database successfully.");
+        renderDashboard();
+      }
+
+      function resetAdvancedFilters() {
+        document.getElementById('advanced-filters-form').reset();
+        document.getElementById('sidebar-search-leads').value = "";
+        document.getElementById('toolbar-search-input').value = "";
+        filteredLeads = [...leads];
+        showToast("Filters reset successfully.");
+        renderDashboard();
+      }
+
+      // --- CUSTOM DIALOGS AND TRIGGER ACTUATORS ---
+      function switchView(viewName) {
+        currentView = viewName;
+        const btnKanban = document.getElementById('btn-view-kanban');
+        const btnTable = document.getElementById('btn-view-table');
+        const conKanban = document.getElementById('view-container-kanban');
+        const conTable = document.getElementById('view-container-table');
+        const hint = document.getElementById('view-hint-text');
+
+        if (viewName === 'kanban') {
+          btnKanban.classList.add('active');
+          btnTable.classList.remove('active');
+          conKanban.classList.remove('skeleton-hidden');
+          conTable.classList.add('skeleton-hidden');
+          hint.textContent = "Hold and drag cards to progress them across pipeline stages.";
+        } else {
+          btnKanban.classList.remove('active');
+          btnTable.classList.add('active');
+          conKanban.classList.add('skeleton-hidden');
+          conTable.classList.remove('skeleton-hidden');
+          hint.textContent = "Click checkboxes on the left to initiate bulk data reassignments.";
+        }
+      }
+
+      // --- ADVISOR REASSIGNMENT INTERACTION ---
+      function openAssignModal(leadId) {
+        document.getElementById('modal-assign-lead-id').value = leadId;
+        const lead = leads.find(l => l.id === leadId);
+        if (lead) {
+          document.getElementById('modal-assign-agent-select').value = lead.agent;
+        }
+        const modal = new bootstrap.Modal(document.getElementById('assignLeadModal'));
+        modal.show();
+      }
+
+      function submitAssignAgent() {
+        const leadId = document.getElementById('modal-assign-lead-id').value;
+        const selectedAgent = document.getElementById('modal-assign-agent-select').value;
+        const lead = leads.find(l => l.id === leadId);
+
+        if (lead) {
+          const oldAgent = lead.agent;
+          lead.agent = selectedAgent;
+          
+          // Match photos
+          if (selectedAgent === "Marcus Vance") lead.agentPhoto = "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=150&auto=format&fit=crop";
+          if (selectedAgent === "Sophia Lopez") lead.agentPhoto = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop";
+          if (selectedAgent === "David Kim") lead.agentPhoto = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop";
+
+          lead.timeline.unshift({
+            date: "Today",
+            type: "Updated",
+            text: `Advisor reassigned from [${oldAgent}] to [${selectedAgent}].`
+          });
+
+          const modalEl = document.getElementById('assignLeadModal');
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          modalInstance.hide();
+
+          showToast(`Assigned ${lead.name} to ${selectedAgent}`);
+          renderDashboard();
+        }
+      }
+
+      // --- VISIT TOUR SCHEDULER INTERACTION ---
+      function openVisitModal(leadId, propertyTitle) {
+        document.getElementById('modal-visit-lead-id').value = leadId;
+        document.getElementById('modal-visit-property').value = propertyTitle;
+        const lead = leads.find(l => l.id === leadId);
+        if (lead) {
+          document.getElementById('modal-visit-agent').value = lead.agent;
+        }
+
+        // Pre-set tomorrow's date
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('modal-visit-date').value = tomorrow.toISOString().split('T')[0];
+        document.getElementById('modal-visit-time').value = "10:00";
+
+        const modal = new bootstrap.Modal(document.getElementById('scheduleVisitModal'));
+        modal.show();
+      }
+
+      function submitScheduleVisit() {
+        const leadId = document.getElementById('modal-visit-lead-id').value;
+        const date = document.getElementById('modal-visit-date').value;
+        const time = document.getElementById('modal-visit-time').value;
+        const host = document.getElementById('modal-visit-agent').value;
+        const lead = leads.find(l => l.id === leadId);
+
+        if (lead) {
+          lead.dueFollowUp = `${date} at ${time}`;
+          lead.timeline.unshift({
+            date: "Today",
+            type: "Visit",
+            text: `Booked site visit tour at ${lead.property} on ${date} ${time}. Host: ${host}.`
+          });
+
+          // Move stage to Site Visit Scheduled automatically!
+          lead.status = "site_visit";
+
+          const modalEl = document.getElementById('scheduleVisitModal');
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          modalInstance.hide();
+
+          showToast(`Scheduled site visit tour for ${lead.name}`);
+          renderDashboard();
+        }
+      }
+
+      // --- LEAD BLUEPRINT PREVIEW DRAWER ---
+      function previewLeadDetails(leadId) {
+        const lead = leads.find(l => l.id === leadId);
+        if (!lead) return;
+
+        const body = document.getElementById('modal-lead-details-body');
+        const priorityClass = getPriorityBadgeClass(lead.priority);
+        const stageConf = stagesConfig.find(s => s.id === lead.status) || { title: lead.status, color: "secondary" };
+
+        let timelineHtml = "";
+        lead.timeline.forEach(t => {
+          timelineHtml += `
+            <div class="d-flex justify-content-between border-bottom pb-1 mb-1" style="font-size:0.75rem;">
+              <span class="text-main fw-semibold">${t.type} (${t.date}):</span>
+              <span class="text-muted text-end" style="max-width:350px;">${t.text}</span>
+            </div>
+          `;
+        });
+
+        body.innerHTML = `
+          <div class="row g-3">
+            <div class="col-12 col-md-4 text-center border-end">
+              <img src="${lead.photo}" class="rounded-circle border border-primary mb-2" style="width: 100px; height: 100px; object-fit: cover;" alt="Avatar" />
+              <h5 class="font-title fw-bold text-main mb-1">${lead.name}</h5>
+              <p class="text-primary fw-semibold small mb-2">${lead.id}</p>
+              <div class="d-flex flex-column gap-1 text-start bg-body-tertiary p-2 rounded border" style="font-size: 0.75rem;">
+                <div><i class="bi bi-envelope text-primary me-2"></i> ${lead.email}</div>
+                <div><i class="bi bi-telephone text-primary me-2"></i> ${lead.phone}</div>
+                <div><i class="bi bi-diagram-3 text-primary me-2"></i> Channel: ${lead.source}</div>
+              </div>
+            </div>
+            <div class="col-12 col-md-8 text-start">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge ${priorityClass}">${lead.priority} Priority</span>
+                <span class="badge bg-${stageConf.color}-subtle text-${stageConf.color}">${stageConf.title}</span>
+              </div>
+              <h6 class="font-title fw-bold text-main mb-1">Target Estate Acquisition Interest</h6>
+              <p class="text-muted small"><i class="bi bi-houses-fill text-primary me-1"></i> ${lead.property}</p>
+              
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <span class="text-muted d-block uppercase" style="font-size: 0.6rem;">Deal Budget Outlay</span>
+                  <strong class="text-primary" style="font-size:0.9rem;">$${lead.budget.toLocaleString()}</strong>
+                </div>
+                <div class="col-6">
+                  <span class="text-muted d-block uppercase" style="font-size: 0.6rem;">Assigned Advisor Account</span>
+                  <strong class="text-main" style="font-size:0.85rem;">${lead.agent}</strong>
+                </div>
+              </div>
+
+              <div class="mb-3 p-2 rounded bg-body-tertiary border text-start" style="font-size: 0.8rem;">
+                <span class="text-muted d-block small fw-semibold mb-1">Dossier Notes</span>
+                <span class="text-main" style="font-style: italic;">"${lead.notes}"</span>
+              </div>
+
+              <h6 class="font-title fw-bold text-main mb-2" style="font-size:0.85rem;">Engagement Audit Trail</h6>
+              <div class="d-flex flex-column gap-1">
+                ${timelineHtml}
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Wire up buttons in modal footer
+        document.getElementById('modal-btn-email').onclick = () => triggerEmailDispatch(lead.email);
+        document.getElementById('modal-btn-visit').onclick = () => {
+          const mEl = bootstrap.Modal.getInstance(document.getElementById('leadDetailsModal'));
+          if (mEl) mEl.hide();
+          openVisitModal(lead.id, lead.property);
+        };
+
+        // Update full details link to pass ID
+        const linkBtn = document.getElementById('modal-btn-full-details');
+        if (linkBtn) {
+          linkBtn.href = `lead-details.html?id=${lead.id}`;
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('leadDetailsModal'));
+        modal.show();
+      }
+
+      // --- RECORD PURGE INTERACTION ---
+      function openDeleteModal(leadId) {
+        document.getElementById('modal-delete-lead-id').value = leadId;
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        modal.show();
+      }
+
+      function submitDeleteLead() {
+        const leadId = document.getElementById('modal-delete-lead-id').value;
+        const index = leads.findIndex(l => l.id === leadId);
+
+        if (index !== -1) {
+          const name = leads[index].name;
+          leads.splice(index, 1);
+          filteredLeads = filteredLeads.filter(l => l.id !== leadId);
+          selectedLeadIds = selectedLeadIds.filter(id => id !== leadId);
+
+          const modalEl = document.getElementById('deleteConfirmModal');
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          modalInstance.hide();
+
+          showToast(`Purged lead dossier for ${name}`);
+          renderDashboard();
+        }
+      }
+
+      // --- REVOLUTIONARY MICRO ACTIONS ---
+      function triggerEmailDispatch(email) {
+        showToast(`Advisory email client launched to reach: ${email}`);
+      }
+
+      function triggerImportAction() {
+        showToast("Lead pipeline synchronized. Imported 4 new prospects from elite referral channels.");
+      }
+
+      function triggerRefresh() {
+        showToast("Synchronizing directories with Cloud CRM index...");
+        // Re-trigger skeleton loaders for realistic premium state toggling!
+        document.getElementById('skeleton-loader-container').classList.remove('skeleton-hidden');
+        document.getElementById('real-content-container').classList.add('skeleton-hidden');
+        
+        setTimeout(() => {
+          document.getElementById('skeleton-loader-container').classList.add('skeleton-hidden');
+          const realContent = document.getElementById('real-content-container');
+          realContent.classList.remove('skeleton-hidden');
+          realContent.style.opacity = '1';
+          renderDashboard();
+          showToast("Lead indices up to date.");
+        }, 600);
+      }
+
+      function exportData(format) {
+        showToast(`Compiled database. Downloading Lead_Management_Roster_${format}.pdf...`);
+      }
+
+      // --- BULK CONTEXT SCRIPT ACTIONS ---
+      function triggerBulkAssign() {
+        if (selectedLeadIds.length === 0) return;
+        showToast(`Initiating reassignment advisor routing for ${selectedLeadIds.length} selected lead dossiers.`);
+      }
+
+      function exportSelected() {
+        if (selectedLeadIds.length === 0) return;
+        showToast(`Exported ${selectedLeadIds.length} leads in professional spreadsheet structure.`);
+      }
+
+      function triggerBulkArchive() {
+        if (selectedLeadIds.length === 0) return;
+        showToast(`Archived ${selectedLeadIds.length} leads from high performance listings workspace.`);
+        deselectAllRows();
+      }
+
+      function triggerBulkDelete() {
+        if (selectedLeadIds.length === 0) return;
+        
+        if (confirm(`Are you absolutely sure you want to purge ${selectedLeadIds.length} selected profiles?`)) {
+          leads = leads.filter(l => !selectedLeadIds.includes(l.id));
+          filteredLeads = filteredLeads.filter(l => !selectedLeadIds.includes(l.id));
+          deselectAllRows();
+          showToast("Batch records purged successfully.");
+          renderDashboard();
+        }
+      }
+
+      // --- PREMIUM VISUAL HELPER FUNCTIONS ---
+      function getPriorityBadgeClass(priority) {
+        if (priority === "Urgent") return "badge-uh bg-danger text-white";
+        if (priority === "High") return "badge-uh bg-warning text-dark";
+        if (priority === "Medium") return "badge-uh bg-info text-dark";
+        return "badge-uh bg-secondary text-white";
+      }
+
+      function animateCounterToValue(elementId, targetValue, suffix = "") {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        
+        let start = 0;
+        const duration = 600;
+        const stepTime = 15;
+        const increment = targetValue / (duration / stepTime);
+
+        const timer = setInterval(() => {
+          start += increment;
+          if (start >= targetValue) {
+            el.textContent = Math.round(targetValue) + suffix;
+            clearInterval(timer);
+          } else {
+            el.textContent = Math.round(start) + suffix;
+          }
+        }, stepTime);
+      }
+
+      function showToast(message) {
+        const textNode = document.getElementById('toast-message-content');
+        if (textNode) {
+          textNode.innerHTML = `<i class="bi bi-info-circle-fill"></i> ${message}`;
+        }
+        const toastEl = document.getElementById('appToast');
+        const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+        toast.show();
+      }
+
+      // --- RADIAL MOUSE GLOW TRACKING ---
+      function setupMouseGlowTracking() {
+        document.addEventListener('mousemove', e => {
+          const cards = document.querySelectorAll('.glow-card');
+          cards.forEach(card => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

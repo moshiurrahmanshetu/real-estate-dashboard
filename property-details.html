@@ -1,0 +1,2079 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Property Details - UrbanHub Real Estate SaaS</title>
+
+    <!-- Pre-load LocalStorage theme choice to prevent visual flicker before render -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Swiper.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Page specific style additions for property details view */
+      .gallery-container {
+        border-radius: 16px;
+        overflow: hidden;
+        background-color: #000;
+        position: relative;
+        border: 1px solid var(--uh-border-card);
+      }
+
+      .swiper-main {
+        width: 100%;
+        height: 500px;
+      }
+
+      .swiper-main .swiper-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+      }
+
+      .swiper-main .swiper-slide:hover img {
+        transform: scale(1.02);
+      }
+
+      .swiper-thumbs-slider {
+        margin-top: 12px;
+        height: 90px;
+        box-sizing: border-box;
+        padding: 4px 0;
+      }
+
+      .swiper-thumbs-slider .swiper-slide {
+        width: 25%;
+        height: 100%;
+        opacity: 0.5;
+        cursor: pointer;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid transparent;
+        transition: var(--uh-transition-smooth);
+      }
+
+      .swiper-thumbs-slider .swiper-slide-thumb-active {
+        opacity: 1;
+        border-color: var(--uh-primary);
+        box-shadow: 0 4px 10px rgba(var(--uh-primary-rgb), 0.25);
+      }
+
+      .swiper-thumbs-slider .swiper-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .gallery-badge {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        background: rgba(17, 17, 20, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .gallery-controls-overlay {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        z-index: 10;
+        display: flex;
+        gap: 8px;
+      }
+
+      .gallery-control-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(17, 17, 20, 0.75);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        transition: var(--uh-transition-smooth);
+      }
+
+      .gallery-control-btn:hover {
+        background: var(--uh-primary);
+        color: #fff;
+        border-color: var(--uh-primary);
+        transform: translateY(-2px);
+      }
+
+      /* Hover highlight styles */
+      .feature-item-box {
+        background-color: rgba(var(--uh-primary-rgb), 0.02);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: var(--uh-transition-smooth);
+      }
+
+      .feature-item-box:hover {
+        background-color: rgba(var(--uh-primary-rgb), 0.07);
+        border-color: var(--uh-primary);
+        transform: translateY(-3px);
+      }
+
+      .feature-item-box i {
+        font-size: 1.4rem;
+        color: var(--uh-primary);
+      }
+
+      /* Overview Item Grid design */
+      .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 16px;
+      }
+
+      .overview-item-card {
+        background: rgba(var(--uh-primary-rgb), 0.02);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        padding: 16px;
+        transition: var(--uh-transition-smooth);
+      }
+
+      .overview-item-card:hover {
+        background: rgba(var(--uh-primary-rgb), 0.05);
+        border-color: rgba(var(--uh-primary-rgb), 0.3);
+        transform: scale(1.02);
+      }
+
+      /* Floor Plan accordion customization */
+      .accordion-premium-item {
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card) !important;
+        border-radius: 12px !important;
+        margin-bottom: 12px;
+        overflow: hidden;
+      }
+
+      .accordion-premium-button {
+        background-color: var(--uh-bg-card);
+        color: var(--uh-text-main);
+        font-family: var(--uh-font-title);
+        font-weight: 600;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 1.25rem;
+      }
+
+      .accordion-premium-button:not(.collapsed) {
+        background-color: rgba(var(--uh-primary-rgb), 0.04);
+        color: var(--uh-primary);
+      }
+
+      /* Review Stars & Bars styling */
+      .rating-bar-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .rating-bar-label {
+        font-size: 0.825rem;
+        color: var(--uh-text-muted);
+        min-width: 50px;
+      }
+
+      /* Spotlight hover effect tracking */
+      .property-card-premium {
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 14px;
+        overflow: hidden;
+        transition: var(--uh-transition-smooth);
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .property-card-premium:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--uh-shadow-lg);
+        border-color: rgba(var(--uh-primary-rgb), 0.3);
+      }
+
+      .property-image-wrapper {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        overflow: hidden;
+        background-color: #000;
+      }
+
+      .property-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .property-card-premium:hover .property-img {
+        transform: scale(1.08);
+      }
+
+      .property-badges-overlay {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 2;
+      }
+
+      .property-specs-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        background-color: rgba(var(--uh-primary-rgb), 0.03);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 8px;
+        padding: 6px;
+        margin-top: auto;
+        margin-bottom: 0.75rem;
+      }
+
+      .property-spec-pill {
+        text-align: center;
+        font-size: 0.7rem;
+        color: var(--uh-text-muted);
+      }
+
+      .property-spec-pill i {
+        color: var(--uh-primary);
+        font-size: 0.85rem;
+        display: block;
+        margin-bottom: 1px;
+      }
+
+      /* Fullscreen Swiper Modal design */
+      .fullscreen-modal-body {
+        background-color: #000 !important;
+        padding: 0 !important;
+        position: relative;
+      }
+
+      .fullscreen-swiper {
+        width: 100%;
+        height: 85vh;
+      }
+
+      .fullscreen-swiper img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      /* Custom description collapsed styling */
+      .description-collapsed {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .description-expanded {
+        display: block;
+      }
+
+      /* Document icon box */
+      .doc-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background-color: rgba(var(--uh-primary-rgb), 0.08);
+        color: var(--uh-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        transition: var(--uh-transition-smooth);
+      }
+
+      .doc-item-wrapper {
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        padding: 12px 16px;
+        transition: var(--uh-transition-smooth);
+        background-color: var(--uh-bg-card);
+      }
+
+      .doc-item-wrapper:hover {
+        border-color: var(--uh-primary);
+        background-color: rgba(var(--uh-primary-rgb), 0.02);
+      }
+
+      .doc-item-wrapper:hover .doc-icon-box {
+        background-color: var(--uh-primary);
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(var(--uh-primary-rgb), 0.2);
+      }
+
+      /* Near-by amenities layout */
+      .nearby-category-header {
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--uh-primary);
+        border-bottom: 2px solid rgba(var(--uh-primary-rgb), 0.15);
+        padding-bottom: 6px;
+        margin-bottom: 12px;
+      }
+
+      .commute-timeline {
+        border-left: 1px dashed var(--uh-border-color);
+        padding-left: 12px;
+        margin-left: 6px;
+      }
+
+      .commute-step {
+        position: relative;
+        padding-bottom: 12px;
+      }
+
+      .commute-step::before {
+        content: "";
+        position: absolute;
+        left: -17px;
+        top: 4px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background-color: var(--uh-text-muted);
+      }
+
+      .commute-step.active::before {
+        background-color: var(--uh-primary);
+        box-shadow: 0 0 0 3px rgba(var(--uh-primary-rgb), 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-wrapper">
+      <!-- FIXED LEFT SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <!-- Logo Header -->
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <i class="bi bi-building-up"></i>
+          </div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <!-- Scrollable Navigation Menu -->
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link active">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="transactions.html" class="sidebar-menu-link">
+                <i class="bi bi-currency-exchange"></i>
+                <span>Transactions</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Intelligence</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Analytics</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="calendar.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar3"></i>
+                <span>Calendar</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="tasks.html" class="sidebar-menu-link">
+                <i class="bi bi-check2-square"></i>
+                <span>Tasks</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reviews.html" class="sidebar-menu-link">
+                <i class="bi bi-star"></i>
+                <span>Reviews</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="login.html" class="sidebar-menu-link text-danger">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sidebar Footer with user account summary -->
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="User Profile Image" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- Sidebar Overlay for Mobile View -->
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+      <!-- PAGE CONTENT AREA & TOP HEADER -->
+      <main class="main-content-wrapper">
+        <!-- TOP HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <!-- Mobile Toggle Button -->
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn">
+              <i class="bi bi-list"></i>
+            </button>
+            
+            <!-- Elegant Search Box -->
+            <form class="header-search-form d-none d-md-block" onsubmit="event.preventDefault();">
+              <input type="text" id="global-header-search" class="header-search-input" placeholder="Search properties, ID, or location..." />
+              <i class="bi bi-search header-search-icon"></i>
+            </form>
+          </div>
+
+          <!-- Right side controls (Dropdowns) -->
+          <div class="header-controls">
+            <!-- Dynamic Theme Toggle -->
+            <button id="theme-toggle" class="header-btn" title="Switch Theme">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+
+            <!-- Language Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Languages">
+                <i class="bi bi-globe"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium lang-dropdown-menu">
+                <li><span class="dropdown-header">Select Language</span></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇬🇧</span> English</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇪🇸</span> Español</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇫🇷</span> Français</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇩🇪</span> Deutsch</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇦🇪</span> العربية</a></li>
+              </ul>
+            </div>
+
+            <!-- Messages Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Messages">
+                <i class="bi bi-chat-dots"></i>
+                <span class="header-btn-badge"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="width: 320px;">
+                <li><span class="dropdown-header">Recent Messages</span></li>
+                <li>
+                  <a class="dropdown-item d-flex align-items-start gap-3 py-2 border-bottom border-light-subtle" href="messages.html">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="Sender Avatar" referrerpolicy="no-referrer" />
+                    <div class="w-100">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold font-title" style="font-size: 0.85rem;">Clara Vance</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">2 min ago</span>
+                      </div>
+                      <p class="text-muted mb-0 text-truncate" style="font-size: 0.775rem;">Is the listing price for the Penthouse negotiable?</p>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item text-center fw-semibold text-primary py-2" href="messages.html" style="font-size: 0.8rem;">
+                    View All Messages
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Notifications Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+                <i class="bi bi-bell"></i>
+                <span class="header-btn-badge"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="width: 320px;">
+                <li><span class="dropdown-header">System Notifications</span></li>
+                <li>
+                  <a class="dropdown-item d-flex align-items-start gap-3 py-2 border-bottom border-light-subtle" href="javascript:void(0);">
+                    <div class="stat-icon-wrapper text-success bg-success-subtle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1rem;">
+                      <i class="bi bi-file-earmark-check"></i>
+                    </div>
+                    <div>
+                      <span class="fw-medium d-block" style="font-size: 0.825rem;">Agreement Signed</span>
+                      <p class="text-muted mb-0" style="font-size: 0.75rem;">Unit 402 lease finalised by legal team.</p>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item text-center fw-semibold text-primary py-2" href="javascript:void(0);" style="font-size: 0.8rem;">
+                    Clear All Notifications
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <!-- User Profile Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn p-0 rounded-circle border-2 border-primary" style="width: 40px; height: 40px; overflow: hidden;" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Profile">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" style="width: 100%; height: 100%; object-fit: cover;" alt="User Profile Image" referrerpolicy="no-referrer" />
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="min-width: 220px;">
+                <li>
+                  <div class="px-3 py-2 border-bottom border-light-subtle mb-2">
+                    <span class="fw-bold d-block font-title" style="font-size: 0.9rem;">Sarah Jenkins</span>
+                    <span class="text-muted" style="font-size: 0.75rem;">sarah@urbanhub.com</span>
+                  </div>
+                </li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="profile.html"><i class="bi bi-person"></i> My Profile</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="settings.html"><i class="bi bi-gear"></i> Settings</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger d-flex align-items-center gap-2" href="login.html"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </header>
+
+        <!-- DASHBOARD CONTAINER BODY -->
+        <div class="page-body">
+          <!-- BREADCRUMB AND ACTIONS HEADER SECTION -->
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4" data-aos="fade-down">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item"><a href="properties.html" class="text-decoration-none text-muted">Properties</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Property Details</li>
+                </ol>
+              </nav>
+              <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                <h1 class="h3 mb-0 font-title fw-bold text-main">The Grand Peninsula Vista Villa</h1>
+                <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.75rem;">PROP-102</span>
+              </div>
+              <p class="text-muted mb-0 mt-1" style="font-size: 0.85rem;">
+                <i class="bi bi-geo-alt-fill text-primary me-1"></i> 1408 Peninsula Drive, Beverly Hills, CA 90210
+              </p>
+            </div>
+
+            <!-- Action Buttons Row -->
+            <div class="d-flex flex-wrap align-items-center gap-2 w-100 w-md-auto">
+              <a href="properties.html" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 px-3 py-2 rounded-3 text-muted" style="border: 1px solid var(--uh-border-color); font-size: 0.85rem;" id="btn-back-properties">
+                <i class="bi bi-arrow-left"></i> Back to Properties
+              </a>
+              <button class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center p-2 rounded-3 text-muted" style="border: 1px solid var(--uh-border-color); width: 38px; height: 38px;" title="Print Listing Details" onclick="window.print();">
+                <i class="bi bi-printer"></i>
+              </button>
+              <button class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center p-2 rounded-3 text-muted" style="border: 1px solid var(--uh-border-color); width: 38px; height: 38px;" title="Share Listing Link" onclick="sharePropertyDetails()">
+                <i class="bi bi-share"></i>
+              </button>
+              <button class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center p-2 rounded-3 text-muted" style="border: 1px solid var(--uh-border-color); width: 38px; height: 38px;" id="btn-favorite-detail" title="Add to Favorites" onclick="togglePropertyFavorite()">
+                <i class="bi bi-heart" id="favorite-heart-icon"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- META INFORMATION BAR & BADGES -->
+          <div class="row g-3 mb-4" data-aos="fade-up">
+            <div class="col-12">
+              <div class="uh-card py-3 px-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <span class="badge badge-uh badge-uh-success">For Sale</span>
+                  <span class="badge badge-uh badge-uh-info"><i class="bi bi-building"></i> Villa</span>
+                  <span class="badge badge-uh badge-uh-warning"><i class="bi bi-star-fill"></i> Featured Listing</span>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-4 text-muted" style="font-size: 0.8rem;">
+                  <div>
+                    <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">Created Date</span>
+                    <span class="fw-semibold text-main">June 14, 2026</span>
+                  </div>
+                  <div class="border-start border-light-subtle ps-4 d-none d-sm-block">
+                    <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">Last Updated</span>
+                    <span class="fw-semibold text-main">July 09, 2026</span>
+                  </div>
+                  <div class="border-start border-light-subtle ps-4">
+                    <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">Listing Agent</span>
+                    <span class="fw-semibold text-primary">Sarah Jenkins</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PROPERTY GALLERY SECTION (SWIPER) -->
+          <div class="row g-4 mb-4" data-aos="fade-up">
+            <div class="col-12">
+              <div class="gallery-container">
+                <!-- Swiper Slider -->
+                <div class="swiper swiper-main" id="swiper-main-instance">
+                  <div class="swiper-wrapper">
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1200&auto=format&fit=crop" alt="The Grand Peninsula Vista Villa Exterior" referrerpolicy="no-referrer" />
+                    </div>
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1200&auto=format&fit=crop" alt="Luxury Living Room" referrerpolicy="no-referrer" />
+                    </div>
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=1200&auto=format&fit=crop" alt="Master Chef Kitchen" referrerpolicy="no-referrer" />
+                    </div>
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=1200&auto=format&fit=crop" alt="Primary Bedroom Suite" referrerpolicy="no-referrer" />
+                    </div>
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?q=80&w=1200&auto=format&fit=crop" alt="Infinity Pool and Patio Deck" referrerpolicy="no-referrer" />
+                    </div>
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1200&auto=format&fit=crop" alt="Spa-like Primary Bathroom" referrerpolicy="no-referrer" />
+                    </div>
+                  </div>
+                  <!-- Gallery Title badge overlay -->
+                  <div class="gallery-badge badge text-white px-3 py-2 font-title">
+                    <i class="bi bi-camera me-1"></i> High Definition Visuals
+                  </div>
+                  
+                  <!-- Gallery Control Buttons Overlay -->
+                  <div class="gallery-controls-overlay">
+                    <div class="gallery-control-btn swiper-main-prev" title="Previous Image">
+                      <i class="bi bi-chevron-left"></i>
+                    </div>
+                    <div class="gallery-control-btn swiper-main-next" title="Next Image">
+                      <i class="bi bi-chevron-right"></i>
+                    </div>
+                    <div class="gallery-control-btn" title="View Fullscreen" onclick="triggerFullscreenGallery()">
+                      <i class="bi bi-arrows-fullscreen"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Swiper Thumbnails Slider -->
+                <div class="swiper swiper-thumbs-slider" id="swiper-thumbs-instance">
+                  <div class="swiper-wrapper">
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=240&auto=format&fit=crop" alt="Thumb Exterior" referrerpolicy="no-referrer" />
+                    </div>
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=240&auto=format&fit=crop" alt="Thumb Living Room" referrerpolicy="no-referrer" />
+                    </div>
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=240&auto=format&fit=crop" alt="Thumb Kitchen" referrerpolicy="no-referrer" />
+                    </div>
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=240&auto=format&fit=crop" alt="Thumb Bedroom" referrerpolicy="no-referrer" />
+                    </div>
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?q=80&w=240&auto=format&fit=crop" alt="Thumb Pool" referrerpolicy="no-referrer" />
+                    </div>
+                    <div class="swiper-slide">
+                      <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=240&auto=format&fit=crop" alt="Thumb Bathroom" referrerpolicy="no-referrer" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PRIMARY DETAILS AND SIDEBAR INFO -->
+          <div class="row g-4">
+            <!-- LEFT COLUMN: Main Details & Maps -->
+            <div class="col-12 col-lg-8 d-flex flex-column gap-4">
+              
+              <!-- 1. Property Overview Card -->
+              <div class="uh-card" data-aos="fade-up">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h4 class="mb-0 font-title fw-bold">Property Specifications</h4>
+                  <div class="text-primary fs-4 fw-bold font-title" id="overview-price">$4,850,000</div>
+                </div>
+                <hr class="my-3 border-light-subtle" />
+                <div class="overview-grid">
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Purpose</span>
+                    <span class="fw-bold text-main d-flex align-items-center gap-2"><i class="bi bi-tag text-primary"></i> For Sale</span>
+                  </div>
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Property Type</span>
+                    <span class="fw-bold text-main d-flex align-items-center gap-2"><i class="bi bi-building text-primary"></i> Luxury Villa</span>
+                  </div>
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Status</span>
+                    <span class="fw-bold text-success d-flex align-items-center gap-2"><i class="bi bi-patch-check text-success"></i> Active</span>
+                  </div>
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Area</span>
+                    <span class="fw-bold text-main d-flex align-items-center gap-2"><i class="bi bi-textarea-resize text-primary"></i> 5,400 sqft</span>
+                  </div>
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Bedrooms</span>
+                    <span class="fw-bold text-main d-flex align-items-center gap-2"><i class="bi bi-door-closed text-primary"></i> 5 Bedrooms</span>
+                  </div>
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Bathrooms</span>
+                    <span class="fw-bold text-main d-flex align-items-center gap-2"><i class="bi bi-water text-primary"></i> 6 Bathrooms</span>
+                  </div>
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Garage</span>
+                    <span class="fw-bold text-main d-flex align-items-center gap-2"><i class="bi bi-car-front text-primary"></i> 3 Cars</span>
+                  </div>
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Year Built</span>
+                    <span class="fw-bold text-main d-flex align-items-center gap-2"><i class="bi bi-calendar-check text-primary"></i> 2024</span>
+                  </div>
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Floor Level</span>
+                    <span class="fw-bold text-main d-flex align-items-center gap-2"><i class="bi bi-layers text-primary"></i> Penthouse / Multi</span>
+                  </div>
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Furnished</span>
+                    <span class="fw-bold text-main d-flex align-items-center gap-2"><i class="bi bi-lamp text-primary"></i> Fully Furnished</span>
+                  </div>
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Available From</span>
+                    <span class="fw-bold text-main d-flex align-items-center gap-2"><i class="bi bi-calendar-event text-primary"></i> Immediately</span>
+                  </div>
+                  <div class="overview-item-card">
+                    <span class="text-muted d-block mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Listing Code</span>
+                    <span class="fw-bold text-primary d-flex align-items-center gap-2"><i class="bi bi-qr-code text-primary"></i> PROP-102</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. Professional Description -->
+              <div class="uh-card" data-aos="fade-up">
+                <h4 class="font-title fw-bold mb-3">Architectural Description</h4>
+                <div id="description-text-container" class="description-collapsed text-muted" style="line-height: 1.7; font-size: 0.925rem;">
+                  <p>Discover an unparalleled level of coastal luxury living in the crown jewel of Beverly Hills. The Grand Peninsula Vista Villa represents a masterpiece of modern architecture, utilizing natural premium materials, expansive glass panels, and a seamless blend of indoor/outdoor entertainment spaces that cascade out to panoramic vistas. Set back on a highly exclusive 0.8-acre site, this 2024 structural achievement has been built to commercial-grade standards, and features five meticulously crafted bedroom suites and six bath layouts.</p>
+                  <p>Entering the private security gates, you are welcomed by an architectural concrete drive with lush perimeter landscaping and mature specimen trees. The double-height grand foyer opens immediately to water views, featuring structural frameless glass and a central custom gold spiral stair. The main living level showcases dynamic marble floors, imported lighting features, and fully pocketing automated sliding doors opening directly to the 80-foot infinite heated pool, outdoor spa, custom fire pit terrace, and complete outdoor kitchen with automated weather shielding.</p>
+                  <p>The epicurean primary kitchen is customized with professional Gaggenau appliances, handcrafted walnut cabinetry, and a private back-of-house preparatory butler pantry. The master wing occupies an entire upper section with distinct luxury lounge, complete dual-sided boutique dressing rooms, absolute private massage studio, and a massive wraparound outdoor private terrace. Premium amenities include a fully equipped home cinema with acoustic modeling, a private gym with specialized wellness recovery features, and complete integrated smart home automation.</p>
+                </div>
+                <button class="btn btn-link text-primary p-0 mt-3 text-decoration-none fw-semibold d-inline-flex align-items-center gap-1" id="read-more-btn" onclick="toggleDescriptionText()">
+                  <span>Read More</span> <i class="bi bi-chevron-down" id="read-more-icon"></i>
+                </button>
+              </div>
+
+              <!-- 3. Property Features & Amenities Card -->
+              <div class="uh-card" data-aos="fade-up">
+                <h4 class="font-title fw-bold mb-3">Amenities & Custom Assets</h4>
+                <p class="text-muted mb-4" style="font-size: 0.85rem;">Premium internal building systems, luxury installations, and security standards.</p>
+                <div class="row g-3">
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-snow"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Air Conditioning</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">Multi-zone VRF</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-water"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Swimming Pool</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">80ft Infinity-Edge</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-tree"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Garden</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">Japanese Zen Theme</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-compass"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Balcony</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">Wraparound Terrace</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-activity"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Private Gym</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">Technogym Equipped</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-p-circle"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Parking Garage</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">3 Cars EV Ready</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-shield-check"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Private Security</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">Gated & Alarm systems</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-arrow-up-circle"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Elevator</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">OTIS Glass Cabin</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-eye"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">CCTV Network</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">24/7 Server Log</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-lightning-charge"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Generator Backup</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">150kVA Auto Switch</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-wifi"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Fiber WiFi 6</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">10 Gbps Ingress</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-sun"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Solar Power</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">Tesla Roof Panels</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-droplet"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">In-unit Laundry</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">Professional Setup</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-bell-slash"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Fire Suppression</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">Auto sprinkler array</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="feature-item-box">
+                      <i class="bi bi-house-gear"></i>
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Smart Automation</span>
+                        <small class="text-muted" style="font-size: 0.725rem;">Crestron Unified</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. Floor Plans Section -->
+              <div class="uh-card" data-aos="fade-up">
+                <h4 class="font-title fw-bold mb-3">Architectural Floor Plans</h4>
+                <p class="text-muted mb-4" style="font-size: 0.85rem;">Detailed dimensional drafts for each floor layer.</p>
+                
+                <div class="accordion" id="accordionFloorPlans">
+                  <!-- Level 1 -->
+                  <div class="accordion-item accordion-premium-item">
+                    <h2 class="accordion-header" id="headingFloorOne">
+                      <button class="accordion-button accordion-premium-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFloorOne" aria-expanded="true" aria-controls="collapseFloorOne">
+                        <div class="w-100 d-flex flex-wrap align-items-center justify-content-between pe-3">
+                          <span>Ground Floor Layout</span>
+                          <span class="badge bg-primary-subtle text-primary" style="font-size: 0.75rem;">2,800 sqft | 2 Beds | 3 Baths</span>
+                        </div>
+                      </button>
+                    </h2>
+                    <div id="collapseFloorOne" class="accordion-collapse collapse show" aria-labelledby="headingFloorOne" data-bs-parent="#accordionFloorPlans">
+                      <div class="accordion-body bg-body-tertiary">
+                        <div class="row align-items-center g-4">
+                          <div class="col-12 col-md-5">
+                            <div class="border border-light-subtle rounded-3 p-3 text-center bg-dark" style="height: 200px; display: flex; align-items: center; justify-content: center; position: relative;">
+                              <div class="text-muted">
+                                <i class="bi bi-map fs-1 text-primary mb-2"></i>
+                                <span class="d-block fw-semibold text-main">Ground Level Schema</span>
+                                <small class="text-muted" style="font-size: 0.7rem;">Architectural Vector Blueprint</small>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-12 col-md-7">
+                            <h6 class="font-title fw-bold mb-2 text-main">Ground Level Specifications:</h6>
+                            <p class="text-muted mb-3" style="font-size: 0.825rem;">The Ground Level accommodates the double-height grand entryway foyer, double living lounges with full garden access, epicurean kitchen with butler pantry, and two en-suite guest chambers.</p>
+                            <div class="d-flex gap-2">
+                              <a href="/assets/images/placeholder-floorplan1.pdf" download onclick="event.preventDefault(); alert('Preparing High-Resolution PDF Vector draft compilation...')" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                                <i class="bi bi-file-earmark-pdf"></i> Download PDF Blueprint
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Level 2 -->
+                  <div class="accordion-item accordion-premium-item">
+                    <h2 class="accordion-header" id="headingFloorTwo">
+                      <button class="accordion-button accordion-premium-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFloorTwo" aria-expanded="false" aria-controls="collapseFloorTwo">
+                        <div class="w-100 d-flex flex-wrap align-items-center justify-content-between pe-3">
+                          <span>First Floor Layout (Master Level)</span>
+                          <span class="badge bg-primary-subtle text-primary" style="font-size: 0.75rem;">2,600 sqft | 3 Beds | 3 Baths</span>
+                        </div>
+                      </button>
+                    </h2>
+                    <div id="collapseFloorTwo" class="accordion-collapse collapse" aria-labelledby="headingFloorTwo" data-bs-parent="#accordionFloorPlans">
+                      <div class="accordion-body bg-body-tertiary">
+                        <div class="row align-items-center g-4">
+                          <div class="col-12 col-md-5">
+                            <div class="border border-light-subtle rounded-3 p-3 text-center bg-dark" style="height: 200px; display: flex; align-items: center; justify-content: center; position: relative;">
+                              <div class="text-muted">
+                                <i class="bi bi-map fs-1 text-primary mb-2"></i>
+                                <span class="d-block fw-semibold text-main">Master Level Schema</span>
+                                <small class="text-muted" style="font-size: 0.7rem;">Architectural Vector Blueprint</small>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-12 col-md-7">
+                            <h6 class="font-title fw-bold mb-2 text-main">Master Level Specifications:</h6>
+                            <p class="text-muted mb-3" style="font-size: 0.825rem;">The Entire First Floor is engineered for maximum privacy, comprising the immense Primary Master Wing with pocketing doors to terrace, two secondary family bedrooms, home study room, and gym.</p>
+                            <div class="d-flex gap-2">
+                              <a href="/assets/images/placeholder-floorplan2.pdf" download onclick="event.preventDefault(); alert('Preparing High-Resolution PDF Vector draft compilation...')" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                                <i class="bi bi-file-earmark-pdf"></i> Download PDF Blueprint
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 5. Property Location & Commute Details -->
+              <div class="uh-card" data-aos="fade-up">
+                <h4 class="font-title fw-bold mb-3">Property Location & Hubs</h4>
+                <p class="text-muted mb-4" style="font-size: 0.85rem;">Prime coordinate neighborhood setting with complete transit details.</p>
+                
+                <!-- Map Placeholder -->
+                <div class="mb-4 rounded-3 overflow-hidden border border-light-subtle" style="height: 320px; position: relative;">
+                  <!-- Embed custom beautiful mock styled map with dark theme overlay or Google Map placeholder -->
+                  <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3303.4357303861214!2d-118.402830!3d34.073620!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80c2bc04ea884d43%3A0x6b107e3240e9d6d5!2sBeverly%20Hills%2C%20CA%2090210!5e0!3m2!1sen!2sus!4v1720610000000!5m2!1sen!2sus" 
+                    width="100%" 
+                    height="100%" 
+                    style="border:0; filter: grayscale(0.5) contrast(1.1) invert(0);" 
+                    allowfullscreen="" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer">
+                  </iframe>
+                </div>
+
+                <h5 class="font-title fw-bold mb-3" style="font-size: 1rem;"><i class="bi bi-geo-alt-fill text-primary"></i> Premium Nearby Hubs Commute</h5>
+                <div class="row g-4">
+                  <!-- Column 1 -->
+                  <div class="col-12 col-md-6">
+                    <div class="nearby-category-header"><i class="bi bi-book-half"></i> Schools & Medical</div>
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-2" style="font-size: 0.85rem;">
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Beverly Hills High School</span>
+                        <span class="badge bg-primary-subtle text-primary">1.2 miles | 4 mins</span>
+                      </li>
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">UCLA Medical Center</span>
+                        <span class="badge bg-primary-subtle text-primary">2.4 miles | 8 mins</span>
+                      </li>
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Roxbury Pediatrics</span>
+                        <span class="badge bg-primary-subtle text-primary">0.8 miles | 3 mins</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Column 2 -->
+                  <div class="col-12 col-md-6">
+                    <div class="nearby-category-header"><i class="bi bi-shop"></i> Shopping & Dine</div>
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-2" style="font-size: 0.85rem;">
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Rodeo Drive Retail Avenue</span>
+                        <span class="badge bg-primary-subtle text-primary">0.6 miles | 2 mins</span>
+                      </li>
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Whole Foods Market</span>
+                        <span class="badge bg-primary-subtle text-primary">1.0 miles | 3 mins</span>
+                      </li>
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Il Pastaio Restaurant</span>
+                        <span class="badge bg-primary-subtle text-primary">0.5 miles | 2 mins</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Column 3 -->
+                  <div class="col-12 col-md-6">
+                    <div class="nearby-category-header"><i class="bi bi-airplane"></i> Transit & Airports</div>
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-2" style="font-size: 0.85rem;">
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Wilshire / Rodeo Metro Station</span>
+                        <span class="badge bg-primary-subtle text-primary">0.4 miles | 2 mins</span>
+                      </li>
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Los Angeles Intl Airport (LAX)</span>
+                        <span class="badge bg-primary-subtle text-primary">12.5 miles | 22 mins</span>
+                      </li>
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Santa Monica Municipal Airport</span>
+                        <span class="badge bg-primary-subtle text-primary">7.8 miles | 15 mins</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Column 4 -->
+                  <div class="col-12 col-md-6">
+                    <div class="nearby-category-header"><i class="bi bi-buildings"></i> Civic & Community</div>
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-2" style="font-size: 0.85rem;">
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Beverly Hills City Park</span>
+                        <span class="badge bg-primary-subtle text-primary">0.3 miles | 1 mins</span>
+                      </li>
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Chase Premium Banking Hub</span>
+                        <span class="badge bg-primary-subtle text-primary">0.7 miles | 2 mins</span>
+                      </li>
+                      <li class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">City Police Precinct Node</span>
+                        <span class="badge bg-primary-subtle text-primary">1.5 miles | 5 mins</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 6. Customer Reviews and Progress Summary -->
+              <div class="uh-card" data-aos="fade-up">
+                <h4 class="font-title fw-bold mb-3">Client Opinions & Review Summary</h4>
+                <p class="text-muted mb-4" style="font-size: 0.85rem;">Aggregate audit feedback from professional visiting parties.</p>
+
+                <div class="row g-4 align-items-center mb-4">
+                  <!-- Avg Rating -->
+                  <div class="col-12 col-md-4 text-center border-end border-light-subtle py-2">
+                    <h1 class="display-3 fw-extrabold text-primary mb-1">4.9</h1>
+                    <div class="text-warning fs-5 mb-2">
+                      <i class="bi bi-star-fill"></i>
+                      <i class="bi bi-star-fill"></i>
+                      <i class="bi bi-star-fill"></i>
+                      <i class="bi bi-star-fill"></i>
+                      <i class="bi bi-star-fill"></i>
+                    </div>
+                    <span class="text-muted d-block" style="font-size: 0.8rem;">Based on 14 certified visit reviews</span>
+                  </div>
+
+                  <!-- Progress Bars -->
+                  <div class="col-12 col-md-8 px-md-4">
+                    <div class="rating-bar-wrapper">
+                      <span class="rating-bar-label">5 Star</span>
+                      <div class="progress flex-grow-1" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 88%" aria-valuenow="88" aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                      <span class="rating-bar-label text-end" style="min-width: 30px;">88%</span>
+                    </div>
+                    <div class="rating-bar-wrapper">
+                      <span class="rating-bar-label">4 Star</span>
+                      <div class="progress flex-grow-1" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 10%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                      <span class="rating-bar-label text-end" style="min-width: 30px;">10%</span>
+                    </div>
+                    <div class="rating-bar-wrapper">
+                      <span class="rating-bar-label">3 Star</span>
+                      <div class="progress flex-grow-1" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 2%" aria-valuenow="2" aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                      <span class="rating-bar-label text-end" style="min-width: 30px;">2%</span>
+                    </div>
+                    <div class="rating-bar-wrapper">
+                      <span class="rating-bar-label">2 Star</span>
+                      <div class="progress flex-grow-1" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                      <span class="rating-bar-label text-end" style="min-width: 30px;">0%</span>
+                    </div>
+                    <div class="rating-bar-wrapper">
+                      <span class="rating-bar-label">1 Star</span>
+                      <div class="progress flex-grow-1" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                      <span class="rating-bar-label text-end" style="min-width: 30px;">0%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="my-4 border-light-subtle" />
+
+                <!-- Reviews Feed -->
+                <div class="d-flex flex-column gap-3">
+                  <div class="p-3 rounded-3 bg-body border border-light-subtle">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div class="d-flex align-items-center gap-3">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" class="rounded-circle" style="width: 44px; height: 44px; object-fit: cover;" alt="Clara Vance" referrerpolicy="no-referrer" />
+                        <div>
+                          <span class="fw-bold text-main font-title d-block" style="font-size: 0.9rem;">Clara Vance</span>
+                          <small class="text-muted" style="font-size: 0.75rem;">Premium Buyer Party</small>
+                        </div>
+                      </div>
+                      <div class="text-end">
+                        <div class="text-warning" style="font-size: 0.8rem;">
+                          <i class="bi bi-star-fill"></i>
+                          <i class="bi bi-star-fill"></i>
+                          <i class="bi bi-star-fill"></i>
+                          <i class="bi bi-star-fill"></i>
+                          <i class="bi bi-star-fill"></i>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.7rem;">June 28, 2026</small>
+                      </div>
+                    </div>
+                    <p class="text-muted mb-0" style="font-size: 0.85rem; line-height: 1.6;">We conducted an exhaustive walkthrough of PROP-102. The home automation systems and architectural layout are flawless. Sarah was extremely well-prepared, walking us through every structural specification sheet of the infinity pool and foundation.</p>
+                  </div>
+
+                  <div class="p-3 rounded-3 bg-body border border-light-subtle">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div class="d-flex align-items-center gap-3">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop" class="rounded-circle" style="width: 44px; height: 44px; object-fit: cover;" alt="Marcus Sterling" referrerpolicy="no-referrer" />
+                        <div>
+                          <span class="fw-bold text-main font-title d-block" style="font-size: 0.9rem;">Marcus Sterling</span>
+                          <small class="text-muted" style="font-size: 0.75rem;">Private Equity Developer</small>
+                        </div>
+                      </div>
+                      <div class="text-end">
+                        <div class="text-warning" style="font-size: 0.8rem;">
+                          <i class="bi bi-star-fill"></i>
+                          <i class="bi bi-star-fill"></i>
+                          <i class="bi bi-star-fill"></i>
+                          <i class="bi bi-star-fill"></i>
+                          <i class="bi bi-star-half text-warning"></i>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.7rem;">May 14, 2026</small>
+                      </div>
+                    </div>
+                    <p class="text-muted mb-0" style="font-size: 0.85rem; line-height: 1.6;">Exceptional architectural standards on display. The Gaggenau primary kitchen setup is perfect for massive hosting requirements. Highly recommending this asset for long-term private wealth placement.</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Sidebar Forms & Calculators -->
+            <div class="col-12 col-lg-4 d-flex flex-column gap-4">
+              
+              <!-- 7. Agent Bio Information Card -->
+              <div class="uh-card text-center" data-aos="fade-up">
+                <span class="badge bg-primary-subtle text-primary mb-3" style="font-size: 0.7rem; text-transform: uppercase;">Exclusive Listing Agent</span>
+                <div class="position-relative d-inline-block mx-auto mb-3">
+                  <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop" class="rounded-circle border border-2 border-primary p-1" style="width: 100px; height: 100px; object-fit: cover;" alt="Sarah Jenkins" referrerpolicy="no-referrer" />
+                  <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" style="width: 18px; height: 18px;" title="Online"></span>
+                </div>
+                <h5 class="fw-bold text-main font-title mb-1">Sarah Jenkins</h5>
+                <span class="text-primary fw-medium d-block mb-3" style="font-size: 0.825rem;">Managing Director / Broker</span>
+                
+                <!-- Agent quick metrics -->
+                <div class="row g-2 mb-4 border-top border-bottom border-light-subtle py-3 text-center">
+                  <div class="col-4 border-end border-light-subtle">
+                    <span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase;">Experience</span>
+                    <strong class="text-main" style="font-size: 0.85rem;">12 Years</strong>
+                  </div>
+                  <div class="col-4 border-end border-light-subtle">
+                    <span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase;">Active Listings</span>
+                    <strong class="text-main" style="font-size: 0.85rem;">42 Assets</strong>
+                  </div>
+                  <div class="col-4">
+                    <span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase;">Rating</span>
+                    <strong class="text-main" style="font-size: 0.85rem;"><i class="bi bi-star-fill text-warning"></i> 4.98</strong>
+                  </div>
+                </div>
+
+                <div class="d-flex flex-column gap-2">
+                  <a href="tel:+13105550192" class="btn btn-primary d-flex align-items-center justify-content-center gap-2 text-white fw-semibold" style="background-color: var(--uh-primary); border-color: var(--uh-primary); font-size: 0.85rem;">
+                    <i class="bi bi-telephone-fill"></i> Call (+1) 310-555-0192
+                  </a>
+                  <a href="mailto:sarah@urbanhub.com?subject=Inquiry%20on%20PROP-102" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 text-muted rounded-3" style="border: 1px solid var(--uh-border-color); font-size: 0.85rem;">
+                    <i class="bi bi-envelope-at-fill"></i> Send Secure Email
+                  </a>
+                  <a href="agent-details.html" class="btn btn-link text-primary text-decoration-none fw-semibold" style="font-size: 0.8rem;">
+                    View Agent Profile & Active Portfolio <i class="bi bi-arrow-right"></i>
+                  </a>
+                </div>
+              </div>
+
+              <!-- 8. Schedule Visit Card (Validation) -->
+              <div class="uh-card" id="schedule-visit-widget" data-aos="fade-up">
+                <h5 class="fw-bold font-title mb-2"><i class="bi bi-calendar2-check text-primary me-1"></i>Schedule Private Viewing</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Request a secure, private, guided walking tour of this estate.</p>
+                
+                <form id="viewingRequestForm" class="needs-validation" novalidate onsubmit="submitViewingRequest(event)">
+                  <div class="mb-3">
+                    <label for="visit-name" class="form-label text-muted fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Full Name</label>
+                    <input type="text" class="form-control bg-body border-light-subtle rounded-3 text-muted" id="visit-name" placeholder="Sarah Smith" style="font-size: 0.85rem; padding: 10px;" required />
+                    <div class="invalid-feedback" style="font-size: 0.725rem;">
+                      Please provide your representative name.
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="visit-email" class="form-label text-muted fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Email Address</label>
+                    <input type="email" class="form-control bg-body border-light-subtle rounded-3 text-muted" id="visit-email" placeholder="sarah@example.com" style="font-size: 0.85rem; padding: 10px;" required />
+                    <div class="invalid-feedback" style="font-size: 0.725rem;">
+                      Provide a valid business email address.
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="visit-phone" class="form-label text-muted fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Phone Number</label>
+                    <input type="tel" class="form-control bg-body border-light-subtle rounded-3 text-muted" id="visit-phone" placeholder="+1 (310) 555-0199" style="font-size: 0.85rem; padding: 10px;" required />
+                    <div class="invalid-feedback" style="font-size: 0.725rem;">
+                      A valid contact number is required.
+                    </div>
+                  </div>
+
+                  <div class="row g-2 mb-3">
+                    <div class="col-6">
+                      <label for="visit-date" class="form-label text-muted fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Visit Date</label>
+                      <input type="date" class="form-control bg-body border-light-subtle rounded-3 text-muted" id="visit-date" style="font-size: 0.825rem; padding: 8px;" required />
+                    </div>
+                    <div class="col-6">
+                      <label for="visit-time" class="form-label text-muted fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Visit Time</label>
+                      <select class="form-select bg-body border-light-subtle rounded-3 text-muted" id="visit-time" style="font-size: 0.825rem; padding: 8px;" required>
+                        <option value="">Select Slot</option>
+                        <option value="10:00 AM">10:00 AM</option>
+                        <option value="11:30 AM">11:30 AM</option>
+                        <option value="02:00 PM">02:00 PM</option>
+                        <option value="03:30 PM">03:30 PM</option>
+                        <option value="05:00 PM">05:00 PM</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="mb-4">
+                    <label for="visit-message" class="form-label text-muted fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Message / Requirements</label>
+                    <textarea class="form-control bg-body border-light-subtle rounded-3 text-muted" id="visit-message" rows="3" placeholder="Interested in looking at the mechanical rooms, pool heating system..." style="font-size: 0.85rem; padding: 10px;"></textarea>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary w-100 py-2.5 text-white fw-bold font-title" style="background-color: var(--uh-primary); border-color: var(--uh-primary); font-size: 0.85rem;">
+                    <i class="bi bi-send-fill me-1"></i> Submit Visit Proposal
+                  </button>
+                </form>
+              </div>
+
+              <!-- 9. Interactive Mortgage Calculator -->
+              <div class="uh-card" id="mortgage-calc-widget" data-aos="fade-up">
+                <h5 class="fw-bold font-title mb-2"><i class="bi bi-calculator-fill text-primary me-1"></i>Mortgage Calculator</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Evaluate monthly payments using standard finance models.</p>
+
+                <div class="d-flex flex-column gap-3">
+                  <div>
+                    <label for="calc-price" class="form-label text-muted fw-semibold mb-1" style="font-size: 0.75rem;">Listing Price ($)</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-body text-muted border-light-subtle">$</span>
+                      <input type="number" class="form-control bg-body border-light-subtle text-muted fw-bold" id="calc-price" value="4850000" style="font-size: 0.85rem;" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label for="calc-down" class="form-label text-muted fw-semibold mb-1" style="font-size: 0.75rem;">Down Payment ($)</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-body text-muted border-light-subtle">$</span>
+                      <input type="number" class="form-control bg-body border-light-subtle text-muted" id="calc-down" value="970000" style="font-size: 0.85rem;" />
+                    </div>
+                  </div>
+
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label for="calc-rate" class="form-label text-muted fw-semibold mb-1" style="font-size: 0.75rem;">Interest Rate (%)</label>
+                      <input type="number" step="0.01" class="form-control bg-body border-light-subtle text-muted" id="calc-rate" value="5.5" style="font-size: 0.85rem;" />
+                    </div>
+                    <div class="col-6">
+                      <label for="calc-term" class="form-label text-muted fw-semibold mb-1" style="font-size: 0.75rem;">Loan Term (Years)</label>
+                      <select class="form-select bg-body border-light-subtle text-muted" id="calc-term" style="font-size: 0.825rem;">
+                        <option value="15">15 Years</option>
+                        <option value="20">20 Years</option>
+                        <option value="30" selected>30 Years</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <button type="button" class="btn btn-outline-primary w-100 py-2 font-title fw-bold" style="font-size: 0.825rem;" onclick="calculatePremiumMortgage()">
+                    Calculate Monthly Payment
+                  </button>
+
+                  <hr class="my-2 border-light-subtle" />
+
+                  <!-- Results panel -->
+                  <div class="p-3 rounded-3 bg-body border border-light-subtle">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase;">Monthly Payment</span>
+                      <span class="fw-bold text-primary font-title fs-5" id="mortgage-monthly-val">$22,029.83</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="text-muted" style="font-size: 0.725rem;">Total Payment Cost</span>
+                      <span class="fw-semibold text-main" id="mortgage-total-val">$7,930,739</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span class="text-muted" style="font-size: 0.725rem;">Total Interest Paid</span>
+                      <span class="fw-semibold text-main" id="mortgage-interest-val">$4,050,739</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 10. Property Documents Download -->
+              <div class="uh-card" data-aos="fade-up">
+                <h5 class="fw-bold font-title mb-2"><i class="bi bi-file-earmark-pdf-fill text-primary me-1"></i>Registry Downloads</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Official verified legal papers, certifications, and drafts.</p>
+
+                <div class="d-flex flex-column gap-3">
+                  <div class="doc-item-wrapper d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="doc-icon-box">
+                        <i class="bi bi-file-earmark-richtext"></i>
+                      </div>
+                      <div>
+                        <span class="fw-bold text-main d-block" style="font-size: 0.825rem;">Sale Deed Agreement</span>
+                        <small class="text-muted" style="font-size: 0.7rem;">PDF | 4.2 MB | June 2026</small>
+                      </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary p-1.5" title="Download Deed File" onclick="triggerFileDownload('Sale Deed Agreement')">
+                      <i class="bi bi-download"></i>
+                    </button>
+                  </div>
+
+                  <div class="doc-item-wrapper d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="doc-icon-box">
+                        <i class="bi bi-journal-text"></i>
+                      </div>
+                      <div>
+                        <span class="fw-bold text-main d-block" style="font-size: 0.825rem;">Ownership Papers</span>
+                        <small class="text-muted" style="font-size: 0.7rem;">PDF | 8.1 MB | Verified</small>
+                      </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary p-1.5" title="Download Ownership Papers" onclick="triggerFileDownload('Ownership Papers')">
+                      <i class="bi bi-download"></i>
+                    </button>
+                  </div>
+
+                  <div class="doc-item-wrapper d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="doc-icon-box">
+                        <i class="bi bi-map"></i>
+                      </div>
+                      <div>
+                        <span class="fw-bold text-main d-block" style="font-size: 0.825rem;">Floor Plan Vector Layout</span>
+                        <small class="text-muted" style="font-size: 0.7rem;">PDF | 12.4 MB | High Res</small>
+                      </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary p-1.5" title="Download Floor Plan" onclick="triggerFileDownload('Floor Plan PDF')">
+                      <i class="bi bi-download"></i>
+                    </button>
+                  </div>
+
+                  <div class="doc-item-wrapper d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="doc-icon-box">
+                        <i class="bi bi-file-earmark-check"></i>
+                      </div>
+                      <div>
+                        <span class="fw-bold text-main d-block" style="font-size: 0.825rem;">Legal Due Diligence Cert</span>
+                        <small class="text-muted" style="font-size: 0.7rem;">PDF | 2.9 MB | Certified</small>
+                      </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary p-1.5" title="Download Legal Due Diligence Cert" onclick="triggerFileDownload('Legal Due Diligence Cert')">
+                      <i class="bi bi-download"></i>
+                    </button>
+                  </div>
+
+                  <div class="doc-item-wrapper d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="doc-icon-box">
+                        <i class="bi bi-lightning"></i>
+                      </div>
+                      <div>
+                        <span class="fw-bold text-main d-block" style="font-size: 0.825rem;">Energy Efficiency Cert</span>
+                        <small class="text-muted" style="font-size: 0.7rem;">PDF | 1.1 MB | Grade A++</small>
+                      </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary p-1.5" title="Download Energy Efficiency Certificate" onclick="triggerFileDownload('Energy Efficiency Certificate')">
+                      <i class="bi bi-download"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 11. Historical Price Trend Timeline -->
+              <div class="uh-card" data-aos="fade-up">
+                <h5 class="fw-bold font-title mb-2"><i class="bi bi-graph-up text-primary me-1"></i>Listing Price History</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Official audit trail of list price adjustments.</p>
+                
+                <div class="timeline-uh">
+                  <div class="timeline-item-uh">
+                    <span class="timeline-marker-uh info"></span>
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">JULY 09, 2026 (Adjustment)</span>
+                    <span class="fw-bold text-main font-title d-block" style="font-size: 0.825rem;">$4,850,000</span>
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Adjusted value based on premium landscaping finished additions.</small>
+                  </div>
+
+                  <div class="timeline-item-uh">
+                    <span class="timeline-marker-uh success"></span>
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">JUNE 14, 2026 (Initial Listing)</span>
+                    <span class="fw-bold text-main font-title d-block" style="font-size: 0.825rem;">$4,950,000</span>
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Initial launching price posted on UrbanHub regional platform.</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 12. Full Listing Workflow Timeline -->
+              <div class="uh-card" data-aos="fade-up">
+                <h5 class="fw-bold font-title mb-2"><i class="bi bi-arrow-left-right text-primary me-1"></i>Property Timeline Logs</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">General lifecycle milestones of PROP-102.</p>
+                
+                <div class="timeline-uh">
+                  <div class="timeline-item-uh">
+                    <span class="timeline-marker-uh info"></span>
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">JULY 10, 2026</span>
+                    <span class="fw-bold text-main font-title d-block" style="font-size: 0.825rem;">Featured Campaign Launched</span>
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Promoted to primary global spotlight slider position.</small>
+                  </div>
+
+                  <div class="timeline-item-uh">
+                    <span class="timeline-marker-uh success"></span>
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">JULY 02, 2026</span>
+                    <span class="fw-bold text-main font-title d-block" style="font-size: 0.825rem;">Final Municipal Inspection Passed</span>
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Building code, structural mechanics, plumbing fully greenlit.</small>
+                  </div>
+
+                  <div class="timeline-item-uh">
+                    <span class="timeline-marker-uh warning"></span>
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">JUNE 20, 2026</span>
+                    <span class="fw-bold text-main font-title d-block" style="font-size: 0.825rem;">Energy Efficiency Audit Completed</span>
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">A++ Grade certified for solar array output performance.</small>
+                  </div>
+
+                  <div class="timeline-item-uh">
+                    <span class="timeline-marker-uh success"></span>
+                    <span class="text-muted d-block" style="font-size: 0.7rem;">JUNE 14, 2026</span>
+                    <span class="fw-bold text-main font-title d-block" style="font-size: 0.825rem;">Listing Officially Published</span>
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Created and added to SQL database registries.</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 13. Quick Administrative Actions -->
+              <div class="uh-card" data-aos="fade-up">
+                <h5 class="fw-bold font-title mb-3"><i class="bi bi-shield-lock-fill text-primary me-1"></i>Administrative Hub</h5>
+                <p class="text-muted mb-3" style="font-size: 0.8rem;">Direct operations for managing this property record.</p>
+                <div class="d-flex flex-column gap-2">
+                  <a href="add-property.html?edit=PROP-102" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 text-muted" style="border: 1px solid var(--uh-border-color); font-size: 0.825rem;">
+                    <i class="bi bi-pencil-square text-primary"></i> Edit Listing details
+                  </a>
+                  <button class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 text-muted" style="border: 1px solid var(--uh-border-color); font-size: 0.825rem;" onclick="duplicateListing()">
+                    <i class="bi bi-copy text-info"></i> Duplicate Listing record
+                  </button>
+                  <button class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 text-muted" style="border: 1px solid var(--uh-border-color); font-size: 0.825rem;" onclick="archiveListing()">
+                    <i class="bi bi-archive text-warning"></i> Archive Listing node
+                  </button>
+                  <button class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 text-muted" style="border: 1px solid var(--uh-border-color); font-size: 0.825rem;" onclick="generateListingPDF()">
+                    <i class="bi bi-file-earmark-pdf text-success"></i> Generate Listing Brochure
+                  </button>
+                  <hr class="my-1 border-light-subtle" />
+                  <button class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 fw-semibold" style="font-size: 0.825rem;" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
+                    <i class="bi bi-trash-fill"></i> Delete Listing Permanently
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- RELATED PROPERTIES ROW -->
+          <div class="row g-4 mt-4 mb-4" data-aos="fade-up">
+            <div class="col-12">
+              <h4 class="font-title fw-bold mb-1">Related Luxury Offerings</h4>
+              <p class="text-muted mb-4" style="font-size: 0.85rem;">Highly curated active listings matching comparable architectural standards.</p>
+              
+              <div class="row g-4">
+                <!-- Card 1 -->
+                <div class="col-12 col-md-6 col-xl-3">
+                  <div class="property-card-premium">
+                    <div class="property-image-wrapper">
+                      <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=600&auto=format&fit=crop" class="property-img" alt="Modernist Seaside Villa" referrerpolicy="no-referrer" />
+                      <div class="property-badges-overlay">
+                        <span class="badge bg-success-subtle text-success">For Sale</span>
+                        <span class="favorite-btn-premium" title="Bookmark" onclick="event.preventDefault(); alert('Saved Modernist Seaside Villa to favorites!')"><i class="bi bi-heart"></i></span>
+                      </div>
+                    </div>
+                    <div class="p-3 d-flex flex-column flex-grow-1">
+                      <h6 class="fw-bold text-main font-title mb-1 text-truncate">Modernist Seaside Villa</h6>
+                      <p class="text-muted mb-3" style="font-size: 0.75rem;"><i class="bi bi-geo-alt-fill text-primary"></i> Miami Beach, FL</p>
+                      <div class="property-specs-grid">
+                        <div class="property-spec-pill"><i class="bi bi-door-closed"></i> 4 Beds</div>
+                        <div class="property-spec-pill"><i class="bi bi-water"></i> 5 Baths</div>
+                        <div class="property-spec-pill"><i class="bi bi-car-front"></i> Garage</div>
+                        <div class="property-spec-pill"><i class="bi bi-textarea-resize"></i> 4,200 sqft</div>
+                      </div>
+                      <div class="d-flex align-items-center justify-content-between mt-auto pt-2 border-top border-light-subtle">
+                        <span class="fw-bold text-primary font-title" style="font-size: 0.95rem;">$2,450,000</span>
+                        <a href="property-details.html?id=PROP-103" class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem;">View Details</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="col-12 col-md-6 col-xl-3">
+                  <div class="property-card-premium">
+                    <div class="property-image-wrapper">
+                      <img src="https://images.unsplash.com/photo-1600596543064-77af90aa6f32?q=80&w=600&auto=format&fit=crop" class="property-img" alt="Contemporary Hilltop Mansion" referrerpolicy="no-referrer" />
+                      <div class="property-badges-overlay">
+                        <span class="badge bg-success-subtle text-success">For Sale</span>
+                        <span class="favorite-btn-premium" title="Bookmark" onclick="event.preventDefault(); alert('Saved Contemporary Hilltop Mansion to favorites!')"><i class="bi bi-heart"></i></span>
+                      </div>
+                    </div>
+                    <div class="p-3 d-flex flex-column flex-grow-1">
+                      <h6 class="fw-bold text-main font-title mb-1 text-truncate">Contemporary Hilltop Mansion</h6>
+                      <p class="text-muted mb-3" style="font-size: 0.75rem;"><i class="bi bi-geo-alt-fill text-primary"></i> Hollywood Hills, CA</p>
+                      <div class="property-specs-grid">
+                        <div class="property-spec-pill"><i class="bi bi-door-closed"></i> 6 Beds</div>
+                        <div class="property-spec-pill"><i class="bi bi-water"></i> 7 Baths</div>
+                        <div class="property-spec-pill"><i class="bi bi-car-front"></i> Garage</div>
+                        <div class="property-spec-pill"><i class="bi bi-textarea-resize"></i> 6,800 sqft</div>
+                      </div>
+                      <div class="d-flex align-items-center justify-content-between mt-auto pt-2 border-top border-light-subtle">
+                        <span class="fw-bold text-primary font-title" style="font-size: 0.95rem;">$6,200,000</span>
+                        <a href="property-details.html?id=PROP-104" class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem;">View Details</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="col-12 col-md-6 col-xl-3">
+                  <div class="property-card-premium">
+                    <div class="property-image-wrapper">
+                      <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=600&auto=format&fit=crop" class="property-img" alt="The Sanctuary Forest Retreat" referrerpolicy="no-referrer" />
+                      <div class="property-badges-overlay">
+                        <span class="badge bg-success-subtle text-success">For Sale</span>
+                        <span class="favorite-btn-premium" title="Bookmark" onclick="event.preventDefault(); alert('Saved Sanctuary Forest Retreat to favorites!')"><i class="bi bi-heart"></i></span>
+                      </div>
+                    </div>
+                    <div class="p-3 d-flex flex-column flex-grow-1">
+                      <h6 class="fw-bold text-main font-title mb-1 text-truncate">The Sanctuary Forest Lodge</h6>
+                      <p class="text-muted mb-3" style="font-size: 0.75rem;"><i class="bi bi-geo-alt-fill text-primary"></i> Lake Tahoe, NV</p>
+                      <div class="property-specs-grid">
+                        <div class="property-spec-pill"><i class="bi bi-door-closed"></i> 4 Beds</div>
+                        <div class="property-spec-pill"><i class="bi bi-water"></i> 4 Baths</div>
+                        <div class="property-spec-pill"><i class="bi bi-car-front"></i> Garage</div>
+                        <div class="property-spec-pill"><i class="bi bi-textarea-resize"></i> 3,900 sqft</div>
+                      </div>
+                      <div class="d-flex align-items-center justify-content-between mt-auto pt-2 border-top border-light-subtle">
+                        <span class="fw-bold text-primary font-title" style="font-size: 0.95rem;">$1,850,000</span>
+                        <a href="property-details.html?id=PROP-105" class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem;">View Details</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="col-12 col-md-6 col-xl-3">
+                  <div class="property-card-premium">
+                    <div class="property-image-wrapper">
+                      <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?q=80&w=600&auto=format&fit=crop" class="property-img" alt="Gold-Coast Coastal Haven" referrerpolicy="no-referrer" />
+                      <div class="property-badges-overlay">
+                        <span class="badge bg-info-subtle text-info">For Rent</span>
+                        <span class="favorite-btn-premium" title="Bookmark" onclick="event.preventDefault(); alert('Saved Gold-Coast Coastal Haven to favorites!')"><i class="bi bi-heart"></i></span>
+                      </div>
+                    </div>
+                    <div class="p-3 d-flex flex-column flex-grow-1">
+                      <h6 class="fw-bold text-main font-title mb-1 text-truncate">Gold-Coast Coastal Haven</h6>
+                      <p class="text-muted mb-3" style="font-size: 0.75rem;"><i class="bi bi-geo-alt-fill text-primary"></i> Malibu, CA</p>
+                      <div class="property-specs-grid">
+                        <div class="property-spec-pill"><i class="bi bi-door-closed"></i> 3 Beds</div>
+                        <div class="property-spec-pill"><i class="bi bi-water"></i> 3.5 Baths</div>
+                        <div class="property-spec-pill"><i class="bi bi-car-front"></i> Parking</div>
+                        <div class="property-spec-pill"><i class="bi bi-textarea-resize"></i> 2,800 sqft</div>
+                      </div>
+                      <div class="d-flex align-items-center justify-content-between mt-auto pt-2 border-top border-light-subtle">
+                        <span class="fw-bold text-primary font-title" style="font-size: 0.95rem;">$14,000 /mo</span>
+                        <a href="property-details.html?id=PROP-106" class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem;">View Details</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: var(--uh-bg-card); border: 1px solid var(--uh-border-color); border-radius: 14px;">
+          <div class="modal-header border-bottom border-light-subtle py-3">
+            <h5 class="modal-title font-title fw-bold text-main" id="deleteConfirmLabel">
+              <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i> Confirm Permanent Deletion
+            </h5>
+            <button type="button" class="btn-close btn-close-white" style="filter: var(--bs-theme, invert(1));" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body py-4">
+            <p class="mb-2 text-main fw-semibold">Are you absolutely sure you want to permanently delete this listing node?</p>
+            <p class="text-muted mb-0" style="font-size: 0.85rem;">This operation will purge the structural data and relational assets of <strong>PROP-102 (The Grand Peninsula Vista Villa)</strong> from the core database registry. This cannot be undone.</p>
+          </div>
+          <div class="modal-header d-flex justify-content-end gap-2 border-top border-light-subtle py-3">
+            <button type="button" class="btn btn-outline-secondary text-muted" style="border: 1px solid var(--uh-border-color); font-size: 0.825rem;" data-bs-dismiss="modal">Cancel Action</button>
+            <button type="button" class="btn btn-danger text-white font-title fw-bold" style="font-size: 0.825rem;" onclick="confirmPermanentListingDelete()">Delete Permanent Listing</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GALLERY FULLSCREEN PREVIEW MODAL -->
+    <div class="modal fade" id="fullscreenGalleryModal" tabindex="-1" aria-labelledby="fullscreenGalleryLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content" style="background-color: #000; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; overflow: hidden;">
+          <div class="modal-header border-bottom border-light-subtle py-3 px-4 d-flex justify-content-between align-items-center" style="background-color: #111114;">
+            <h5 class="modal-title font-title fw-bold text-white mb-0" id="fullscreenGalleryLabel">
+              <i class="bi bi-image-fill text-primary me-2"></i> Fullscreen Preview - PROP-102
+            </h5>
+            <button type="button" class="btn-close btn-close-white" style="filter: invert(0);" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body fullscreen-modal-body">
+            <!-- Fullscreen Swiper Slider -->
+            <div class="swiper fullscreen-swiper" id="swiper-fullscreen-instance">
+              <div class="swiper-wrapper">
+                <div class="swiper-slide">
+                  <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1200&auto=format&fit=crop" alt="Exterior View" referrerpolicy="no-referrer" />
+                </div>
+                <div class="swiper-slide">
+                  <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1200&auto=format&fit=crop" alt="Living Room Layout" referrerpolicy="no-referrer" />
+                </div>
+                <div class="swiper-slide">
+                  <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=1200&auto=format&fit=crop" alt="Kitchen Prep Zone" referrerpolicy="no-referrer" />
+                </div>
+                <div class="swiper-slide">
+                  <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=1200&auto=format&fit=crop" alt="Suite Suite" referrerpolicy="no-referrer" />
+                </div>
+                <div class="swiper-slide">
+                  <img src="https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?q=80&w=1200&auto=format&fit=crop" alt="Pool" referrerpolicy="no-referrer" />
+                </div>
+                <div class="swiper-slide">
+                  <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1200&auto=format&fit=crop" alt="Baths Room" referrerpolicy="no-referrer" />
+                </div>
+              </div>
+              <div class="gallery-controls-overlay">
+                <div class="gallery-control-btn swiper-fs-prev"><i class="bi bi-chevron-left"></i></div>
+                <div class="gallery-control-btn swiper-fs-next"><i class="bi bi-chevron-right"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AOS Animation Library JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Swiper.js Slider JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <!-- Custom Main JS Script -->
+    <script src="/assets/js/main.js"></script>
+
+    <!-- IN-PAGE PROPERTY DETAILS INTERACTIVITY ENGINE -->
+    <script>
+      let isFavorite = false;
+      let activeSwiper = null;
+      let activeFS = null;
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // --- 1. INITIALIZE SWIPER GALLERY ---
+        const swiperThumbs = new Swiper('#swiper-thumbs-instance', {
+          spaceBetween: 10,
+          slidesPerView: 4,
+          freeMode: true,
+          watchSlidesProgress: true,
+        });
+
+        activeSwiper = new Swiper('#swiper-main-instance', {
+          spaceBetween: 10,
+          loop: true,
+          thumbs: {
+            swiper: swiperThumbs,
+          },
+          navigation: {
+            nextEl: '.swiper-main-next',
+            prevEl: '.swiper-main-prev',
+          },
+          autoplay: {
+            delay: 4500,
+            disableOnInteraction: false,
+          },
+        });
+
+        // --- 2. LOCALSTORAGE STATE SYNC (FAVORITES) ---
+        const favoritesStore = JSON.parse(localStorage.getItem('uh_favorites')) || [];
+        isFavorite = favoritesStore.includes('PROP-102');
+        updateFavoriteButtonUI();
+
+        // --- 3. PRE-FILL VIEW DATE INPUT (TOMORROW) ---
+        const visitDateInput = document.getElementById('visit-date');
+        if (visitDateInput) {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const yyyy = tomorrow.getFullYear();
+          const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+          const dd = String(tomorrow.getDate()).padStart(2, '0');
+          visitDateInput.value = `${yyyy}-${mm}-${dd}`;
+          visitDateInput.min = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // --- 4. INITIALIZE MORTGAGE MATH ON LOAD ---
+        calculatePremiumMortgage();
+      });
+
+      // --- 5. DESCRIPTION TEXT READ MORE TOGGLE ---
+      function toggleDescriptionText() {
+        const textContainer = document.getElementById('description-text-container');
+        const readBtn = document.getElementById('read-more-btn');
+        const btnText = readBtn.querySelector('span');
+        const btnIcon = document.getElementById('read-more-icon');
+
+        if (textContainer.classList.contains('description-collapsed')) {
+          textContainer.classList.remove('description-collapsed');
+          textContainer.classList.add('description-expanded');
+          btnText.textContent = 'Read Less';
+          btnIcon.className = 'bi bi-chevron-up';
+        } else {
+          textContainer.classList.remove('description-expanded');
+          textContainer.classList.add('description-collapsed');
+          btnText.textContent = 'Read More';
+          btnIcon.className = 'bi bi-chevron-down';
+        }
+      }
+
+      // --- 6. INTERACTIVE FAVORITE STATUS ---
+      function togglePropertyFavorite() {
+        isFavorite = !isFavorite;
+        const favoritesStore = JSON.parse(localStorage.getItem('uh_favorites')) || [];
+        
+        if (isFavorite) {
+          if (!favoritesStore.includes('PROP-102')) favoritesStore.push('PROP-102');
+          showNotificationToast('Success', 'Added PROP-102 to your private bookmark collection.');
+        } else {
+          const idx = favoritesStore.indexOf('PROP-102');
+          if (idx > -1) favoritesStore.splice(idx, 1);
+          showNotificationToast('Registry Updated', 'Removed listing from your bookmarks.');
+        }
+
+        localStorage.setItem('uh_favorites', JSON.stringify(favoritesStore));
+        updateFavoriteButtonUI();
+      }
+
+      function updateFavoriteButtonUI() {
+        const heartBtn = document.getElementById('btn-favorite-detail');
+        const heartIcon = document.getElementById('favorite-heart-icon');
+        if (!heartBtn || !heartIcon) return;
+
+        if (isFavorite) {
+          heartBtn.className = 'btn btn-primary d-inline-flex align-items-center justify-content-center p-2 rounded-3 text-white';
+          heartBtn.style.backgroundColor = 'var(--uh-primary)';
+          heartBtn.style.borderColor = 'var(--uh-primary)';
+          heartIcon.className = 'bi bi-heart-fill';
+          heartBtn.setAttribute('title', 'Remove from Bookmarks');
+        } else {
+          heartBtn.className = 'btn btn-outline-secondary d-inline-flex align-items-center justify-content-center p-2 rounded-3 text-muted';
+          heartBtn.style.backgroundColor = '';
+          heartBtn.style.borderColor = 'var(--uh-border-color)';
+          heartIcon.className = 'bi bi-heart';
+          heartBtn.setAttribute('title', 'Bookmark Listing');
+        }
+      }
+
+      // --- 7. EXPORT SHARE LINK ---
+      function sharePropertyDetails() {
+        const copyURL = window.location.origin + "/property-details.html";
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(copyURL);
+          showNotificationToast('Clipboard Link', 'Link to property registry compiled and saved to clipboard!');
+        } else {
+          showNotificationToast('Share Link', 'Direct URL: ' + copyURL);
+        }
+      }
+
+      // --- 8. OPEN FULLSCREEN SWIPER POPUP ---
+      function triggerFullscreenGallery() {
+        const fsModalEl = document.getElementById('fullscreenGalleryModal');
+        const fsModal = new bootstrap.Modal(fsModalEl);
+        fsModal.show();
+
+        // Lazy initialize or sync active slide index
+        const currentIndex = activeSwiper ? activeSwiper.realIndex : 0;
+
+        setTimeout(() => {
+          if (activeFS) {
+            activeFS.destroy();
+          }
+          activeFS = new Swiper('#swiper-fullscreen-instance', {
+            spaceBetween: 10,
+            initialSlide: currentIndex,
+            loop: true,
+            navigation: {
+              nextEl: '.swiper-fs-next',
+              prevEl: '.swiper-fs-prev',
+            },
+          });
+        }, 300);
+      }
+
+      // --- 9. MORTGAGE CALCULATOR LOGIC ---
+      function calculatePremiumMortgage() {
+        const price = parseFloat(document.getElementById('calc-price').value) || 0;
+        const down = parseFloat(document.getElementById('calc-down').value) || 0;
+        const annualRate = parseFloat(document.getElementById('calc-rate').value) || 0;
+        const termYears = parseFloat(document.getElementById('calc-term').value) || 30;
+
+        const loanAmount = price - down;
+        if (loanAmount <= 0) {
+          document.getElementById('mortgage-monthly-val').textContent = '$0.00';
+          document.getElementById('mortgage-total-val').textContent = '$0.00';
+          document.getElementById('mortgage-interest-val').textContent = '$0.00';
+          return;
+        }
+
+        const monthlyRate = (annualRate / 100) / 12;
+        const totalPaymentsCount = termYears * 12;
+
+        let monthlyPayment = 0;
+        if (monthlyRate === 0) {
+          monthlyPayment = loanAmount / totalPaymentsCount;
+        } else {
+          monthlyPayment = (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, totalPaymentsCount)) / 
+                           (Math.pow(1 + monthlyRate, totalPaymentsCount) - 1);
+        }
+
+        const totalCostPaid = (monthlyPayment * totalPaymentsCount);
+        const interestCostPaid = totalCostPaid - loanAmount;
+
+        document.getElementById('mortgage-monthly-val').textContent = '$' + monthlyPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('mortgage-total-val').textContent = '$' + Math.ceil(totalCostPaid).toLocaleString();
+        document.getElementById('mortgage-interest-val').textContent = '$' + Math.ceil(interestCostPaid).toLocaleString();
+      }
+
+      // --- 10. SUBMIT VIEWING PROPOSAL (VALIDATION & TOAST) ---
+      function submitViewingRequest(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const form = document.getElementById('viewingRequestForm');
+        
+        if (form.checkValidity() === false) {
+          form.classList.add('was-validated');
+          return;
+        }
+
+        const name = document.getElementById('visit-name').value;
+        const date = document.getElementById('visit-date').value;
+        const slot = document.getElementById('visit-time').value;
+
+        showNotificationToast('Appointment Scheduled', `Request successfully routed. Tour confirmed for ${name} on ${date} at ${slot}.`);
+        form.reset();
+        form.classList.remove('was-validated');
+      }
+
+      // --- 11. ADMINISTRATIVE ACTIONS HANDLERS ---
+      function duplicateListing() {
+        showNotificationToast('Database Action', 'Compiling listing schema nodes... Created duplicate clone record: PROP-102-COPY.');
+      }
+
+      function archiveListing() {
+        showNotificationToast('Registry Updated', 'Status of PROP-102 changed to: Archived. Removing from general public searches.');
+      }
+
+      function generateListingPDF() {
+        showNotificationToast('Document Compiled', 'Compiling layout specs, images, floor plans... Launching download for Brochure-PROP-102.pdf.');
+      }
+
+      function triggerFileDownload(docName) {
+        showNotificationToast('Download Started', `Downloading official certified copy of: ${docName}.pdf`);
+      }
+
+      function confirmPermanentListingDelete() {
+        const modalEl = document.getElementById('deleteConfirmModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+
+        showNotificationToast('Record Purged', 'PROP-102 listing has been permanently deleted from relational database logs.');
+        setTimeout(() => {
+          window.location.href = 'properties.html';
+        }, 1200);
+      }
+
+      // --- 12. FLOATING INTEGRATED TOAST WRAPPER ---
+      function showNotificationToast(title, message) {
+        let toastContainer = document.getElementById('uh-toast-container');
+        if (!toastContainer) {
+          toastContainer = document.createElement('div');
+          toastContainer.id = 'uh-toast-container';
+          toastContainer.className = 'position-fixed bottom-0 end-0 p-4';
+          toastContainer.style.zIndex = '9999';
+          document.body.appendChild(toastContainer);
+        }
+        
+        const toast = document.createElement('div');
+        toast.className = 'uh-card p-3 d-flex align-items-center gap-3 border-primary shadow-lg mb-2';
+        toast.style.minWidth = '320px';
+        toast.style.background = 'var(--uh-bg-card)';
+        toast.style.border = '1px solid var(--uh-primary)';
+        toast.style.animation = 'toastFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        
+        toast.innerHTML = `
+          <div class="stat-icon-wrapper bg-primary text-white" style="width: 34px; height: 34px; font-size: 0.95rem; border-radius: 8px;">
+            <i class="bi bi-info-circle-fill"></i>
+          </div>
+          <div class="flex-grow-1">
+            <span class="fw-bold d-block text-main" style="font-size: 0.825rem; font-family: var(--uh-font-title);">${title}</span>
+            <p class="text-muted mb-0" style="font-size: 0.775rem; line-height: 1.4;">${message}</p>
+          </div>
+          <button class="btn-close btn-close-white" style="font-size: 0.65rem;" onclick="this.parentElement.remove()"></button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(12px)';
+          toast.style.transition = 'all 0.4s ease';
+          setTimeout(() => toast.remove(), 450);
+        }, 4000);
+      }
+    </script>
+  </body>
+</html>

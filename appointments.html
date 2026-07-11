@@ -1,0 +1,2040 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Appointments &amp; Schedules - UrbanHub CRM</title>
+
+    <!-- Theme Choice Pre-load Script to avoid flashing -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* --- PREMIUM PAGE STYLING --- */
+      
+      /* Glow effect card styling */
+      .glow-card {
+        position: relative;
+        overflow: hidden;
+      }
+      .card-glow-effect {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none;
+        background: radial-gradient(circle 120px at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(var(--uh-primary-rgb), 0.08), transparent 80%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 1;
+      }
+      .glow-card:hover .card-glow-effect {
+        opacity: 1;
+      }
+
+      /* Hover lift animations */
+      .lift-on-hover {
+        transition: var(--uh-transition-smooth);
+      }
+      .lift-on-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--uh-shadow-lg) !important;
+        border-color: rgba(var(--uh-primary-rgb), 0.3) !important;
+      }
+
+      /* Custom FullCalendar Adaptations to theme */
+      .fc {
+        --fc-button-bg-color: var(--uh-bg-card);
+        --fc-button-border-color: var(--uh-border-color);
+        --fc-button-hover-bg-color: rgba(var(--uh-primary-rgb), 0.1);
+        --fc-button-hover-border-color: var(--uh-primary);
+        --fc-button-active-bg-color: var(--uh-primary);
+        --fc-button-active-border-color: var(--uh-primary);
+        --fc-border-color: var(--uh-border-color);
+        --fc-page-bg-color: var(--uh-bg-card);
+        --fc-list-event-hover-bg-color: rgba(var(--uh-primary-rgb), 0.05);
+        font-family: var(--uh-font-title);
+      }
+      
+      .fc .fc-toolbar-title {
+        font-size: 1.25rem !important;
+        font-weight: 700;
+        color: var(--uh-text-main);
+      }
+
+      .fc .fc-col-header-cell-cushion,
+      .fc .fc-daygrid-day-number {
+        color: var(--uh-text-main);
+        font-family: var(--uh-font-body);
+        font-weight: 500;
+        text-decoration: none !important;
+      }
+
+      .fc-theme-bootstrap5 a {
+        color: var(--uh-text-main) !important;
+      }
+
+      .fc-event {
+        cursor: pointer;
+        border-radius: 4px !important;
+        padding: 2px 6px !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: none !important;
+      }
+      .fc-event:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      }
+
+      /* Meeting Type Event Colors */
+      .fc-event-visit { background-color: rgba(212, 175, 55, 0.15) !important; border-left: 3px solid var(--uh-primary) !important; color: var(--uh-text-main) !important; }
+      .fc-event-virtual { background-color: rgba(59, 130, 246, 0.15) !important; border-left: 3px solid var(--uh-info) !important; color: var(--uh-text-main) !important; }
+      .fc-event-office { background-color: rgba(16, 185, 129, 0.15) !important; border-left: 3px solid var(--uh-success) !important; color: var(--uh-text-main) !important; }
+      .fc-event-signing { background-color: rgba(245, 158, 11, 0.15) !important; border-left: 3px solid var(--uh-warning) !important; color: var(--uh-text-main) !important; }
+
+      /* Agenda Timeline Styles */
+      .agenda-timeline {
+        position: relative;
+        padding-left: 20px;
+        border-left: 2px solid var(--uh-border-color);
+      }
+      .agenda-item {
+        position: relative;
+        padding-bottom: 20px;
+      }
+      .agenda-item:last-child {
+        padding-bottom: 0;
+      }
+      .agenda-time-dot {
+        position: absolute;
+        left: -27px;
+        top: 4px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--uh-bg-card);
+        border: 2px solid var(--uh-primary);
+        z-index: 2;
+      }
+      .agenda-item.completed .agenda-time-dot {
+        border-color: var(--uh-success);
+        background-color: var(--uh-success);
+      }
+      .agenda-item.cancelled .agenda-time-dot {
+        border-color: var(--uh-text-muted);
+        background-color: transparent;
+      }
+
+      /* State Simulator styling */
+      .state-simulator-bar {
+        background-color: rgba(var(--uh-primary-rgb), 0.04);
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.15);
+        border-radius: 10px;
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      /* Skeleton placeholder animation */
+      .skeleton-placeholder {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255, 255, 255, 0.05) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading-flow 1.5s infinite;
+        border-radius: 6px;
+        display: inline-block;
+      }
+      @keyframes skeleton-loading-flow {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-hidden {
+        display: none !important;
+      }
+
+      /* Availability indicator colors */
+      .avail-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+      .avail-dot.free { background-color: var(--uh-success); }
+      .avail-dot.busy { background-color: var(--uh-text-muted); }
+
+      /* Toast Notification */
+      .toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 1080;
+      }
+      .uh-toast {
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-primary);
+        color: var(--uh-text-main);
+        border-radius: 8px;
+        box-shadow: var(--uh-shadow-lg);
+      }
+
+      @media print {
+        .btn-no-print, .top-header, .sidebar-wrapper, .state-simulator-bar, .advanced-filters-card {
+          display: none !important;
+        }
+        .main-content-wrapper {
+          margin-left: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Mobile sidebar overlay backdrop -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon"><i class="bi bi-building-up"></i></div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link active">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="transactions.html" class="sidebar-menu-link">
+                <i class="bi bi-currency-exchange"></i>
+                <span>Transactions</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input" id="global-search-input" placeholder="Quick appointment lookup..." onkeyup="handleGlobalSearch(this.value)" />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <!-- Theme toggle standard binding -->
+            <button id="theme-toggle" class="header-btn" title="Switch Theme">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE BODY CONTAINER -->
+        <div class="page-body">
+
+          <!-- STATE SIMULATOR BAR -->
+          <div class="state-simulator-bar mb-4 btn-no-print" data-aos="fade-down">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-cpu text-primary"></i>
+              <span class="small fw-semibold text-main">UI Reusable States Simulator:</span>
+            </div>
+            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+              <button class="btn btn-xs btn-outline-primary px-2.5 py-1 active" id="sim-btn-success" onclick="switchSimulatorState('success')">
+                <i class="bi bi-check-circle me-1"></i> Success State
+              </button>
+              <button class="btn btn-xs btn-outline-secondary px-2.5 py-1" id="sim-btn-loading" onclick="switchSimulatorState('loading')">
+                <i class="bi bi-hourglass-split me-1"></i> Loading Skeletons
+              </button>
+              <button class="btn btn-xs btn-outline-warning px-2.5 py-1" id="sim-btn-empty" onclick="switchSimulatorState('empty')">
+                <i class="bi bi-folder-x me-1"></i> Empty State
+              </button>
+              <button class="btn btn-xs btn-outline-danger px-2.5 py-1" id="sim-btn-error" onclick="switchSimulatorState('error')">
+                <i class="bi bi-exclamation-triangle me-1"></i> Error State
+              </button>
+            </div>
+          </div>
+
+          <!-- BREADCRUMB & HEADER PANEL -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-down" data-aos-delay="50">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Appointments</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Schedules &amp; Appointments</h1>
+            </div>
+
+            <!-- Toolbar buttons -->
+            <div class="d-flex align-items-center flex-wrap gap-2 btn-no-print">
+              <a href="coming-soon.html" class="btn btn-sm btn-primary d-flex align-items-center gap-1.5">
+                <i class="bi bi-calendar-plus"></i> <span>Add Appointment</span>
+              </a>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerExportCSV()">
+                <i class="bi bi-file-earmark-spreadsheet"></i> <span>Export CSV</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerExportPDF()">
+                <i class="bi bi-file-earmark-pdf"></i> <span>Export PDF</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span>Print</span>
+              </button>
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5" onclick="triggerRefresh()">
+                <i class="bi bi-arrow-clockwise"></i> <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SKELETON PRELOAD STATE -->
+          <div id="state-loading-skeleton" class="skeleton-hidden">
+            <div class="row g-4 mb-4">
+              <div class="col-6 col-md-3" v-for="n in 4">
+                <div class="uh-card p-3">
+                  <div class="skeleton-placeholder mb-2" style="width: 50%; height: 12px;"></div>
+                  <div class="skeleton-placeholder" style="width: 80%; height: 26px;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="row g-4">
+              <div class="col-12 col-lg-8">
+                <div class="uh-card p-4 mb-4">
+                  <div class="skeleton-placeholder mb-4" style="width: 30%; height: 24px;"></div>
+                  <div class="skeleton-placeholder mb-2" style="width: 100%; height: 350px;"></div>
+                </div>
+              </div>
+              <div class="col-12 col-lg-4">
+                <div class="uh-card p-4 mb-4">
+                  <div class="skeleton-placeholder mb-3" style="width: 60%; height: 20px;"></div>
+                  <div class="skeleton-placeholder mb-2" style="width: 100%; height: 50px;" v-for="i in 3"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE PANEL -->
+          <div id="state-empty" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 max-width-600 mx-auto" style="max-width: 600px;">
+              <div class="text-warning mb-4"><i class="bi bi-calendar-x" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">No Scheduled Appointments</h3>
+              <p class="text-muted small mb-4">The appointments roster is empty. There are no client events, virtual consults, or physical tours scheduled in the system archive for the specified query.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <a href="coming-soon.html" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i> Add First Appointment</a>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ERROR STATE PANEL -->
+          <div id="state-error" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 max-width-600 mx-auto border-danger" style="max-width: 600px;">
+              <div class="text-danger mb-4"><i class="bi bi-wifi-off" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">Sync Synchronization Failure</h3>
+              <p class="text-muted small mb-4">UrbanHub was unable to securely connect to the schedules stream registry. This is caused by a secure credential validation timeout or unstable network ping routing.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-danger" onclick="triggerRefresh()"><i class="bi bi-arrow-clockwise me-1"></i> Force Secure Sync</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- REAL HIGH-FIDELITY SUCCESS CONTENT -->
+          <div id="state-success-content" class="fade-transition">
+
+            <!-- STATISTICS CARDS METRIC GRID -->
+            <div class="row g-3 mb-4" data-aos="fade-up" data-aos-delay="100">
+              <div class="col-6 col-md-3 col-xl-1-5 col-xxl-1-5">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem; letter-spacing: 0.5px;">TOTAL SLOTS</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                    <h3 class="font-title fw-bold mb-0 text-primary animate-counter-uh" data-target="154">154</h3>
+                    <span class="text-success small fw-semibold" style="font-size: 0.725rem;"><i class="bi bi-graph-up"></i> +8%</span>
+                  </div>
+                  <span class="text-muted small d-block" style="font-size: 0.65rem;">Active pipeline</span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 col-xl-1-5 col-xxl-1-5">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem; letter-spacing: 0.5px;">TODAY'S EVENTS</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                    <h3 class="font-title fw-bold mb-0 text-info animate-counter-uh" data-target="8">8</h3>
+                    <span class="badge bg-danger-subtle text-danger py-0.5 px-1.5" style="font-size: 0.6rem;">BUSY</span>
+                  </div>
+                  <span class="text-muted small d-block" style="font-size: 0.65rem;">Schedules active</span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 col-xl-1-5 col-xxl-1-5">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem; letter-spacing: 0.5px;">UPCOMING</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                    <h3 class="font-title fw-bold mb-0 text-warning animate-counter-uh" data-target="18">18</h3>
+                    <span class="text-muted small fw-semibold" style="font-size: 0.725rem;"><i class="bi bi-dash"></i> static</span>
+                  </div>
+                  <span class="text-muted small d-block" style="font-size: 0.65rem;">Next 7 days</span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 col-xl-1-5 col-xxl-1-5">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem; letter-spacing: 0.5px;">COMPLETED</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                    <h3 class="font-title fw-bold mb-0 text-success animate-counter-uh" data-target="112">112</h3>
+                    <span class="text-success small fw-semibold" style="font-size: 0.725rem;"><i class="bi bi-check-all"></i> 90%</span>
+                  </div>
+                  <span class="text-muted small d-block" style="font-size: 0.65rem;">Showing rate</span>
+                </div>
+              </div>
+              <div class="col-6 col-md-4 col-xl-1-5 col-xxl-1-5">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem; letter-spacing: 0.5px;">CANCELLED &amp; NOSHOW</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                    <h3 class="font-title fw-bold mb-0 text-danger" style="font-size: 1.75rem;"><span class="animate-counter-uh" data-target="12">12</span> / <span class="animate-counter-uh" data-target="4">4</span></h3>
+                    <span class="text-success small fw-semibold" style="font-size: 0.725rem;"><i class="bi bi-arrow-down-short"></i> -3%</span>
+                  </div>
+                  <span class="text-muted small d-block" style="font-size: 0.65rem;">Cancellation curve</span>
+                </div>
+              </div>
+              <div class="col-6 col-md-4 col-xl-1-5 col-xxl-1-5">
+                <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem; letter-spacing: 0.5px;">VISITS VS VIRTUAL</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                    <h3 class="font-title fw-bold mb-0 text-primary" style="font-size: 1.75rem;"><span class="animate-counter-uh" data-target="86">86</span> / <span class="animate-counter-uh" data-target="68">68</span></h3>
+                  </div>
+                  <span class="text-muted small d-block" style="font-size: 0.65rem;">Meeting distribution</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEARCH, BULK ACTIONS & ADVANCED FILTER HEADER CARD -->
+            <div class="uh-card p-4 mb-4 advanced-filters-card" data-aos="fade-up" data-aos-delay="150">
+              <div class="row align-items-center g-3">
+                <!-- Left: Quick filter buttons & Bulk Actions info -->
+                <div class="col-12 col-lg-5">
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="small text-muted fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Quick Filter:</span>
+                    <button class="btn btn-xs btn-outline-primary px-2.5 active" onclick="filterByQuick('all', this)">All</button>
+                    <button class="btn btn-xs btn-outline-primary px-2.5" onclick="filterByQuick('today', this)">Today</button>
+                    <button class="btn btn-xs btn-outline-primary px-2.5" onclick="filterByQuick('Scheduled', this)">Scheduled</button>
+                    <button class="btn btn-xs btn-outline-primary px-2.5" onclick="filterByQuick('Virtual Meeting', this)">Virtuals</button>
+                    <button class="btn btn-xs btn-outline-primary px-2.5" onclick="filterByQuick('Property Visit', this)">Tours</button>
+                  </div>
+                </div>
+
+                <!-- Center: Interactive Search Bar -->
+                <div class="col-12 col-md-8 col-lg-4">
+                  <div class="input-group">
+                    <span class="input-group-text bg-body border-light-subtle"><i class="bi bi-funnel text-primary"></i></span>
+                    <input type="text" class="form-control bg-body border-light-subtle text-main" id="search-bar-input" placeholder="Search client name, advisor, property..." onkeyup="handleGridSearch(this.value)" />
+                  </div>
+                </div>
+
+                <!-- Right: Advanced Filter Toggle Button -->
+                <div class="col-12 col-md-4 col-lg-3 text-end">
+                  <button class="btn btn-sm btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-1.5" onclick="toggleAdvancedFilterPanel()">
+                    <i class="bi bi-sliders text-primary"></i> <span>Advanced Search Filter</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- BULK ACTIONS SUB-BAR (DYNAMICS) -->
+              <div id="bulk-actions-bar" class="bg-body border border-light-subtle rounded p-3.5 mt-3 d-none align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge bg-primary text-dark font-title" id="selected-count-badge">0 Selected</span>
+                  <span class="small text-muted">Choose a bulk action for scheduled slots:</span>
+                </div>
+                <div class="d-flex align-items-center gap-1.5">
+                  <button class="btn btn-xs btn-outline-warning" onclick="triggerBulkStatus('Confirmed')"><i class="bi bi-check-all"></i> Confirm Selected</button>
+                  <button class="btn btn-xs btn-outline-success" onclick="triggerBulkStatus('Completed')"><i class="bi bi-calendar2-check"></i> Mark Completed</button>
+                  <button class="btn btn-xs btn-outline-danger" onclick="triggerBulkDelete()"><i class="bi bi-trash"></i> Cancel / Delete Bulk</button>
+                </div>
+              </div>
+
+              <!-- COLLAPSIBLE ADVANCED SEARCH FILTERS PANEL -->
+              <div class="row g-3 mt-3 pt-3 border-top border-light-subtle d-none" id="advanced-filter-panel">
+                <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                  <label class="form-label text-muted small fw-semibold">Meeting Type</label>
+                  <select class="form-select bg-body border-light-subtle text-main" id="filter-meeting-type">
+                    <option value="">All Meeting Types</option>
+                    <option value="Property Visit">Property Visit</option>
+                    <option value="Office Meeting">Office Meeting</option>
+                    <option value="Virtual Meeting">Virtual Meeting</option>
+                    <option value="Document Verification">Document Verification</option>
+                    <option value="Contract Signing">Contract Signing</option>
+                    <option value="Follow-up Meeting">Follow-up Meeting</option>
+                  </select>
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                  <label class="form-label text-muted small fw-semibold">Event Status</label>
+                  <select class="form-select bg-body border-light-subtle text-main" id="filter-status">
+                    <option value="">All Statuses</option>
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Checked In">Checked In</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="No Show">No Show</option>
+                  </select>
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                  <label class="form-label text-muted small fw-semibold">Assigned Advisor</label>
+                  <select class="form-select bg-body border-light-subtle text-main" id="filter-agent">
+                    <option value="">All Advisors</option>
+                    <option value="Sophia Lopez">Sophia Lopez</option>
+                    <option value="Marcus Vance">Marcus Vance</option>
+                    <option value="Sarah Jenkins">Sarah Jenkins</option>
+                  </select>
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                  <label class="form-label text-muted small fw-semibold">Priority Index</label>
+                  <select class="form-select bg-body border-light-subtle text-main" id="filter-priority">
+                    <option value="">All Priorities</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                  <label class="form-label text-muted small fw-semibold">Date Schedule Range</label>
+                  <input type="date" class="form-control bg-body border-light-subtle text-main" id="filter-start-date" />
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                  <label class="form-label text-muted small fw-semibold">Target Location / City</label>
+                  <input type="text" class="form-control bg-body border-light-subtle text-main" id="filter-location" placeholder="e.g. Miami, Zoom, Office" />
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                  <label class="form-label text-muted small fw-semibold">Interested Property</label>
+                  <input type="text" class="form-control bg-body border-light-subtle text-main" id="filter-property" placeholder="e.g. Heights Penthouse" />
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4 col-xl-3 d-flex align-items-end gap-2">
+                  <button class="btn btn-primary w-100 btn-sm" onclick="applyAdvancedFilters()"><i class="bi bi-search me-1"></i> Apply Filters</button>
+                  <button class="btn btn-outline-secondary w-100 btn-sm" onclick="resetAdvancedFilters()"><i class="bi bi-x-circle me-1"></i> Reset</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- TWO COLUMN SPLIT GRID: CALENDAR + AGENDA & SIDEBAR MODULES -->
+            <div class="row g-4 mb-4">
+              <!-- Left Column: FullCalendar Engine & Interactive agenda -->
+              <div class="col-12 col-xl-8">
+                <!-- Interactive FullCalendar Card -->
+                <div class="uh-card p-4 glow-card mb-4" data-aos="fade-up" data-aos-delay="200">
+                  <div class="card-glow-effect"></div>
+                  <div class="d-flex justify-content-between align-items-center mb-3.5 flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="bi bi-calendar3-range h5 mb-0 text-primary"></i>
+                      <h4 class="font-title fw-bold mb-0">Roster Master Scheduler</h4>
+                    </div>
+                    <span class="badge bg-success-subtle text-success py-1 px-2.5 rounded-pill"><span class="pulse-indicator me-1"></span> Live Sync Engaged</span>
+                  </div>
+                  <div id="calendar-master" class="p-1 rounded bg-body-tertiary"></div>
+                </div>
+
+                <!-- Interactive Appointment Cards Grid & Agenda View -->
+                <div class="uh-card p-4" data-aos="fade-up">
+                  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <h5 class="font-title fw-bold mb-0"><i class="bi bi-list-task text-primary me-2"></i>Scheduled Appointment Profiles</h5>
+                    <div class="d-flex align-items-center gap-1">
+                      <button class="btn btn-xs btn-outline-secondary px-2.5 py-1" id="view-toggle-grid" onclick="switchAppointmentViewMode('grid')">
+                        <i class="bi bi-grid-fill"></i> Grid Layout
+                      </button>
+                      <button class="btn btn-xs btn-outline-secondary px-2.5 py-1 active" id="view-toggle-timeline" onclick="switchAppointmentViewMode('timeline')">
+                        <i class="bi bi-view-stacked"></i> Timeline Agenda
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- VIEW STATE: TIMELINE AGENDA (DEFAULT) -->
+                  <div id="appointments-timeline-view" class="agenda-timeline">
+                    <!-- Dynamic timeline items loaded by JS -->
+                  </div>
+
+                  <!-- VIEW STATE: PREMIUM CARDS GRID -->
+                  <div id="appointments-grid-view" class="row g-3 d-none">
+                    <!-- Dynamic grid items loaded by JS -->
+                  </div>
+
+                  <!-- NO SEARCH RESULTS FOUND UI STATE (SUB-STATE) -->
+                  <div id="state-no-search" class="d-none text-center py-5">
+                    <div class="text-muted mb-3"><i class="bi bi-search" style="font-size: 2.5rem;"></i></div>
+                    <h6 class="font-title fw-bold text-main mb-1">No Matching Appointments Found</h6>
+                    <p class="text-muted small mb-3">Adjust your search keyword or clean filters to restore list view.</p>
+                    <button class="btn btn-xs btn-outline-primary" onclick="resetAdvancedFilters()"><i class="bi bi-x-circle"></i> Clear Filters</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column: Availability Panel, Physical visits, Activity Feed -->
+              <div class="col-12 col-xl-4">
+                
+                <!-- Availability Panel -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up" data-aos-delay="250">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-calendar2-check text-primary me-2"></i>Resource Availability</h5>
+                  
+                  <div class="mb-3">
+                    <span class="small text-muted d-block fw-bold text-uppercase mb-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">Corporate Meeting Rooms:</span>
+                    <div class="d-flex flex-column gap-2" style="font-size: 0.8rem;">
+                      <div class="d-flex justify-content-between align-items-center p-2 rounded bg-body border border-light-subtle">
+                        <span class="fw-semibold text-main"><i class="bi bi-door-closed text-primary me-1"></i> Ritz Sky-Suite A</span>
+                        <span class="badge bg-success-subtle text-success py-0.5 px-2"><span class="avail-dot free"></span>Free Slots</span>
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center p-2 rounded bg-body border border-light-subtle">
+                        <span class="fw-semibold text-main"><i class="bi bi-door-closed text-primary me-1"></i> Horizon Ocean-Deck B</span>
+                        <span class="badge bg-danger-subtle text-danger py-0.5 px-2"><span class="avail-dot busy"></span>Booked 14:00</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span class="small text-muted d-block fw-bold text-uppercase mb-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">Advisor Activity Slots:</span>
+                    <div class="d-flex flex-column gap-2" style="font-size: 0.8rem;">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Sophia Lopez</span>
+                        <strong class="text-main">3 tours scheduled today</strong>
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Marcus Vance</span>
+                        <strong class="text-main">2 virtual slots booked</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Property Visit Schedule List -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-map-fill text-primary me-2"></i>Property Tours Schedule</h5>
+                  <div class="d-flex flex-column gap-3" id="property-tours-list">
+                    <!-- Loaded dynamically via JS -->
+                  </div>
+                </div>
+
+                <!-- Upcoming Reminders Cards -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="font-title fw-bold mb-0"><i class="bi bi-bell-fill text-warning me-2"></i>Active Alerts</h5>
+                    <span class="badge bg-danger text-white py-0.5 px-1.5" style="font-size: 0.65rem;">URGENT</span>
+                  </div>
+
+                  <div class="d-flex flex-column gap-2" id="upcoming-reminders-list">
+                    <!-- Dynamic Reminders -->
+                  </div>
+                </div>
+
+                <!-- Recent Activities Timeline -->
+                <div class="uh-card p-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3.5"><i class="bi bi-journal-text text-primary me-2"></i>Recent Action Stream</h5>
+                  <div class="d-flex flex-column gap-3" style="font-size: 0.8rem;" id="recent-activities-stream">
+                    <!-- Dynamic Action Items -->
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- ANALYTICS SECTION -->
+            <div class="uh-card p-4 mb-4" data-aos="fade-up">
+              <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                  <h4 class="font-title fw-bold mb-1">Appointment Performance &amp; Metrics Analytics</h4>
+                  <p class="text-muted small mb-0">Overview of booking trend volume, completion rate efficiency, and cancellation margins.</p>
+                </div>
+                <span class="badge bg-info-subtle text-info py-1 px-2.5">Q3 Performance</span>
+              </div>
+
+              <div class="row g-4">
+                <!-- Bar Chart: Monthly Volume -->
+                <div class="col-12 col-md-6 col-xl-4">
+                  <div class="bg-body border border-light-subtle p-3 rounded h-100">
+                    <h6 class="font-title fw-semibold text-muted text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">Appointments Volume (Monthly)</h6>
+                    <div style="position: relative; height: 220px; width: 100%;">
+                      <canvas id="monthlyVolumeChart"></canvas>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Donut Chart: Meeting Type Distribution -->
+                <div class="col-12 col-md-6 col-xl-4">
+                  <div class="bg-body border border-light-subtle p-3 rounded h-100">
+                    <h6 class="font-title fw-semibold text-muted text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">Meeting Type Distribution</h6>
+                    <div style="position: relative; height: 220px; width: 100%;">
+                      <canvas id="meetingTypeDistChart"></canvas>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Radar / Line Chart: Completion & Cancellation Curves -->
+                <div class="col-12 col-xl-4">
+                  <div class="bg-body border border-light-subtle p-3 rounded h-100">
+                    <h6 class="font-title fw-semibold text-muted text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">Completion vs Cancellation Efficiency</h6>
+                    <div style="position: relative; height: 220px; width: 100%;">
+                      <canvas id="efficiencyRadarChart"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container">
+      <div id="liveToast" class="toast uh-toast border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+        <div class="d-flex">
+          <div class="toast-body d-flex align-items-center gap-2">
+            <i class="bi bi-info-circle text-primary" id="toast-icon"></i>
+            <span id="toast-message-text" class="small">Action completed successfully.</span>
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- === REUSABLE BOOTSTRAP MODALS === -->
+
+    <!-- MODAL 1: APPOINTMENT DETAILS PREVIEW MODAL -->
+    <div class="modal fade" id="appointmentDetailsModal" tabindex="-1" aria-labelledby="appointmentDetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-light-subtle">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="appointmentDetailsModalLabel"><i class="bi bi-calendar3-event text-primary me-2"></i>Appointment Summary</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start" id="preview-modal-body">
+            <!-- Dynamic Injection of Appointment Details -->
+          </div>
+          <div class="modal-footer border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            <a href="coming-soon.html" class="btn btn-sm btn-primary" id="preview-modal-details-btn"><i class="bi bi-briefcase me-1"></i> View Full Profile Details</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: RESCHEDULE MODAL -->
+    <div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-light-subtle">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="rescheduleModalLabel"><i class="bi bi-clock-history text-primary me-2"></i>Reschedule Appointment</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <input type="hidden" id="reschedule-appt-id" />
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Target Reschedule Date</label>
+              <input type="date" class="form-control bg-body border-light-subtle text-main" id="reschedule-date" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Target Reschedule Time</label>
+              <input type="time" class="form-control bg-body border-light-subtle text-main" id="reschedule-time" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Rescheduling Justification Notes</label>
+              <textarea class="form-control bg-body border-light-subtle text-main" id="reschedule-notes" rows="3" placeholder="Explain the customer requirements or conflict resolution reasons..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitRescheduleAction()"><i class="bi bi-calendar2-check me-1"></i> Update Schedule</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: ASSIGN ADVISOR MODAL -->
+    <div class="modal fade" id="assignAdvisorModal" tabindex="-1" aria-labelledby="assignAdvisorModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-light-subtle">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="assignAdvisorModalLabel"><i class="bi bi-person-gear text-primary me-2"></i>Assign Broker / Advisor</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <input type="hidden" id="assign-appt-id" />
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Assign Broker / Advisor</label>
+              <select class="form-select bg-body border-light-subtle text-main" id="assign-agent-select">
+                <option value="Sophia Lopez">Sophia Lopez (Senior Executive Broker)</option>
+                <option value="Marcus Vance">Marcus Vance (Partner Advisor)</option>
+                <option value="Sarah Jenkins">Sarah Jenkins (Managing Director)</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitAssignAgentAction()"><i class="bi bi-check-lg me-1"></i> Confirm Assignment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: REMINDER NOTIFICATION MODAL -->
+    <div class="modal fade" id="reminderModal" tabindex="-1" aria-labelledby="reminderModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-light-subtle">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="reminderModalLabel"><i class="bi bi-bell-fill text-warning me-2"></i>Dispatch Booking Reminder</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <input type="hidden" id="reminder-appt-id" />
+            <p class="small text-muted mb-3">Trigger an immediate automated notification or notification reminder alert to the client regarding this appointment schedule.</p>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Reminder Channel</label>
+              <select class="form-select bg-body border-light-subtle text-main" id="reminder-channel">
+                <option value="SMS">Premium SMS Dispatch (Real-time gateway)</option>
+                <option value="Email">Secure Corporate Email Gateway</option>
+                <option value="WhatsApp">WhatsApp Client Push Integration</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Custom Alert Notes</label>
+              <textarea class="form-control bg-body border-light-subtle text-main" id="reminder-text" rows="2" placeholder="e.g. Please bring original KYC documents for confirmation..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-warning text-dark fw-bold" onclick="submitReminderAction()"><i class="bi bi-send me-1"></i> Send Immediate Reminder</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 5: DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-danger">
+          <div class="modal-header border-danger">
+            <h5 class="modal-title font-title fw-bold text-danger" id="deleteModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete / Cancel Appointment</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <input type="hidden" id="delete-appt-id" />
+            <p class="small text-muted mb-0">Are you absolutely sure you want to cancel and delete this scheduled slot? This action will remove the record from the active FullCalendar synchronization buffer and cannot be undone.</p>
+          </div>
+          <div class="modal-footer border-danger">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="submitDeleteAction()"><i class="bi bi-trash me-1"></i> Cancel Slot Permanently</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==================== SCRIPTS ==================== -->
+
+    <!-- FullCalendar CDN v6 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- AOS Animation Library JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Main JS Script -->
+    <script src="/assets/js/main.js"></script>
+
+    <!-- Interactive Logic Engine -->
+    <script>
+      // Global Appointment Registry Data Store
+      let APPOINTMENTS = [
+        {
+          id: "APT-4092",
+          customerName: "Liam Kensington",
+          customerPhoto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop",
+          propertyName: "Horizon Heights Penthouse",
+          propertyImage: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=400&auto=format&fit=crop",
+          propertyAddress: "Biscayne Bay, Miami",
+          agentName: "Sophia Lopez",
+          agentPhoto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop",
+          meetingType: "Property Visit",
+          date: "2026-07-15",
+          time: "10:30",
+          location: "Biscayne Bay Skydeck Heliport, Miami",
+          status: "Scheduled",
+          priority: "High",
+          notes: "Private helicopter tour over property with champagne reception."
+        },
+        {
+          id: "APT-4093",
+          customerName: "Clara Vance",
+          customerPhoto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop",
+          propertyName: "The Obsidian Villa",
+          propertyImage: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=400&auto=format&fit=crop",
+          propertyAddress: "Key Biscayne, Miami",
+          agentName: "Marcus Vance",
+          agentPhoto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=150&auto=format&fit=crop",
+          meetingType: "Virtual Meeting",
+          date: "2026-07-10",
+          time: "14:00",
+          location: "Secure Zoom Broadcast Link #028",
+          status: "Confirmed",
+          priority: "High",
+          notes: "Walkthrough of security systems and biometric lockers."
+        },
+        {
+          id: "APT-4094",
+          customerName: "David Kim",
+          customerPhoto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop",
+          propertyName: "Signature Tower Apartment",
+          propertyImage: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=400&auto=format&fit=crop",
+          propertyAddress: "Brickell, Miami",
+          agentName: "Sophia Lopez",
+          agentPhoto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop",
+          meetingType: "Office Meeting",
+          date: "2026-07-11",
+          time: "16:15",
+          location: "Executive Boardroom A, HQ Miami",
+          status: "Checked In",
+          priority: "Medium",
+          notes: "Review initial bank escrow drafts and verify legal entity status."
+        },
+        {
+          id: "APT-4095",
+          customerName: "John Doe",
+          customerPhoto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop",
+          propertyName: "Skyview Tower Loft",
+          propertyImage: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=400&auto=format&fit=crop",
+          propertyAddress: "Coconut Grove, Miami",
+          agentName: "Sarah Jenkins",
+          agentPhoto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=150&auto=format&fit=crop",
+          meetingType: "Contract Signing",
+          date: "2026-07-09",
+          time: "11:00",
+          location: "Corporate HQ Ocean Lounge, Miami",
+          status: "Completed",
+          priority: "High",
+          notes: "Signing of lease-to-own deed draft. Handed keys over."
+        },
+        {
+          id: "APT-4096",
+          customerName: "Elena Rostova",
+          customerPhoto: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop",
+          propertyName: "The Waterfront Sanctuary",
+          propertyImage: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=400&auto=format&fit=crop",
+          propertyAddress: "Miami Beach, FL",
+          agentName: "Marcus Vance",
+          agentPhoto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=150&auto=format&fit=crop",
+          meetingType: "Document Verification",
+          date: "2026-07-16",
+          time: "09:00",
+          location: "Client Private Suite, Miami Beach",
+          status: "Scheduled",
+          priority: "Low",
+          notes: "Need passport copies and notarized corporate articles of incorporation."
+        },
+        {
+          id: "APT-4097",
+          customerName: "Marcus Vance",
+          customerPhoto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=150&auto=format&fit=crop",
+          propertyName: "Horizon Heights Penthouse",
+          propertyImage: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=400&auto=format&fit=crop",
+          propertyAddress: "Biscayne Bay, Miami",
+          agentName: "Sarah Jenkins",
+          agentPhoto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=150&auto=format&fit=crop",
+          meetingType: "Follow-up Meeting",
+          date: "2026-07-10",
+          time: "15:00",
+          location: "Phone Consult / Zoom",
+          status: "Cancelled",
+          priority: "Medium",
+          notes: "Rescheduled by broker due to flight disruption."
+        },
+        {
+          id: "APT-4098",
+          customerName: "William Sterling",
+          customerPhoto: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop",
+          propertyName: "Sunset Bay Mansion",
+          propertyImage: "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=400&auto=format&fit=crop",
+          propertyAddress: "Coral Gables, Miami",
+          agentName: "Sophia Lopez",
+          agentPhoto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop",
+          meetingType: "Property Visit",
+          date: "2026-07-12",
+          time: "11:00",
+          location: "Mansion Gated Entrance, Coral Gables",
+          status: "Scheduled",
+          priority: "High",
+          notes: "Wants to evaluate dock length for mega-yacht clearance."
+        }
+      ];
+
+      // Recent Activity Log Stream
+      let ACTIVITIES = [
+        { type: "Created", text: "APT-4092 created for Liam Kensington by Advisor Sophia Lopez", time: "2 hours ago", icon: "bi-plus-circle text-primary" },
+        { type: "Rescheduled", text: "APT-4097 rescheduled to July 10, 15:00", time: "4 hours ago", icon: "bi-clock-history text-warning" },
+        { type: "Confirmed", text: "APT-4093 status confirmed by Clara Vance via secure link", time: "1 day ago", icon: "bi-check-circle text-success" },
+        { type: "Completed", text: "APT-4095 completed. Agreement files securely uploaded.", time: "2 days ago", icon: "bi-journal-check text-info" }
+      ];
+
+      // Local UI States
+      let activeViewMode = "timeline"; // "timeline" or "grid"
+      let currentFilterQuick = "all";
+      let searchKeyword = "";
+      let calendarObj = null;
+
+      // Chart Instances
+      let volChart = null;
+      let distChart = null;
+      let effChart = null;
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Initialize Core Engines
+        initGlowEffects();
+        initCalendar();
+        renderFilteredAppointments();
+        renderPropertyTours();
+        renderUpcomingReminders();
+        renderActivities();
+        initCharts();
+
+        // Subscribe to themeChanged event from main.js
+        window.addEventListener("themeChanged", (e) => {
+          setTimeout(() => {
+            initCharts(e.detail.theme);
+            if (calendarObj) {
+              calendarObj.render();
+            }
+          }, 100);
+        });
+      });
+
+      // --- GLOW CARDS & MOUSE TRACKING ---
+      function initGlowEffects() {
+        document.addEventListener("mousemove", (e) => {
+          const glowCards = document.querySelectorAll(".glow-card");
+          glowCards.forEach((card) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty("--mouse-x", `${x}px`);
+            card.style.setProperty("--mouse-y", `${y}px`);
+          });
+        });
+      }
+
+      // --- FULLCALENDAR INITIALIZATION ---
+      function initCalendar() {
+        const calendarEl = document.getElementById("calendar-master");
+        if (!calendarEl) return;
+
+        calendarObj = new FullCalendar.Calendar(calendarEl, {
+          themeSystem: 'standard',
+          initialView: 'dayGridMonth',
+          initialDate: '2026-07-10',
+          headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+          },
+          height: 440,
+          editable: true,
+          selectable: true,
+          events: getCalendarEvents(),
+          eventClick: function(info) {
+            openAppointmentPreview(info.event.id);
+          }
+        });
+        calendarObj.render();
+      }
+
+      function getCalendarEvents() {
+        return APPOINTMENTS.map(apt => {
+          let className = "fc-event-visit";
+          if (apt.meetingType === "Virtual Meeting") className = "fc-event-virtual";
+          if (apt.meetingType === "Office Meeting") className = "fc-event-office";
+          if (apt.meetingType === "Contract Signing") className = "fc-event-signing";
+
+          return {
+            id: apt.id,
+            title: `${apt.customerName} - ${apt.meetingType}`,
+            start: `${apt.date}T${apt.time}:00`,
+            className: className
+          };
+        });
+      }
+
+      // --- TOAST DISPATCH SYSTEM ---
+      function showToast(message, type = "primary") {
+        const toastEl = document.getElementById("liveToast");
+        const toastText = document.getElementById("toast-message-text");
+        const toastIcon = document.getElementById("toast-icon");
+
+        toastText.textContent = message;
+        if (type === "success") {
+          toastIcon.className = "bi bi-check-circle text-success";
+        } else if (type === "danger") {
+          toastIcon.className = "bi bi-exclamation-triangle text-danger";
+        } else if (type === "warning") {
+          toastIcon.className = "bi bi-bell-fill text-warning";
+        } else {
+          toastIcon.className = "bi bi-info-circle text-primary";
+        }
+
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+      }
+
+      // --- APPOINTMENTS RENDERING ENGINE ---
+      function renderFilteredAppointments() {
+        const timelineContainer = document.getElementById("appointments-timeline-view");
+        const gridContainer = document.getElementById("appointments-grid-view");
+        const noSearchEl = document.getElementById("state-no-search");
+
+        const filtered = getFilteredAppointments();
+
+        if (filtered.length === 0) {
+          timelineContainer.innerHTML = "";
+          gridContainer.innerHTML = "";
+          noSearchEl.classList.remove("d-none");
+          document.getElementById("bulk-actions-bar").classList.remove("d-flex");
+          document.getElementById("bulk-actions-bar").classList.add("d-none");
+          return;
+        } else {
+          noSearchEl.classList.add("d-none");
+        }
+
+        // Render Bulk Actions Control
+        updateBulkBar();
+
+        // 1. TIMELINE AGENDA RENDERING
+        let timelineHTML = "";
+        filtered.forEach(apt => {
+          const statusBadge = getStatusBadgeClass(apt.status);
+          const priorityBadge = getPriorityBadgeClass(apt.priority);
+
+          timelineHTML += `
+            <div class="agenda-item ${apt.status.toLowerCase() === 'completed' ? 'completed' : ''} ${apt.status.toLowerCase() === 'cancelled' ? 'cancelled' : ''}" data-aos="fade-up">
+              <div class="agenda-time-dot"></div>
+              <div class="uh-card p-3 mb-3 bg-body border-light-subtle lift-on-hover">
+                <div class="row align-items-center g-3">
+                  <div class="col-auto">
+                    <input type="checkbox" class="form-check-input appt-row-checkbox" value="${apt.id}" onchange="handleRowSelect()" />
+                  </div>
+                  <div class="col-12 col-md-2">
+                    <div class="text-primary font-title fw-bold" style="font-size: 0.9rem;">${apt.time}</div>
+                    <span class="text-muted small">${apt.date}</span>
+                  </div>
+                  <div class="col-12 col-md-3 d-flex align-items-center gap-2">
+                    <img src="${apt.customerPhoto}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" referrerpolicy="no-referrer" />
+                    <div>
+                      <strong class="text-main d-block font-title" style="font-size: 0.85rem;">${apt.customerName}</strong>
+                      <span class="text-muted small" style="font-size: 0.7rem;">ID: ${apt.id}</span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <strong class="text-main d-block" style="font-size: 0.825rem;"><i class="bi bi-houses text-primary me-1"></i>${apt.propertyName}</strong>
+                    <span class="text-muted small" style="font-size: 0.725rem;">${apt.location}</span>
+                  </div>
+                  <div class="col-6 col-md-2">
+                    <span class="badge ${statusBadge} small py-1 px-2.5 d-inline-block font-title">${apt.status}</span>
+                    <span class="badge ${priorityBadge} small py-1 px-2.5 ms-1.5 font-title">${apt.priority}</span>
+                  </div>
+                  <div class="col-6 col-md-2 text-end">
+                    <div class="dropdown">
+                      <button class="btn btn-xs btn-outline-secondary py-1 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots"></i>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end bg-dark border-light-subtle">
+                        <li><a class="dropdown-item py-1.5 small text-main" href="appointment-details.html?id=${apt.id}"><i class="bi bi-eye text-primary me-2"></i> View Profile</a></li>
+                        <li><button class="dropdown-item py-1.5 small text-main" onclick="openRescheduleModal('${apt.id}')"><i class="bi bi-clock text-warning me-2"></i> Reschedule</button></li>
+                        <li><button class="dropdown-item py-1.5 small text-main" onclick="openAssignAdvisorModal('${apt.id}')"><i class="bi bi-person-gear text-success me-2"></i> Assign Agent</button></li>
+                        <li><button class="dropdown-item py-1.5 small text-main" onclick="openReminderModal('${apt.id}')"><i class="bi bi-bell text-info me-2"></i> Send Reminder</button></li>
+                        <li><hr class="dropdown-divider border-light-subtle"></li>
+                        <li><button class="dropdown-item py-1.5 small text-success fw-bold" onclick="updateAppointmentStatus('${apt.id}', 'Completed')"><i class="bi bi-check-circle me-2"></i> Mark Completed</button></li>
+                        <li><button class="dropdown-item py-1.5 small text-danger" onclick="openDeleteModal('${apt.id}')"><i class="bi bi-trash3 me-2"></i> Delete Slot</button></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        timelineContainer.innerHTML = timelineHTML;
+
+        // 2. GRID CARDS RENDERING
+        let gridHTML = "";
+        filtered.forEach(apt => {
+          const statusBadge = getStatusBadgeClass(apt.status);
+          const priorityBadge = getPriorityBadgeClass(apt.priority);
+
+          gridHTML += `
+            <div class="col-12 col-md-6" data-aos="fade-up">
+              <div class="uh-card p-3.5 bg-body border-light-subtle h-100 lift-on-hover d-flex flex-column justify-content-between">
+                <div>
+                  <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                      <img src="${apt.customerPhoto}" class="rounded-circle" style="width: 36px; height: 36px; object-fit: cover;" referrerpolicy="no-referrer" />
+                      <div>
+                        <strong class="text-main d-block font-title" style="font-size: 0.9rem;">${apt.customerName}</strong>
+                        <span class="text-muted small" style="font-size: 0.7rem;">ID: ${apt.id}</span>
+                      </div>
+                    </div>
+                    <div class="d-flex flex-column align-items-end gap-1">
+                      <span class="badge ${statusBadge} font-title" style="font-size: 0.65rem;">${apt.status}</span>
+                      <span class="badge ${priorityBadge} font-title" style="font-size: 0.65rem;">${apt.priority}</span>
+                    </div>
+                  </div>
+
+                  <div class="bg-body-secondary p-2.5 rounded border border-light-subtle mb-3 text-start" style="font-size: 0.8rem;">
+                    <strong class="text-main d-block font-title" style="font-size: 0.825rem;"><i class="bi bi-houses text-primary me-1.5"></i>${apt.propertyName}</strong>
+                    <span class="text-muted d-block small mb-1"><i class="bi bi-geo-alt me-1.5"></i>${apt.propertyAddress}</span>
+                    <span class="text-muted d-block small"><i class="bi bi-clock me-1.5"></i>${apt.date} • ${apt.time}</span>
+                  </div>
+
+                  <div class="d-flex align-items-center gap-2 mb-3 text-start" style="font-size: 0.75rem;">
+                    <img src="${apt.agentPhoto}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" referrerpolicy="no-referrer" />
+                    <span class="text-muted">Advisor: <strong class="text-main">${apt.agentName}</strong></span>
+                  </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-1 mt-auto pt-2.5 border-top border-light-subtle">
+                  <a href="appointment-details.html?id=${apt.id}" class="btn btn-xs btn-outline-primary w-100 py-1 font-title">Details</a>
+                  <button class="btn btn-xs btn-outline-secondary py-1" onclick="openRescheduleModal('${apt.id}')" title="Reschedule"><i class="bi bi-clock text-warning"></i></button>
+                  <button class="btn btn-xs btn-outline-secondary py-1" onclick="openReminderModal('${apt.id}')" title="Alert Reminder"><i class="bi bi-bell text-info"></i></button>
+                  <button class="btn btn-xs btn-outline-success py-1" onclick="updateAppointmentStatus('${apt.id}', 'Completed')" title="Completed"><i class="bi bi-check-lg"></i></button>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        gridContainer.innerHTML = gridHTML;
+      }
+
+      // Helper status badges
+      function getStatusBadgeClass(status) {
+        switch (status) {
+          case "Scheduled": return "bg-primary-subtle text-primary border border-primary-subtle";
+          case "Confirmed": return "bg-info-subtle text-info border border-info-subtle";
+          case "Checked In": return "bg-warning-subtle text-warning border border-warning-subtle";
+          case "Completed": return "bg-success-subtle text-success border border-success-subtle";
+          case "Cancelled": return "bg-danger-subtle text-danger border border-danger-subtle";
+          case "No Show": return "bg-secondary-subtle text-secondary border border-secondary-subtle";
+          default: return "bg-secondary-subtle text-muted";
+        }
+      }
+
+      function getPriorityBadgeClass(priority) {
+        switch (priority) {
+          case "High": return "bg-danger-subtle text-danger";
+          case "Medium": return "bg-warning-subtle text-dark";
+          case "Low": return "bg-secondary-subtle text-muted";
+          default: return "bg-secondary-subtle text-muted";
+        }
+      }
+
+      // --- ADVANCED FILTER LOGIC ---
+      function getFilteredAppointments() {
+        return APPOINTMENTS.filter(apt => {
+          // Search Box Filter
+          const textMatch = (
+            apt.customerName.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+            apt.propertyName.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+            apt.agentName.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+            apt.id.toLowerCase().includes(searchKeyword.toLowerCase())
+          );
+
+          if (!textMatch) return false;
+
+          // Quick Filter
+          if (currentFilterQuick === "today") {
+            if (apt.date !== "2026-07-10") return false;
+          } else if (currentFilterQuick !== "all") {
+            if (apt.status !== currentFilterQuick && apt.meetingType !== currentFilterQuick) return false;
+          }
+
+          // Collapsible Advanced filters
+          const filterType = document.getElementById("filter-meeting-type").value;
+          if (filterType && apt.meetingType !== filterType) return false;
+
+          const filterStatus = document.getElementById("filter-status").value;
+          if (filterStatus && apt.status !== filterStatus) return false;
+
+          const filterAgent = document.getElementById("filter-agent").value;
+          if (filterAgent && apt.agentName !== filterAgent) return false;
+
+          const filterPriority = document.getElementById("filter-priority").value;
+          if (filterPriority && apt.priority !== filterPriority) return false;
+
+          const filterStart = document.getElementById("filter-start-date").value;
+          if (filterStart && apt.date < filterStart) return false;
+
+          const filterLoc = document.getElementById("filter-location").value;
+          if (filterLoc && !apt.location.toLowerCase().includes(filterLoc.toLowerCase()) && !apt.propertyAddress.toLowerCase().includes(filterLoc.toLowerCase())) return false;
+
+          const filterProperty = document.getElementById("filter-property").value;
+          if (filterProperty && !apt.propertyName.toLowerCase().includes(filterProperty.toLowerCase())) return false;
+
+          return true;
+        });
+      }
+
+      function toggleAdvancedFilterPanel() {
+        const panel = document.getElementById("advanced-filter-panel");
+        panel.classList.toggle("d-none");
+      }
+
+      function applyAdvancedFilters() {
+        renderFilteredAppointments();
+        showToast("Advanced filters applied to appointments registry.", "success");
+      }
+
+      function resetAdvancedFilters() {
+        document.getElementById("filter-meeting-type").value = "";
+        document.getElementById("filter-status").value = "";
+        document.getElementById("filter-agent").value = "";
+        document.getElementById("filter-priority").value = "";
+        document.getElementById("filter-start-date").value = "";
+        document.getElementById("filter-location").value = "";
+        document.getElementById("filter-property").value = "";
+        document.getElementById("search-bar-input").value = "";
+        searchKeyword = "";
+        renderFilteredAppointments();
+        showToast("Filters reset to default pipeline state.", "primary");
+      }
+
+      function filterByQuick(type, btn) {
+        currentFilterQuick = type;
+        document.querySelectorAll(".advanced-filters-card button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        renderFilteredAppointments();
+      }
+
+      function handleGridSearch(val) {
+        searchKeyword = val;
+        renderFilteredAppointments();
+      }
+
+      function handleGlobalSearch(val) {
+        searchKeyword = val;
+        document.getElementById("search-bar-input").value = val;
+        renderFilteredAppointments();
+      }
+
+      // --- VIEW STATE TOGGLE (GRID VS TIMELINE) ---
+      function switchAppointmentViewMode(mode) {
+        activeViewMode = mode;
+        const timeline = document.getElementById("appointments-timeline-view");
+        const grid = document.getElementById("appointments-grid-view");
+        const timelineBtn = document.getElementById("view-toggle-timeline");
+        const gridBtn = document.getElementById("view-toggle-grid");
+
+        if (mode === "grid") {
+          timeline.classList.add("d-none");
+          grid.classList.remove("d-none");
+          gridBtn.classList.add("active");
+          timelineBtn.classList.remove("active");
+        } else {
+          timeline.classList.remove("d-none");
+          grid.classList.add("d-none");
+          timelineBtn.classList.add("active");
+          gridBtn.classList.remove("active");
+        }
+      }
+
+      // --- REAL PROPERTY VISITS RENDERING ---
+      function renderPropertyTours() {
+        const listContainer = document.getElementById("property-tours-list");
+        if (!listContainer) return;
+
+        const tours = APPOINTMENTS.filter(apt => apt.meetingType === "Property Visit");
+        let html = "";
+        tours.forEach(tour => {
+          html += `
+            <div class="uh-card p-0 bg-body border-light-subtle overflow-hidden lift-on-hover d-flex align-items-center">
+              <img src="${tour.propertyImage}" style="width: 80px; height: 80px; object-fit: cover;" alt="Property" />
+              <div class="p-2.5 flex-grow-1 text-start" style="font-size: 0.775rem;">
+                <strong class="text-main d-block font-title" style="font-size: 0.8rem;">${tour.propertyName}</strong>
+                <span class="text-muted d-block" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>${tour.date} @ ${tour.time}</span>
+                <span class="text-muted d-block" style="font-size: 0.7rem;">Advisor: ${tour.agentName}</span>
+              </div>
+            </div>
+          `;
+        });
+        listContainer.innerHTML = html || `<p class="text-muted small text-center my-4">No active visits scheduled.</p>`;
+      }
+
+      // --- UPCOMING REMINDERS ---
+      function renderUpcomingReminders() {
+        const remindersEl = document.getElementById("upcoming-reminders-list");
+        if (!remindersEl) return;
+
+        let html = "";
+        const nextAppts = APPOINTMENTS.filter(apt => apt.status === "Scheduled" || apt.status === "Confirmed").slice(0, 3);
+        
+        nextAppts.forEach(apt => {
+          html += `
+            <div class="bg-body border border-light-subtle p-2.5 rounded text-start mb-2 lift-on-hover">
+              <div class="d-flex justify-content-between align-items-center mb-1.5" style="font-size: 0.7rem;">
+                <span class="fw-semibold text-primary font-title"><i class="bi bi-calendar2-week"></i> REMINDER</span>
+                <span class="text-muted">${apt.time} Today</span>
+              </div>
+              <strong class="text-main d-block font-title mb-1" style="font-size: 0.825rem;">${apt.meetingType} • ${apt.customerName}</strong>
+              <p class="text-muted small mb-0" style="font-size: 0.725rem;">Host advisor: ${apt.agentName}</p>
+            </div>
+          `;
+        });
+        remindersEl.innerHTML = html || `<p class="text-muted small text-center my-3">No pending reminders.</p>`;
+      }
+
+      // --- RECENT ACTIONS ACTIVITY FEED ---
+      function renderActivities() {
+        const listEl = document.getElementById("recent-activities-stream");
+        if (!listEl) return;
+
+        let html = "";
+        ACTIVITIES.forEach(act => {
+          html += `
+            <div class="d-flex gap-2.5 align-items-start">
+              <div class="p-1.5 rounded-circle bg-body-secondary border d-flex align-items-center justify-content-center" style="width: 26px; height: 26px;">
+                <i class="bi ${act.icon}" style="font-size: 0.8rem;"></i>
+              </div>
+              <div>
+                <span class="text-muted d-block" style="font-size: 0.725rem;">${act.text}</span>
+                <span class="text-muted small" style="font-size: 0.65rem;">${act.time}</span>
+              </div>
+            </div>
+          `;
+        });
+        listEl.innerHTML = html;
+      }
+
+      // --- APPOINTMENT ACTIONS & MODALS ---
+      function openAppointmentPreview(id) {
+        const apt = APPOINTMENTS.find(a => a.id === id);
+        if (!apt) return;
+
+        const container = document.getElementById("preview-modal-body");
+        container.innerHTML = `
+          <div class="text-center mb-4">
+            <img src="${apt.customerPhoto}" class="rounded-circle border border-3 border-primary mb-2" style="width: 72px; height: 72px; object-fit: cover;" referrerpolicy="no-referrer" />
+            <h5 class="fw-bold text-main font-title mb-0">${apt.customerName}</h5>
+            <span class="badge bg-secondary-subtle text-muted text-uppercase mb-2">${apt.id}</span>
+          </div>
+
+          <div class="bg-body p-3 rounded border border-light-subtle mb-3" style="font-size: 0.85rem;">
+            <div class="row g-2">
+              <div class="col-6"><span class="text-muted">Type:</span> <strong class="text-main">${apt.meetingType}</strong></div>
+              <div class="col-6"><span class="text-muted">Priority:</span> <strong class="text-danger">${apt.priority}</strong></div>
+              <div class="col-6"><span class="text-muted">Date:</span> <strong class="text-main">${apt.date}</strong></div>
+              <div class="col-6"><span class="text-muted">Time:</span> <strong class="text-main">${apt.time}</strong></div>
+              <div class="col-12"><span class="text-muted">Location:</span> <strong class="text-main d-block">${apt.location}</strong></div>
+              <div class="col-12"><span class="text-muted">Property:</span> <strong class="text-primary d-block">${apt.propertyName}</strong></div>
+            </div>
+          </div>
+
+          <div class="mb-3 text-start" style="font-size: 0.8rem;">
+            <label class="fw-semibold text-muted mb-1">Appointment Notes &amp; Demands</label>
+            <p class="text-muted bg-body-secondary p-2 rounded mb-0">${apt.notes || 'No notes added yet.'}</p>
+          </div>
+
+          <div class="d-flex align-items-center gap-2 border-top border-light-subtle pt-3 text-start" style="font-size: 0.8rem;">
+            <img src="${apt.agentPhoto}" class="rounded-circle" style="width: 28px; height: 28px; object-fit: cover;" referrerpolicy="no-referrer" />
+            <div>
+              <span class="text-muted">Assigned Broker Advisor:</span>
+              <strong class="text-main d-block font-title">${apt.agentName}</strong>
+            </div>
+          </div>
+        `;
+
+        document.getElementById("preview-modal-details-btn").href = `appointment-details.html?id=${apt.id}`;
+
+        const modal = new bootstrap.Modal(document.getElementById("appointmentDetailsModal"));
+        modal.show();
+      }
+
+      // Reschedule Modal Control
+      function openRescheduleModal(id) {
+        const apt = APPOINTMENTS.find(a => a.id === id);
+        if (!apt) return;
+        document.getElementById("reschedule-appt-id").value = id;
+        document.getElementById("reschedule-date").value = apt.date;
+        document.getElementById("reschedule-time").value = apt.time;
+        document.getElementById("reschedule-notes").value = apt.notes;
+
+        const modal = new bootstrap.Modal(document.getElementById("rescheduleModal"));
+        modal.show();
+      }
+
+      function submitRescheduleAction() {
+        const id = document.getElementById("reschedule-appt-id").value;
+        const nextDate = document.getElementById("reschedule-date").value;
+        const nextTime = document.getElementById("reschedule-time").value;
+        const nextNotes = document.getElementById("reschedule-notes").value;
+
+        const apt = APPOINTMENTS.find(a => a.id === id);
+        if (apt) {
+          apt.date = nextDate;
+          apt.time = nextTime;
+          apt.notes = nextNotes;
+          apt.status = "Confirmed"; // Automatically mark as confirmed upon schedule update
+
+          // Add to activities
+          ACTIVITIES.unshift({
+            type: "Rescheduled",
+            text: `${apt.id} rescheduled to ${nextDate} at ${nextTime} by broker`,
+            time: "Just now",
+            icon: "bi-clock-history text-warning"
+          });
+
+          // Sync calendar & views
+          if (calendarObj) {
+            calendarObj.getEventById(id)?.remove();
+            calendarObj.addEvent({
+              id: apt.id,
+              title: `${apt.customerName} - ${apt.meetingType}`,
+              start: `${nextDate}T${nextTime}:00`,
+              className: apt.meetingType === "Virtual Meeting" ? "fc-event-virtual" : "fc-event-visit"
+            });
+          }
+
+          renderFilteredAppointments();
+          renderActivities();
+          initCharts();
+
+          bootstrap.Modal.getInstance(document.getElementById("rescheduleModal")).hide();
+          showToast(`APT-${id.split('-')[1]} reschedule dispatch completed.`, "success");
+        }
+      }
+
+      // Assign Agent Modal Control
+      function openAssignAdvisorModal(id) {
+        const apt = APPOINTMENTS.find(a => a.id === id);
+        if (!apt) return;
+        document.getElementById("assign-appt-id").value = id;
+        document.getElementById("assign-agent-select").value = apt.agentName;
+
+        const modal = new bootstrap.Modal(document.getElementById("assignAdvisorModal"));
+        modal.show();
+      }
+
+      function submitAssignAgentAction() {
+        const id = document.getElementById("assign-appt-id").value;
+        const nextAgent = document.getElementById("assign-agent-select").value;
+
+        const apt = APPOINTMENTS.find(a => a.id === id);
+        if (apt) {
+          apt.agentName = nextAgent;
+          
+          ACTIVITIES.unshift({
+            type: "Assigned",
+            text: `Advisor ${nextAgent} assigned to schedule ID ${apt.id}`,
+            time: "Just now",
+            icon: "bi-person-gear text-success"
+          });
+
+          renderFilteredAppointments();
+          renderActivities();
+
+          bootstrap.Modal.getInstance(document.getElementById("assignAdvisorModal")).hide();
+          showToast(`Advisor changed successfully for slot ${id}.`, "success");
+        }
+      }
+
+      // Reminder Modal Control
+      function openReminderModal(id) {
+        const apt = APPOINTMENTS.find(a => a.id === id);
+        if (!apt) return;
+        document.getElementById("reminder-appt-id").value = id;
+        document.getElementById("reminder-text").value = `Looking forward to our scheduled ${apt.meetingType} regarding ${apt.propertyName} tomorrow at ${apt.time}.`;
+
+        const modal = new bootstrap.Modal(document.getElementById("reminderModal"));
+        modal.show();
+      }
+
+      function submitReminderAction() {
+        const id = document.getElementById("reminder-appt-id").value;
+        const channel = document.getElementById("reminder-channel").value;
+
+        ACTIVITIES.unshift({
+          type: "Reminder Sent",
+          text: `Booking alert reminder dispatched to client via ${channel} for slot ${id}`,
+          time: "Just now",
+          icon: "bi-bell text-info"
+        });
+
+        renderActivities();
+
+        bootstrap.Modal.getInstance(document.getElementById("reminderModal")).hide();
+        showToast(`Secure booking alert broadcast successfully through ${channel}.`, "success");
+      }
+
+      // Delete Modal Control
+      function openDeleteModal(id) {
+        document.getElementById("delete-appt-id").value = id;
+        const modal = new bootstrap.Modal(document.getElementById("deleteModal"));
+        modal.show();
+      }
+
+      function submitDeleteAction() {
+        const id = document.getElementById("delete-appt-id").value;
+        const index = APPOINTMENTS.findIndex(a => a.id === id);
+        if (index !== -1) {
+          const removed = APPOINTMENTS[index];
+          APPOINTMENTS.splice(index, 1);
+
+          // Add to activities
+          ACTIVITIES.unshift({
+            type: "Cancelled",
+            text: `Slot ID ${id} cancelled and purged from scheduler`,
+            time: "Just now",
+            icon: "bi-trash text-danger"
+          });
+
+          if (calendarObj) {
+            calendarObj.getEventById(id)?.remove();
+          }
+
+          renderFilteredAppointments();
+          renderPropertyTours();
+          renderUpcomingReminders();
+          renderActivities();
+          initCharts();
+
+          bootstrap.Modal.getInstance(document.getElementById("deleteModal")).hide();
+          showToast(`Schedule registry slot cancelled successfully.`, "danger");
+        }
+      }
+
+      // Inline Quick Status Update
+      function updateAppointmentStatus(id, newStatus) {
+        const apt = APPOINTMENTS.find(a => a.id === id);
+        if (apt) {
+          apt.status = newStatus;
+          
+          ACTIVITIES.unshift({
+            type: "Status Changed",
+            text: `${apt.id} status modified to ${newStatus}`,
+            time: "Just now",
+            icon: "bi-check-circle-fill text-success"
+          });
+
+          renderFilteredAppointments();
+          renderActivities();
+          initCharts();
+          showToast(`Appointment state modified to ${newStatus}.`, "success");
+        }
+      }
+
+      // --- BULK ACTION MANAGEMENT ---
+      let selectedRows = [];
+      function handleRowSelect() {
+        const checkboxes = document.querySelectorAll(".appt-row-checkbox");
+        selectedRows = [];
+        checkboxes.forEach(chk => {
+          if (chk.checked) selectedRows.push(chk.value);
+        });
+
+        const bulkBar = document.getElementById("bulk-actions-bar");
+        const badge = document.getElementById("selected-count-badge");
+
+        if (selectedRows.length > 0) {
+          bulkBar.classList.remove("d-none");
+          bulkBar.classList.add("d-flex");
+          badge.textContent = `${selectedRows.length} Selected`;
+        } else {
+          bulkBar.classList.remove("d-flex");
+          bulkBar.classList.add("d-none");
+        }
+      }
+
+      function updateBulkBar() {
+        selectedRows = [];
+        const bulkBar = document.getElementById("bulk-actions-bar");
+        if (bulkBar) {
+          bulkBar.classList.remove("d-flex");
+          bulkBar.classList.add("d-none");
+        }
+      }
+
+      function triggerBulkStatus(status) {
+        selectedRows.forEach(id => {
+          const apt = APPOINTMENTS.find(a => a.id === id);
+          if (apt) {
+            apt.status = status;
+          }
+        });
+
+        ACTIVITIES.unshift({
+          type: "Bulk Update",
+          text: `${selectedRows.length} appointments updated bulk-status to ${status}`,
+          time: "Just now",
+          icon: "bi-check-all text-success"
+        });
+
+        renderFilteredAppointments();
+        renderActivities();
+        initCharts();
+        showToast(`Bulk updated ${selectedRows.length} schedules.`, "success");
+      }
+
+      function triggerBulkDelete() {
+        selectedRows.forEach(id => {
+          const index = APPOINTMENTS.findIndex(a => a.id === id);
+          if (index !== -1) {
+            APPOINTMENTS.splice(index, 1);
+            if (calendarObj) {
+              calendarObj.getEventById(id)?.remove();
+            }
+          }
+        });
+
+        ACTIVITIES.unshift({
+          type: "Bulk Deleted",
+          text: `Purged ${selectedRows.length} slots from master scheduler`,
+          time: "Just now",
+          icon: "bi-trash text-danger"
+        });
+
+        renderFilteredAppointments();
+        renderPropertyTours();
+        renderUpcomingReminders();
+        renderActivities();
+        initCharts();
+        showToast(`Bulk purged ${selectedRows.length} items.`, "danger");
+      }
+
+      // --- PERFORMANCE PERFORMANCE ANALYTICS CHARTS ---
+      function initCharts(theme) {
+        const isDark = (theme || localStorage.getItem('theme') || 'dark') === 'dark';
+        
+        // Theme-dependent styling variables
+        const gridColor = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)";
+        const textColor = isDark ? "#94A3B8" : "#64748B";
+        const accentGold = isDark ? "#D4AF37" : "#B8860B";
+
+        // Chart 1: Appointments by Month
+        const ctxVol = document.getElementById("monthlyVolumeChart");
+        if (ctxVol) {
+          if (volChart) volChart.destroy();
+          volChart = new Chart(ctxVol, {
+            type: "bar",
+            data: {
+              labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"],
+              datasets: [{
+                label: "Slots Booked",
+                data: [42, 54, 48, 62, 74, 85, 96, 88, 104],
+                backgroundColor: accentGold,
+                borderRadius: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { grid: { display: false }, ticks: { color: textColor } },
+                y: { grid: { color: gridColor }, ticks: { color: textColor } }
+              }
+            }
+          });
+        }
+
+        // Chart 2: Meeting Type Distribution
+        const ctxDist = document.getElementById("meetingTypeDistChart");
+        if (ctxDist) {
+          if (distChart) distChart.destroy();
+          
+          // Compute real distribution dynamically
+          const types = {};
+          APPOINTMENTS.forEach(a => {
+            types[a.meetingType] = (types[a.meetingType] || 0) + 1;
+          });
+
+          distChart = new Chart(ctxDist, {
+            type: "doughnut",
+            data: {
+              labels: Object.keys(types),
+              datasets: [{
+                data: Object.values(types),
+                backgroundColor: [
+                  "#D4AF37", // Gold
+                  "#3B82F6", // Blue
+                  "#10B981", // Green
+                  "#F59E0B", // Amber
+                  "#EC4899", // Pink
+                  "#8B5CF6"  // Purple
+                ],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'bottom', labels: { color: textColor, boxWidth: 10, font: { size: 10 } } }
+              }
+            }
+          });
+        }
+
+        // Chart 3: Completion vs Cancellation Radar
+        const ctxEff = document.getElementById("efficiencyRadarChart");
+        if (ctxEff) {
+          if (effChart) effChart.destroy();
+          effChart = new Chart(ctxEff, {
+            type: "line",
+            data: {
+              labels: ["Q1", "Q2", "Q3", "Current Week"],
+              datasets: [
+                {
+                  label: "Show Rate %",
+                  data: [85, 88, 92, 94],
+                  borderColor: "#10B981",
+                  tension: 0.3,
+                  fill: false
+                },
+                {
+                  label: "Cancel Rate %",
+                  data: [15, 12, 8, 6],
+                  borderColor: "#EF4444",
+                  tension: 0.3,
+                  fill: false
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { labels: { color: textColor } } },
+              scales: {
+                x: { ticks: { color: textColor } },
+                y: { ticks: { color: textColor }, grid: { color: gridColor } }
+              }
+            }
+          });
+        }
+      }
+
+      // --- EXPORT FUNCTIONS ---
+      function triggerExportCSV() {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "ID,Customer Name,Property,Meeting Type,Date,Time,Location,Status,Agent\n";
+        
+        APPOINTMENTS.forEach(a => {
+          csvContent += `"${a.id}","${a.customerName}","${a.propertyName}","${a.meetingType}","${a.date}","${a.time}","${a.location}","${a.status}","${a.agentName}"\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `UrbanHub_Appointments_Roster_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showToast("CSV roster file dispatched successfully.", "success");
+      }
+
+      function triggerExportPDF() {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>UrbanHub Premium Scheduler Report</title>
+              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+            </head>
+            <body class="p-5">
+              <h2 class="font-title fw-bold">UrbanHub Roster Schedule Report</h2>
+              <p class="text-muted">Generated on ${new Date().toLocaleDateString()}</p>
+              <table class="table table-bordered mt-4">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Customer Name</th>
+                    <th>Property</th>
+                    <th>Meeting Type</th>
+                    <th>Date / Time</th>
+                    <th>Status</th>
+                    <th>Agent</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${APPOINTMENTS.map(a => `
+                    <tr>
+                      <td>${a.id}</td>
+                      <td>${a.customerName}</td>
+                      <td>${a.propertyName}</td>
+                      <td>${a.meetingType}</td>
+                      <td>${a.date} @ ${a.time}</td>
+                      <td>${a.status}</td>
+                      <td>${a.agentName}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+              <script>window.print();<\/script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        showToast("PDF report compiled successfully.", "success");
+      }
+
+      function triggerRefresh() {
+        showToast("Secure schedules stream refreshed & synced.", "primary");
+      }
+
+      // --- STATE SIMULATOR ROUTINES ---
+      function switchSimulatorState(state) {
+        const successContent = document.getElementById("state-success-content");
+        const loadingSkeleton = document.getElementById("state-loading-skeleton");
+        const emptyState = document.getElementById("state-empty");
+        const errorState = document.getElementById("state-error");
+
+        // Hide all
+        successContent.classList.add("skeleton-hidden");
+        loadingSkeleton.classList.add("skeleton-hidden");
+        emptyState.classList.add("skeleton-hidden");
+        errorState.classList.add("skeleton-hidden");
+
+        // Active state simulator buttons
+        document.querySelectorAll(".state-simulator-bar button").forEach(btn => btn.classList.remove("active"));
+
+        if (state === "success") {
+          successContent.classList.remove("skeleton-hidden");
+          document.getElementById("sim-btn-success").classList.add("active");
+          if (calendarObj) calendarObj.render();
+        } else if (state === "loading") {
+          loadingSkeleton.classList.remove("skeleton-hidden");
+          document.getElementById("sim-btn-loading").classList.add("active");
+        } else if (state === "empty") {
+          emptyState.classList.remove("skeleton-hidden");
+          document.getElementById("sim-btn-empty").classList.add("active");
+        } else if (state === "error") {
+          errorState.classList.remove("skeleton-hidden");
+          document.getElementById("sim-btn-error").classList.add("active");
+        }
+      }
+    </script>
+  </body>
+</html>

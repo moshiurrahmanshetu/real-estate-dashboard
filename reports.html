@@ -1,0 +1,1866 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reports Center - UrbanHub CRM</title>
+
+    <!-- Theme Choice Pre-load Script to avoid flashing -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Extra fine-tuning for reports layout & high density aesthetics */
+      .state-simulator-bar {
+        background-color: rgba(var(--uh-primary-rgb), 0.04);
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.15);
+        border-radius: 10px;
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      .skeleton-placeholder {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255, 255, 255, 0.05) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading-flow 1.5s infinite;
+        border-radius: 6px;
+        display: inline-block;
+      }
+      @keyframes skeleton-loading-flow {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-hidden {
+        display: none !important;
+      }
+      .badge-custom {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.35em 0.65em;
+        border-radius: 6px;
+        letter-spacing: 0.5px;
+      }
+      .badge-completed { background-color: rgba(16, 185, 129, 0.15); color: #10B981; }
+      .badge-pending { background-color: rgba(245, 158, 11, 0.15); color: #F59E0B; }
+      .badge-processing { background-color: rgba(59, 130, 246, 0.15); color: #3B82F6; }
+      .badge-failed { background-color: rgba(239, 68, 68, 0.15); color: #EF4444; }
+      .badge-archived { background-color: rgba(148, 163, 184, 0.15); color: #94A3B8; }
+
+      .clickable-row {
+        cursor: pointer;
+      }
+      a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+        outline: 2px solid var(--uh-primary) !important;
+        outline-offset: 2px;
+      }
+
+      /* Hover Lift Card Effect */
+      .card-lift-hover {
+        transition: var(--uh-transition-smooth);
+      }
+      .card-lift-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--uh-shadow-lg);
+        border-color: rgba(var(--uh-primary-rgb), 0.25);
+      }
+
+      /* Mini chart container settings */
+      .mini-chart-container {
+        position: relative;
+        height: 120px;
+        width: 100%;
+      }
+
+      /* Scheduled Report Cards styling */
+      .schedule-status-card {
+        border-left: 4px solid var(--uh-primary);
+      }
+
+      /* Custom columns for 8 stats on desktop */
+      @media (min-width: 1200px) {
+        .row-cols-xl-8 > * {
+          flex: 0 0 12.5%;
+          max-width: 12.5%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Overlay Backdrop for Mobile Sidebar -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon"><i class="bi bi-building-up"></i></div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="transactions.html" class="sidebar-menu-link">
+                <i class="bi bi-currency-exchange"></i>
+                <span>Transactions</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Intelligence</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Analytics</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="calendar.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar3"></i>
+                <span>Calendar</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="tasks.html" class="sidebar-menu-link">
+                <i class="bi bi-check2-square"></i>
+                <span>Tasks</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reviews.html" class="sidebar-menu-link">
+                <i class="bi bi-star"></i>
+                <span>Reviews</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reports.html" class="sidebar-menu-link active">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Reports</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn" aria-label="Toggle Navigation menu">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input" id="global-search-input" placeholder="Search reports, saved queries, templates..." onkeyup="handleGlobalReportsSearch(this.value)" />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <!-- Theme toggle standard binding -->
+            <button id="theme-toggle" class="header-btn" title="Switch Theme" aria-label="Switch Theme UI Color Mode">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE BODY CONTAINER -->
+        <div class="page-body">
+
+          <!-- STATE SIMULATOR BAR -->
+          <div class="state-simulator-bar mb-4 btn-no-print" data-aos="fade-down">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-cpu text-primary"></i>
+              <span class="small fw-semibold text-main">UI Reusable States Simulator:</span>
+            </div>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <button class="btn btn-xs btn-outline-primary px-2.5 py-1 active" id="sim-btn-success" onclick="switchSimulatorState('success')">
+                <i class="bi bi-check-circle me-1"></i> Success State
+              </button>
+              <button class="btn btn-xs btn-outline-secondary px-2.5 py-1" id="sim-btn-loading" onclick="switchSimulatorState('loading')">
+                <i class="bi bi-hourglass-split me-1"></i> Loading Skeletons
+              </button>
+              <button class="btn btn-xs btn-outline-warning px-2.5 py-1" id="sim-btn-empty" onclick="switchSimulatorState('empty')">
+                <i class="bi bi-folder-x me-1"></i> Empty State
+              </button>
+              <button class="btn btn-xs btn-outline-danger px-2.5 py-1" id="sim-btn-error" onclick="switchSimulatorState('error')">
+                <i class="bi bi-exclamation-triangle me-1"></i> Error State
+              </button>
+            </div>
+          </div>
+
+          <!-- BREADCRUMB & HEADER PANEL -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-down" data-aos-delay="50">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Reports</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Reports Center</h1>
+            </div>
+
+            <!-- Toolbar buttons -->
+            <div class="d-flex align-items-center flex-wrap gap-2 btn-no-print">
+              <button class="btn btn-sm btn-primary d-flex align-items-center gap-1.5" onclick="openGenerateModal()" title="Generate custom database compilation">
+                <i class="bi bi-plus-circle"></i> <span>Generate Report</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerExport('CSV')" title="Export filtered logs to standard CSV format">
+                <i class="bi bi-file-earmark-spreadsheet"></i> <span>Export CSV</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerExport('Excel')" title="Export filtered logs to spreadsheet file">
+                <i class="bi bi-file-earmark-excel"></i> <span>Export Excel</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="triggerExport('PDF')" title="Compile analytics metrics into a clean PDF document">
+                <i class="bi bi-file-pdf"></i> <span>Export PDF</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" onclick="window.print()" title="Open print preview window">
+                <i class="bi bi-printer"></i> <span>Print</span>
+              </button>
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5" onclick="triggerSyncRefresh()" title="Sync and refresh all reports data listings">
+                <i class="bi bi-arrow-clockwise"></i> <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SKELETON PRELOAD STATE -->
+          <div id="state-loading-skeleton" class="skeleton-hidden">
+            <div class="row g-3 mb-4">
+              <div class="col-6 col-md-3" v-for="n in 4">
+                <div class="uh-card p-3">
+                  <div class="skeleton-placeholder mb-2" style="width: 40%; height: 12px;"></div>
+                  <div class="skeleton-placeholder mb-1" style="width: 75%; height: 24px;"></div>
+                  <div class="skeleton-placeholder" style="width: 50%; height: 10px;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="uh-card p-4">
+              <div class="skeleton-placeholder mb-4" style="width: 30%; height: 20px;"></div>
+              <div class="skeleton-placeholder mb-2" style="width: 100%; height: 40px;" v-for="i in 5"></div>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE PANEL -->
+          <div id="state-empty" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 mx-auto" style="max-width: 600px;">
+              <div class="text-warning mb-4"><i class="bi bi-folder-x" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">No Reports Compiled</h3>
+              <p class="text-muted small mb-4">There are currently no report listings matching the active database criteria. Generate a new report to populate the dashboard center logs.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-primary" onclick="openGenerateModal()"><i class="bi bi-plus-circle me-1"></i> Generate Your First Report</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ERROR STATE PANEL -->
+          <div id="state-error" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 mx-auto border-danger" style="max-width: 600px;">
+              <div class="text-danger mb-4"><i class="bi bi-exclamation-triangle-fill" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">Database Sync Error</h3>
+              <p class="text-muted small mb-4">Unable to establish connection with the central repository module. This might be due to credentials timeout or structural updates.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-danger" onclick="triggerSyncRefresh()"><i class="bi bi-arrow-clockwise me-1"></i> Retry Database Fetch</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- REAL HIGH-FIDELITY SUCCESS CONTENT -->
+          <div id="state-success-content" class="fade-transition">
+
+            <!-- STATISTICS CARDS METRIC GRID (8 Cards) -->
+            <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-8 g-3 mb-4" data-aos="fade-up" data-aos-delay="100">
+              <!-- Card 1: Total Reports -->
+              <div class="col">
+                <div class="uh-card p-3 text-center card-lift-hover bg-body h-100 d-flex flex-column justify-content-between">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">TOTAL REPORTS</span>
+                  <div class="my-2">
+                    <h3 class="font-title fw-bold mb-0 text-primary animate-counter-uh" id="stat-total-reports" data-target="152">152</h3>
+                  </div>
+                  <span class="badge bg-success-subtle text-success py-0.5 px-1.5" style="font-size: 0.6rem;"><i class="bi bi-arrow-up-right"></i> +8.2%</span>
+                </div>
+              </div>
+              <!-- Card 2: Generated Today -->
+              <div class="col">
+                <div class="uh-card p-3 text-center card-lift-hover bg-body h-100 d-flex flex-column justify-content-between">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">GENERATED TODAY</span>
+                  <div class="my-2">
+                    <h3 class="font-title fw-bold mb-0 text-info animate-counter-uh" id="stat-gen-today" data-target="14">14</h3>
+                  </div>
+                  <span class="badge bg-info-subtle text-info py-0.5 px-1.5" style="font-size: 0.6rem;">Active Session</span>
+                </div>
+              </div>
+              <!-- Card 3: Sales Reports -->
+              <div class="col">
+                <div class="uh-card p-3 text-center card-lift-hover bg-body h-100 d-flex flex-column justify-content-between">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">SALES REPORTS</span>
+                  <div class="my-2">
+                    <h3 class="font-title fw-bold mb-0 text-success animate-counter-uh" id="stat-sales-reports" data-target="42">42</h3>
+                  </div>
+                  <span class="badge bg-success-subtle text-success py-0.5 px-1.5" style="font-size: 0.6rem;"><i class="bi bi-check2-all"></i> 100% Ok</span>
+                </div>
+              </div>
+              <!-- Card 4: Rental Reports -->
+              <div class="col">
+                <div class="uh-card p-3 text-center card-lift-hover bg-body h-100 d-flex flex-column justify-content-between">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">RENTAL REPORTS</span>
+                  <div class="my-2">
+                    <h3 class="font-title fw-bold mb-0 text-warning animate-counter-uh" id="stat-rental-reports" data-target="28">28</h3>
+                  </div>
+                  <span class="badge bg-warning-subtle text-warning py-0.5 px-1.5" style="font-size: 0.6rem;">Weekly cycle</span>
+                </div>
+              </div>
+              <!-- Card 5: Financial Reports -->
+              <div class="col">
+                <div class="uh-card p-3 text-center card-lift-hover bg-body h-100 d-flex flex-column justify-content-between">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">FINANCIALS</span>
+                  <div class="my-2">
+                    <h3 class="font-title fw-bold mb-0 text-danger animate-counter-uh" id="stat-financial-reports" data-target="36">36</h3>
+                  </div>
+                  <span class="badge bg-danger-subtle text-danger py-0.5 px-1.5" style="font-size: 0.6rem;">Quarterly Audited</span>
+                </div>
+              </div>
+              <!-- Card 6: Customer Reports -->
+              <div class="col">
+                <div class="uh-card p-3 text-center card-lift-hover bg-body h-100 d-flex flex-column justify-content-between">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">CUSTOMERS</span>
+                  <div class="my-2">
+                    <h3 class="font-title fw-bold mb-0 text-purple animate-counter-uh" id="stat-customer-reports" data-target="18">18</h3>
+                  </div>
+                  <span class="badge bg-purple-subtle text-purple py-0.5 px-1.5" style="font-size: 0.6rem;">CRM Linked</span>
+                </div>
+              </div>
+              <!-- Card 7: Agent Reports -->
+              <div class="col">
+                <div class="uh-card p-3 text-center card-lift-hover bg-body h-100 d-flex flex-column justify-content-between">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">AGENTS PERFORMANCE</span>
+                  <div class="my-2">
+                    <h3 class="font-title fw-bold mb-0 text-primary animate-counter-uh" id="stat-agent-reports" data-target="12">12</h3>
+                  </div>
+                  <span class="badge bg-primary-subtle text-primary py-0.5 px-1.5" style="font-size: 0.6rem;">KPI Tracked</span>
+                </div>
+              </div>
+              <!-- Card 8: Pending Reports -->
+              <div class="col">
+                <div class="uh-card p-3 text-center card-lift-hover bg-body h-100 d-flex flex-column justify-content-between">
+                  <span class="text-muted d-block uppercase small text-truncate" style="font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700;">PENDING JOBS</span>
+                  <div class="my-2">
+                    <h3 class="font-title fw-bold mb-0 text-warning animate-counter-uh" id="stat-pending-jobs" data-target="2">2</h3>
+                  </div>
+                  <span class="badge bg-warning-subtle text-warning py-0.5 px-1.5" style="font-size: 0.6rem;">Queue Active</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DYNAMIC REPORT FILTERS & PARAMETERS PANEL -->
+            <div class="uh-card p-3 mb-4 btn-no-print" data-aos="fade-up">
+              <div class="row align-items-center g-2.5">
+                <!-- Search term -->
+                <div class="col-12 col-md-4">
+                  <div class="input-group">
+                    <span class="input-group-text bg-body border-light-subtle"><i class="bi bi-funnel text-primary"></i></span>
+                    <input type="text" class="form-control bg-body border-light-subtle text-main" id="filter-search-term" placeholder="Filter dynamic results by report title..." onkeyup="applyDynamicFilters()" />
+                  </div>
+                </div>
+                <!-- Selection dropdowns -->
+                <div class="col-6 col-sm-4 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main" id="filter-report-type" onchange="applyDynamicFilters()">
+                    <option value="">All Report Types</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Rentals">Rentals</option>
+                    <option value="Financial">Financial</option>
+                    <option value="Customers">Customers</option>
+                    <option value="Agents">Agents</option>
+                    <option value="Leads">Leads</option>
+                    <option value="Inventory">Inventory</option>
+                    <option value="Invoices">Invoices</option>
+                  </select>
+                </div>
+                <div class="col-6 col-sm-4 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main" id="filter-status" onchange="applyDynamicFilters()">
+                    <option value="">All Statuses</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Failed">Failed</option>
+                  </select>
+                </div>
+                <div class="col-6 col-sm-4 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main" id="filter-city" onchange="applyDynamicFilters()">
+                    <option value="">All Cities</option>
+                    <option value="Miami">Miami</option>
+                    <option value="New York">New York</option>
+                    <option value="Los Angeles">Los Angeles</option>
+                    <option value="Chicago">Chicago</option>
+                  </select>
+                </div>
+                <div class="col-6 col-sm-12 col-md-2 d-flex gap-2">
+                  <button class="btn btn-outline-secondary w-100 btn-sm" onclick="toggleAdvancedFilterContainer()"><i class="bi bi-sliders me-1"></i> Advanced</button>
+                  <button class="btn btn-outline-danger btn-sm px-2" onclick="resetFilterParameters()" title="Clear Filters"><i class="bi bi-trash"></i></button>
+                </div>
+              </div>
+
+              <!-- ADVANCED COLLAPSIBLE FILTERS PANEL -->
+              <div class="collapse mt-3" id="advanced-filters-panel">
+                <div class="p-3 rounded bg-body border border-light-subtle">
+                  <div class="row g-3">
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <label class="form-label text-muted small fw-semibold">Agent Selector</label>
+                      <select class="form-select bg-body border-light-subtle text-main" id="filter-agent" onchange="applyDynamicFilters()">
+                        <option value="">All Agents</option>
+                        <option value="Marcus Vance">Marcus Vance</option>
+                        <option value="Sarah Jenkins">Sarah Jenkins</option>
+                        <option value="Robert Downey">Robert Downey</option>
+                        <option value="Emma Watson">Emma Watson</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <label class="form-label text-muted small fw-semibold">Customer Selector</label>
+                      <select class="form-select bg-body border-light-subtle text-main" id="filter-customer" onchange="applyDynamicFilters()">
+                        <option value="">All Customers</option>
+                        <option value="David Foster">David Foster</option>
+                        <option value="Robert Downey">Robert Downey</option>
+                        <option value="Amanda Seyfried">Amanda Seyfried</option>
+                        <option value="Jessica Alba">Jessica Alba</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <label class="form-label text-muted small fw-semibold">Property Type</label>
+                      <select class="form-select bg-body border-light-subtle text-main" id="filter-property-type" onchange="applyDynamicFilters()">
+                        <option value="">All Property Types</option>
+                        <option value="Apartment">Apartment</option>
+                        <option value="Villa">Villa</option>
+                        <option value="Penthouse">Penthouse</option>
+                        <option value="Office Space">Office Space</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <label class="form-label text-muted small fw-semibold">Date Range</label>
+                      <div class="input-group">
+                        <input type="date" class="form-control bg-body border-light-subtle text-main p-1.5" id="filter-start-date" onchange="applyDynamicFilters()" style="font-size: 0.75rem;" />
+                        <input type="date" class="form-control bg-body border-light-subtle text-main p-1.5" id="filter-end-date" onchange="applyDynamicFilters()" style="font-size: 0.75rem;" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DYNAMIC MULTI-GRID PREVIEWS (5 Small Chart.js previews) -->
+            <div class="row g-3 mb-4" data-aos="fade-up">
+              <!-- Chart 1: Sales Summary -->
+              <div class="col-12 col-sm-6 col-xl-2-4 col-lg-4">
+                <div class="uh-card p-3 h-100 bg-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-bold" style="font-size: 0.75rem;">SALES SUMMARY</span>
+                    <i class="bi bi-graph-up text-success"></i>
+                  </div>
+                  <div class="mini-chart-container">
+                    <canvas id="salesChart"></canvas>
+                  </div>
+                </div>
+              </div>
+              <!-- Chart 2: Revenue Summary -->
+              <div class="col-12 col-sm-6 col-xl-2-4 col-lg-4">
+                <div class="uh-card p-3 h-100 bg-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-bold" style="font-size: 0.75rem;">REVENUE TREND</span>
+                    <i class="bi bi-currency-dollar text-primary"></i>
+                  </div>
+                  <div class="mini-chart-container">
+                    <canvas id="revenueChart"></canvas>
+                  </div>
+                </div>
+              </div>
+              <!-- Chart 3: Lead Summary -->
+              <div class="col-12 col-sm-6 col-xl-2-4 col-lg-4">
+                <div class="uh-card p-3 h-100 bg-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-bold" style="font-size: 0.75rem;">LEAD GENERATION</span>
+                    <i class="bi bi-funnel text-info"></i>
+                  </div>
+                  <div class="mini-chart-container">
+                    <canvas id="leadChart"></canvas>
+                  </div>
+                </div>
+              </div>
+              <!-- Chart 4: Property Summary -->
+              <div class="col-12 col-sm-6 col-xl-2-4 col-lg-6">
+                <div class="uh-card p-3 h-100 bg-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-bold" style="font-size: 0.75rem;">PROPERTY LISTINGS</span>
+                    <i class="bi bi-houses text-warning"></i>
+                  </div>
+                  <div class="mini-chart-container">
+                    <canvas id="propertyChart"></canvas>
+                  </div>
+                </div>
+              </div>
+              <!-- Chart 5: Customer Summary -->
+              <div class="col-12 col-sm-12 col-xl-2-4 col-lg-6">
+                <div class="uh-card p-3 h-100 bg-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-bold" style="font-size: 0.75rem;">CUSTOMER GROWTH</span>
+                    <i class="bi bi-people text-purple"></i>
+                  </div>
+                  <div class="mini-chart-container">
+                    <canvas id="customerChart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- COMPREHENSIVE QUICK REPORT GENERATOR (12 Category Cards) -->
+            <div class="mb-4" data-aos="fade-up">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="font-title fw-bold mb-0">Quick Report Generator</h4>
+                <!-- Category Tab Filters -->
+                <div class="d-flex gap-1 flex-wrap" id="generator-category-filters">
+                  <button class="btn btn-xs btn-primary px-2.5 py-1 text-xs active" onclick="filterGeneratorCards('all', this)">All Categories</button>
+                  <button class="btn btn-xs btn-outline-secondary px-2.5 py-1 text-xs" onclick="filterGeneratorCards('Sales', this)">Sales</button>
+                  <button class="btn btn-xs btn-outline-secondary px-2.5 py-1 text-xs" onclick="filterGeneratorCards('Rentals', this)">Rentals</button>
+                  <button class="btn btn-xs btn-outline-secondary px-2.5 py-1 text-xs" onclick="filterGeneratorCards('Finance', this)">Finance</button>
+                  <button class="btn btn-xs btn-outline-secondary px-2.5 py-1 text-xs" onclick="filterGeneratorCards('CRM', this)">Customers & Agents</button>
+                  <button class="btn btn-xs btn-outline-secondary px-2.5 py-1 text-xs" onclick="filterGeneratorCards('Operations', this)">Ops</button>
+                </div>
+              </div>
+
+              <!-- 12 Cards Grid -->
+              <div class="row g-3" id="quick-generator-cards-grid">
+                <!-- Card 1: Property Sales Report -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="Sales">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-success-subtle rounded text-success"><i class="bi bi-houses-fill" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">Sales</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Property Sales Report</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Comprehensive compilation of concluded properties sales, conversions rates, and top zones.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Property Sales Report', 'Sales')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Property Sales Report')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Property Sales Report', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 2: Rental Report -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="Rentals">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-warning-subtle rounded text-warning"><i class="bi bi-key-fill" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">Rentals</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Rental Report</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Monthly rental properties income flow, ongoing leases list, and expiration calendars.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Rental Report', 'Rentals')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Rental Report')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Rental Report', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 3: Customer Report -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="CRM">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-info-subtle rounded text-info"><i class="bi bi-person-lines-fill" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">CRM</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Customer Report</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Customer onboarding stats, demographic charts, retention indexes, and feedback parameters.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Customer Report', 'CRM')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Customer Report')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Customer Report', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 4: Lead Report -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="CRM">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-purple-subtle rounded text-purple"><i class="bi bi-funnel-fill" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">CRM</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Lead Report</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Marketing acquisition funnels, conversion rates, leads distribution, and costs per lead.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Lead Report', 'CRM')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Lead Report')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Lead Report', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 5: Agent Performance -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="CRM">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-primary-subtle rounded text-primary"><i class="bi bi-person-badge-fill" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">CRM</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Agent Performance</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Individual sales targets, commissions accumulated, customer ratings, and response latency.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Agent Performance', 'CRM')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Agent Performance')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Agent Performance', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 6: Revenue Report -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="Finance">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-success-subtle rounded text-success"><i class="bi bi-wallet2" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">Finance</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Revenue Report</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Total capital growth curves, comparative margins, EBITDA evaluations, and tax calculations.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Revenue Report', 'Finance')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Revenue Report')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Revenue Report', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 7: Commission Report -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="Finance">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-danger-subtle rounded text-danger"><i class="bi bi-cash-coin" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">Finance</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Commission Report</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Calculated commissions logs, payout schedules, partner rates, and withholding balances.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Commission Report', 'Finance')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Commission Report')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Commission Report', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 8: Inventory Report -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="Sales">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-info-subtle rounded text-info"><i class="bi bi-box-seam-fill" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">Sales</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Inventory Report</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Structural listings status, newly onboarded projects, pricing index, and square footage sums.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Inventory Report', 'Sales')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Inventory Report')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Inventory Report', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 9: Occupancy Report -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="Rentals">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-warning-subtle rounded text-warning"><i class="bi bi-check-circle-fill" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">Rentals</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Occupancy Report</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Properties vacancy rate, tenants turnaround times, active leases distribution, and forecasts.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Occupancy Report', 'Rentals')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Occupancy Report')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Occupancy Report', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 10: Appointments Report -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="Operations">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-primary-subtle rounded text-primary"><i class="bi bi-calendar-event-fill" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">Operations</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Appointments Report</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Showings scheduled, agent calendar optimization, lead conversion parameters, and feedback loops.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Appointments Report', 'Operations')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Appointments Report')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Appointments Report', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 11: Transactions Report -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="Finance">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-danger-subtle rounded text-danger"><i class="bi bi-currency-exchange" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">Finance</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Transactions Report</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Compilation of payment streams, outstanding dues, processing latency, and custom handshakes.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Transactions Report', 'Finance')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Transactions Report')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Transactions Report', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 12: Invoices Report -->
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 generator-report-card" data-category="Operations">
+                  <div class="uh-card p-3 h-100 d-flex flex-column justify-content-between card-lift-hover">
+                    <div>
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="p-2 bg-purple-subtle rounded text-purple"><i class="bi bi-receipt-cutoff" style="font-size: 1.2rem;"></i></div>
+                        <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">Operations</span>
+                      </div>
+                      <h6 class="font-title fw-bold text-main mb-1">Invoices Report</h6>
+                      <p class="text-muted small mb-3" style="font-size: 0.75rem; line-height: 1.35;">Issued invoices tracker, outstanding customer balances, collection efficiency parameters, and credits.</p>
+                    </div>
+                    <div class="d-flex gap-1 btn-no-print">
+                      <button class="btn btn-xs btn-primary flex-fill py-1 text-xs" onclick="generateReport('Invoices Report', 'Operations')"><i class="bi bi-play-fill"></i> Generate</button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="previewReport('Invoices Report')" title="Preview Report"><i class="bi bi-eye"></i></button>
+                      <button class="btn btn-xs btn-outline-secondary py-1 text-xs" onclick="downloadReport('Invoices Report', 'PDF')" title="Download PDF"><i class="bi bi-download"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- PRIMARY DATA TABLE (Recent Compiled Reports) -->
+            <div class="row g-4 mb-4">
+              <div class="col-12 col-xl-8" data-aos="fade-right">
+                <div class="uh-card p-4 h-100" id="transaction-table-card">
+                  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                      <h4 class="font-title fw-bold mb-0">Recent Compiled Reports</h4>
+                      <span class="badge bg-primary text-dark font-title" id="table-record-count">6 Compiled</span>
+                    </div>
+
+                    <!-- Bulk Selection Controls -->
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <div class="form-check m-0 d-flex align-items-center gap-1.5">
+                        <input class="form-check-input" type="checkbox" id="bulk-select-all" onclick="toggleBulkSelectAll(this)" style="font-size: 0.85rem;" />
+                        <label class="form-check-label text-muted small fw-semibold" for="bulk-select-all">Select All</label>
+                      </div>
+                      <!-- Bulk Actions Dropdown -->
+                      <div class="dropdown d-none" id="bulk-actions-container">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="bi bi-box-seam"></i> Bulk Actions (<span id="bulk-selected-counter">0</span>)
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end bg-dark border-light-subtle">
+                          <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="triggerBulkSelectedAction('download')"><i class="bi bi-download text-success me-2"></i> Download Selected</a></li>
+                          <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="triggerBulkSelectedAction('archive')"><i class="bi bi-archive text-warning me-2"></i> Archive Selected</a></li>
+                          <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="triggerBulkSelectedAction('share')"><i class="bi bi-share text-info me-2"></i> Share Selected</a></li>
+                          <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="triggerBulkSelectedAction('delete')"><i class="bi bi-trash text-danger me-2"></i> Delete Permanently</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="table-responsive">
+                    <table class="table premium-table" id="reports-main-table">
+                      <thead>
+                        <tr>
+                          <th scope="col" style="width: 40px;">Select</th>
+                          <th scope="col">Report Name</th>
+                          <th scope="col">Generated By</th>
+                          <th scope="col">Date</th>
+                          <th scope="col">Type</th>
+                          <th scope="col">Format</th>
+                          <th scope="col">Size</th>
+                          <th scope="col">Status</th>
+                          <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="reports-table-body-target">
+                        <!-- Dynamic rows injected here -->
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- NO SEARCH RESULTS FOUND UI STATE -->
+                  <div id="state-no-search" class="d-none text-center py-5">
+                    <div class="text-muted mb-3"><i class="bi bi-search" style="font-size: 2.5rem;"></i></div>
+                    <h5 class="font-title fw-bold text-main mb-1">No Matching Reports</h5>
+                    <p class="text-muted small px-3 mb-3">Adjust your search parameters or type of template to view matching results.</p>
+                    <button class="btn btn-sm btn-outline-primary" onclick="resetFilterParameters()"><i class="bi bi-x-circle"></i> Reset Filter Parameters</button>
+                  </div>
+
+                  <!-- PAGINATION BOTTOM CONTROLS -->
+                  <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2" id="table-pagination-panel">
+                    <span class="small text-muted">Showing <span id="paginated-start-count">1</span> to <span id="paginated-end-count">6</span> of <span id="paginated-total-count">6</span> reports</span>
+                    <nav aria-label="Reports table pages">
+                      <ul class="pagination pagination-sm m-0">
+                        <li class="page-item disabled"><a class="page-link" href="javascript:void(0)" tabindex="-1">Previous</a></li>
+                        <li class="page-item active"><a class="page-link" href="javascript:void(0)">1</a></li>
+                        <li class="page-item"><a class="page-link" href="javascript:void(0)">2</a></li>
+                        <li class="page-item"><a class="page-link" href="javascript:void(0)">Next</a></li>
+                      </ul>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+
+              <!-- DOWNLOAD CENTER & SAVED REPORTS SIDE PANEL -->
+              <div class="col-12 col-xl-4" data-aos="fade-left">
+                <div class="d-flex flex-column gap-4 h-100">
+                  <!-- Saved / Favorite Reports Panel -->
+                  <div class="uh-card">
+                    <h5 class="font-title fw-bold mb-1">Saved & Favorite Reports</h5>
+                    <p class="text-muted small mb-3">Quick access to pinned sheets and favorite compilations.</p>
+
+                    <div class="d-flex flex-column gap-2.5">
+                      <!-- Saved item 1 -->
+                      <div class="p-2.5 rounded bg-body border border-light-subtle d-flex align-items-center justify-content-between">
+                        <div>
+                          <span class="text-main fw-semibold d-block" style="font-size: 0.85rem;"><i class="bi bi-pin-angle-fill text-primary me-1.5"></i>Q2 Fiscal Sales Audit</span>
+                          <span class="text-muted text-xs">Generated by Sarah Jenkins • June 15, 2026</span>
+                        </div>
+                        <div class="d-flex gap-1">
+                          <button class="btn btn-xs btn-outline-secondary p-1" onclick="previewReport('Q2 Fiscal Sales Audit')" title="Preview"><i class="bi bi-eye"></i></button>
+                          <button class="btn btn-xs btn-outline-secondary p-1" onclick="downloadReport('Q2 Fiscal Sales Audit', 'PDF')" title="Download"><i class="bi bi-download"></i></button>
+                        </div>
+                      </div>
+
+                      <!-- Saved item 2 -->
+                      <div class="p-2.5 rounded bg-body border border-light-subtle d-flex align-items-center justify-content-between">
+                        <div>
+                          <span class="text-main fw-semibold d-block" style="font-size: 0.85rem;"><i class="bi bi-pin-angle-fill text-primary me-1.5"></i>Monthly Active Rental Roll</span>
+                          <span class="text-muted text-xs">Generated by System • July 01, 2026</span>
+                        </div>
+                        <div class="d-flex gap-1">
+                          <button class="btn btn-xs btn-outline-secondary p-1" onclick="previewReport('Monthly Active Rental Roll')" title="Preview"><i class="bi bi-eye"></i></button>
+                          <button class="btn btn-xs btn-outline-secondary p-1" onclick="downloadReport('Monthly Active Rental Roll', 'Excel')" title="Download"><i class="bi bi-download"></i></button>
+                        </div>
+                      </div>
+
+                      <!-- Saved item 3 -->
+                      <div class="p-2.5 rounded bg-body border border-light-subtle d-flex align-items-center justify-content-between">
+                        <div>
+                          <span class="text-main fw-semibold d-block" style="font-size: 0.85rem;"><i class="bi bi-star-fill text-warning me-1.5"></i>Top Commission Payouts FY26</span>
+                          <span class="text-muted text-xs">Generated by Marcus Vance • June 30, 2026</span>
+                        </div>
+                        <div class="d-flex gap-1">
+                          <button class="btn btn-xs btn-outline-secondary p-1" onclick="previewReport('Top Commission Payouts FY26')" title="Preview"><i class="bi bi-eye"></i></button>
+                          <button class="btn btn-xs btn-outline-secondary p-1" onclick="downloadReport('Top Commission Payouts FY26', 'PDF')" title="Download"><i class="bi bi-download"></i></button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Download Center Panel -->
+                  <div class="uh-card">
+                    <h5 class="font-title fw-bold mb-1">Download Center</h5>
+                    <p class="text-muted small mb-3">Bulk export or transmit report packages in standard file formats.</p>
+
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <button class="btn btn-outline-secondary w-100 py-3 text-center d-flex flex-column align-items-center justify-content-center gap-2 card-lift-hover" onclick="triggerExport('CSV')">
+                          <i class="bi bi-file-earmark-spreadsheet text-success" style="font-size: 1.5rem;"></i>
+                          <span class="small fw-semibold">Export CSV</span>
+                        </button>
+                      </div>
+                      <div class="col-6">
+                        <button class="btn btn-outline-secondary w-100 py-3 text-center d-flex flex-column align-items-center justify-content-center gap-2 card-lift-hover" onclick="triggerExport('Excel')">
+                          <i class="bi bi-file-earmark-excel text-primary" style="font-size: 1.5rem;"></i>
+                          <span class="small fw-semibold">Export Excel</span>
+                        </button>
+                      </div>
+                      <div class="col-6">
+                        <button class="btn btn-outline-secondary w-100 py-3 text-center d-flex flex-column align-items-center justify-content-center gap-2 card-lift-hover" onclick="triggerExport('PDF')">
+                          <i class="bi bi-file-pdf text-danger" style="font-size: 1.5rem;"></i>
+                          <span class="small fw-semibold">Compile PDF</span>
+                        </button>
+                      </div>
+                      <div class="col-6">
+                        <button class="btn btn-outline-secondary w-100 py-3 text-center d-flex flex-column align-items-center justify-content-center gap-2 card-lift-hover" onclick="openEmailModal()">
+                          <i class="bi bi-envelope-open text-warning" style="font-size: 1.5rem;"></i>
+                          <span class="small fw-semibold">Email Package</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SCHEDULED REPORTS GRID SECTION -->
+            <div class="mb-4" data-aos="fade-up">
+              <h4 class="font-title fw-bold mb-1">Scheduled Automation Profiles</h4>
+              <p class="text-muted small mb-3">Automated reports scheduled for generation and delivery directly to partner stakeholders.</p>
+
+              <div class="row g-3">
+                <!-- Daily Schedule -->
+                <div class="col-12 col-md-4 col-lg">
+                  <div class="uh-card p-3 h-100 schedule-status-card border-start border-primary">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <span class="badge bg-primary-subtle text-primary" style="font-size: 0.65rem;">Daily</span>
+                      <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" checked id="switch-daily" />
+                      </div>
+                    </div>
+                    <h6 class="font-title fw-bold text-main mb-1">Active Leads Digest</h6>
+                    <p class="text-muted mb-2" style="font-size: 0.75rem;">Dispatched every morning at 08:00 AM UTC containing raw pipeline details.</p>
+                    <span class="text-muted small" style="font-size: 0.7rem;"><i class="bi bi-envelope me-1"></i> to: marketing@urbanhub.com</span>
+                  </div>
+                </div>
+
+                <!-- Weekly Schedule -->
+                <div class="col-12 col-md-4 col-lg">
+                  <div class="uh-card p-3 h-100 schedule-status-card border-start border-success">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <span class="badge bg-success-subtle text-success" style="font-size: 0.65rem;">Weekly</span>
+                      <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" checked id="switch-weekly" />
+                      </div>
+                    </div>
+                    <h6 class="font-title fw-bold text-main mb-1">Weekly Rental Roll</h6>
+                    <p class="text-muted mb-2" style="font-size: 0.75rem;">Compiled every Monday at midnight reporting collected occupancy values.</p>
+                    <span class="text-muted small" style="font-size: 0.7rem;"><i class="bi bi-envelope me-1"></i> to: finance@urbanhub.com</span>
+                  </div>
+                </div>
+
+                <!-- Monthly Schedule -->
+                <div class="col-12 col-md-4 col-lg">
+                  <div class="uh-card p-3 h-100 schedule-status-card border-start border-info">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <span class="badge bg-info-subtle text-info" style="font-size: 0.65rem;">Monthly</span>
+                      <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" checked id="switch-monthly" />
+                      </div>
+                    </div>
+                    <h6 class="font-title fw-bold text-main mb-1">Agent Performance Audit</h6>
+                    <p class="text-muted mb-2" style="font-size: 0.75rem;">Issued first day of each month containing detailed agent commissions sums.</p>
+                    <span class="text-muted small" style="font-size: 0.7rem;"><i class="bi bi-envelope me-1"></i> to: admin@urbanhub.com</span>
+                  </div>
+                </div>
+
+                <!-- Quarterly Schedule -->
+                <div class="col-12 col-md-6 col-lg">
+                  <div class="uh-card p-3 h-100 schedule-status-card border-start border-warning">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <span class="badge bg-warning-subtle text-warning" style="font-size: 0.65rem;">Quarterly</span>
+                      <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" checked id="switch-quarterly" />
+                      </div>
+                    </div>
+                    <h6 class="font-title fw-bold text-main mb-1">EBITDA Audit Reports</h6>
+                    <p class="text-muted mb-2" style="font-size: 0.75rem;">Synthesized and compiled for fiscal audits and tax summaries.</p>
+                    <span class="text-muted small" style="font-size: 0.7rem;"><i class="bi bi-envelope me-1"></i> to: board@urbanhub.com</span>
+                  </div>
+                </div>
+
+                <!-- Yearly Schedule -->
+                <div class="col-12 col-md-6 col-lg">
+                  <div class="uh-card p-3 h-100 schedule-status-card border-start border-danger">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <span class="badge bg-danger-subtle text-danger" style="font-size: 0.65rem;">Yearly</span>
+                      <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" id="switch-yearly" />
+                      </div>
+                    </div>
+                    <h6 class="font-title fw-bold text-main mb-1">Fiscal Year Audit Synopsis</h6>
+                    <p class="text-muted mb-2" style="font-size: 0.75rem;">Yearly financial performance audit and corporate capital overview.</p>
+                    <span class="text-muted small" style="font-size: 0.7rem;"><i class="bi bi-envelope me-1"></i> to: investors@urbanhub.com</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div> <!-- END STATE SUCCESS CONTENT -->
+
+        </div> <!-- END PAGE BODY CONTAINER -->
+      </main>
+    </div>
+
+    <!-- MODAL 1: GENERATE REPORT MODAL -->
+    <div class="modal fade" id="generateReportModal" tabindex="-1" aria-labelledby="generateReportModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-light-subtle text-main">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="generateReportModalLabel"><i class="bi bi-cpu text-primary me-2"></i>Compile Custom Report</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="generate-custom-report-form" onsubmit="handleGenerateSubmit(event)">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Report Title / Name</label>
+                <input type="text" class="form-control bg-body border-light-subtle text-main" id="m-report-title" required placeholder="e.g. Q3 Florida Sales Audit" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Report Template Category</label>
+                <select class="form-select bg-body border-light-subtle text-main" id="m-report-category" required>
+                  <option value="Sales">Sales & Inventory</option>
+                  <option value="Rentals">Rentals & Occupancy</option>
+                  <option value="Finance">Finance & Commissions</option>
+                  <option value="CRM">Customers & Leads</option>
+                  <option value="Operations">Operations & Invoices</option>
+                </select>
+              </div>
+              <div class="row mb-3">
+                <div class="col">
+                  <label class="form-label small fw-semibold">Date Range Start</label>
+                  <input type="date" class="form-control bg-body border-light-subtle text-main" id="m-report-start" />
+                </div>
+                <div class="col">
+                  <label class="form-label small fw-semibold">Date Range End</label>
+                  <input type="date" class="form-control bg-body border-light-subtle text-main" id="m-report-end" />
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Primary Output Format</label>
+                <div class="d-flex gap-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="m-report-format" id="f-pdf" value="PDF" checked />
+                    <label class="form-check-label small" for="f-pdf"><i class="bi bi-file-pdf text-danger me-1"></i>PDF Document</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="m-report-format" id="f-excel" value="Excel" />
+                    <label class="form-check-label small" for="f-excel"><i class="bi bi-file-earmark-excel text-success me-1"></i>Excel Sheet</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="m-report-format" id="f-csv" value="CSV" />
+                    <label class="form-check-label small" for="f-csv"><i class="bi bi-file-earmark-spreadsheet text-info me-1"></i>CSV Spreadsheet</label>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer border-0 p-0 pt-3">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-play-fill me-1"></i>Start Compilation</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: PREVIEW MODAL -->
+    <div class="modal fade" id="previewReportModal" tabindex="-1" aria-labelledby="previewReportModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark border-light-subtle text-main">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="previewReportModalLabel"><i class="bi bi-eye text-primary me-2"></i>Report Preview Console</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-0">
+            <div class="bg-body p-4 text-center border-bottom border-light-subtle">
+              <i class="bi bi-building-up text-primary" style="font-size: 2.5rem;"></i>
+              <h4 class="font-title fw-bold text-main mt-2 mb-1" id="preview-title">Property Sales Report</h4>
+              <p class="text-muted small mb-0">Compiled on July 10, 2026 by Sarah Jenkins</p>
+            </div>
+            <div class="p-4" style="font-size: 0.85rem; max-height: 400px; overflow-y: auto;">
+              <h6 class="font-title fw-semibold text-main mb-3 border-bottom pb-2">Executive Summary Data</h6>
+              <div class="row mb-4">
+                <div class="col-sm-6 mb-3">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem;">TOTAL TURNOVER</span>
+                  <strong class="text-success h5 font-title mb-0">$12,450,000.00</strong>
+                </div>
+                <div class="col-sm-6 mb-3">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem;">ACCUMULATED COMMISSIONS</span>
+                  <strong class="text-primary h5 font-title mb-0">$373,500.00</strong>
+                </div>
+                <div class="col-sm-6 mb-3">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem;">ONBOARDED LEADS</span>
+                  <strong class="text-info h5 font-title mb-0">842 Contacts</strong>
+                </div>
+                <div class="col-sm-6">
+                  <span class="text-muted d-block uppercase small" style="font-size: 0.65rem;">OCCUPANCY COEFFICIENT</span>
+                  <strong class="text-warning h5 font-title mb-0">94.2%</strong>
+                </div>
+              </div>
+              <h6 class="font-title fw-semibold text-main mb-3 border-bottom pb-2">Recent Core Transactions Logs</h6>
+              <div class="table-responsive">
+                <table class="table table-sm text-main" style="font-size: 0.775rem;">
+                  <thead>
+                    <tr>
+                      <th>Ref ID</th>
+                      <th>Location</th>
+                      <th>Agent</th>
+                      <th class="text-end">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>TXN-1076</td>
+                      <td>Coral Gables Estate</td>
+                      <td>Emma Watson</td>
+                      <td class="text-end">$1,450,000.00</td>
+                    </tr>
+                    <tr>
+                      <td>TXN-1075</td>
+                      <td>South Beach Duplex</td>
+                      <td>Marcus Vance</td>
+                      <td class="text-end">$650,000.00</td>
+                    </tr>
+                    <tr>
+                      <td>TXN-1074</td>
+                      <td>Wynwood Art Loft</td>
+                      <td>Sarah Jenkins</td>
+                      <td class="text-end">$380,000.00</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close Preview</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="downloadReport('preview', 'PDF')"><i class="bi bi-download me-1"></i>Download PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteReportModal" tabindex="-1" aria-labelledby="deleteReportModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content bg-dark border-danger text-main">
+          <div class="modal-body text-center p-4">
+            <div class="text-danger mb-3"><i class="bi bi-exclamation-octagon-fill" style="font-size: 3.5rem;"></i></div>
+            <h4 class="font-title fw-bold text-main mb-1">Delete Report Log?</h4>
+            <p class="text-muted small mb-4">This action is permanent and cannot be undone. The compiled spreadsheet or PDF file will be wiped from the local repository.</p>
+            <div class="d-flex justify-content-center gap-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-sm btn-danger" onclick="confirmDeleteReport()">Confirm Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: EXPORT SUCCESS / PROGRESS MODAL -->
+    <div class="modal fade" id="exportStatusModal" tabindex="-1" aria-labelledby="exportStatusModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content bg-dark border-light-subtle text-main">
+          <div class="modal-body text-center p-4">
+            <div class="text-success mb-3"><i class="bi bi-check-circle-fill" style="font-size: 3.5rem;"></i></div>
+            <h4 class="font-title fw-bold text-main mb-1">Export Completed</h4>
+            <p class="text-muted small mb-4" id="export-success-message">Your custom dataset has been compiled and downloaded to your browser storage queue.</p>
+            <button type="button" class="btn btn-sm btn-primary px-4" data-bs-dismiss="modal">Dismiss</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 5: EMAIL MODAL -->
+    <div class="modal fade" id="emailReportModal" tabindex="-1" aria-labelledby="emailReportModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-light-subtle text-main">
+          <div class="modal-header border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="emailReportModalLabel"><i class="bi bi-envelope text-primary me-2"></i>Email Report Package</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form onsubmit="handleEmailSubmit(event)">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Recipient Email Address</label>
+                <input type="email" class="form-control bg-body border-light-subtle text-main" id="email-recipient" required placeholder="partner@domain.com" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Subject Title</label>
+                <input type="text" class="form-control bg-body border-light-subtle text-main" id="email-subject" required value="Compiled UrbanHub Performance Reports" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Message Body (Optional)</label>
+                <textarea class="form-control bg-body border-light-subtle text-main" rows="3" placeholder="Please find the active real estate reports compiled from the UrbanHub core database."></textarea>
+              </div>
+              <div class="modal-footer border-0 p-0 pt-3">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-send-fill me-1"></i>Send Mail</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JS SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/assets/js/main.js"></script>
+
+    <script>
+      // --- LOCAL MEMORY & DATABASE SEED ---
+      let reportsDatabase = [
+        { id: "REP-4012", name: "Q2 Fiscal Sales Audit", generatedBy: "Sarah Jenkins", date: "2026-06-15", type: "Sales", format: "PDF", size: "12.4 MB", status: "Completed" },
+        { id: "REP-4011", name: "Monthly Active Rental Roll", generatedBy: "System (Cron)", date: "2026-07-01", type: "Rentals", format: "Excel", size: "4.8 MB", status: "Completed" },
+        { id: "REP-4010", name: "Top Commission Payouts FY26", generatedBy: "Marcus Vance", date: "2026-06-30", type: "Financial", format: "PDF", size: "8.1 MB", status: "Completed" },
+        { id: "REP-4009", name: "Miami Leads Funnel Summary", generatedBy: "Emma Watson", date: "2026-07-05", type: "Leads", format: "CSV", size: "2.1 MB", status: "Completed" },
+        { id: "REP-4008", name: "Apartment Inventory Assessment", generatedBy: "Robert Downey", date: "2026-07-09", type: "Inventory", format: "PDF", size: "15.3 MB", status: "Completed" },
+        { id: "REP-4007", name: "Monthly Customer Feedback Index", generatedBy: "Sarah Jenkins", date: "2026-07-08", type: "Customers", format: "PDF", size: "1.2 MB", status: "Pending" }
+      ];
+
+      let activeDeleteId = null;
+      let activePreviewReportName = "";
+
+      // Initialize Dynamic Table & Mini Charts on load
+      document.addEventListener("DOMContentLoaded", () => {
+        renderReportsTable(reportsDatabase);
+        initializeMiniCharts();
+      });
+
+      // --- RENDERING DYNAMIC REPORTS TABLE ---
+      function renderReportsTable(data) {
+        const tbody = document.getElementById("reports-table-body-target");
+        const noSearchUI = document.getElementById("state-no-search");
+        const tableRecordCount = document.getElementById("table-record-count");
+        const paginatedStartCount = document.getElementById("paginated-start-count");
+        const paginatedEndCount = document.getElementById("paginated-end-count");
+        const paginatedTotalCount = document.getElementById("paginated-total-count");
+
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+          noSearchUI.classList.remove("d-none");
+          tableRecordCount.textContent = "0 Compiled";
+          paginatedStartCount.textContent = "0";
+          paginatedEndCount.textContent = "0";
+          paginatedTotalCount.textContent = "0";
+          return;
+        }
+
+        noSearchUI.classList.add("d-none");
+        tableRecordCount.textContent = `${data.length} Compiled`;
+        paginatedStartCount.textContent = "1";
+        paginatedEndCount.textContent = `${data.length}`;
+        paginatedTotalCount.textContent = `${data.length}`;
+
+        data.forEach(item => {
+          let badgeClass = "badge-completed";
+          if (item.status === "Pending") badgeClass = "badge-pending";
+          if (item.status === "Processing") badgeClass = "badge-processing";
+          if (item.status === "Failed") badgeClass = "badge-failed";
+
+          let formatIcon = "bi-file-pdf text-danger";
+          if (item.format === "Excel") formatIcon = "bi-file-earmark-excel text-success";
+          if (item.format === "CSV") formatIcon = "bi-file-earmark-spreadsheet text-info";
+
+          const row = document.createElement("tr");
+          row.className = "align-middle";
+          row.innerHTML = `
+            <td>
+              <input class="form-check-input bulk-checkbox-item" type="checkbox" data-id="${item.id}" onclick="handleRowCheckboxSelect()" />
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2 clickable-row" onclick="previewReport('${item.name}')">
+                <i class="bi ${formatIcon}" style="font-size: 1.25rem;"></i>
+                <span class="text-main fw-semibold">${item.name}</span>
+              </div>
+            </td>
+            <td>
+              <span class="small text-muted">${item.generatedBy}</span>
+            </td>
+            <td>
+              <span class="small text-muted">${item.date}</span>
+            </td>
+            <td>
+              <span class="badge bg-secondary-subtle text-muted text-xs">${item.type}</span>
+            </td>
+            <td>
+              <span class="small fw-semibold text-main">${item.format}</span>
+            </td>
+            <td>
+              <span class="small text-muted font-mono">${item.size}</span>
+            </td>
+            <td>
+              <span class="badge-custom ${badgeClass}">${item.status}</span>
+            </td>
+            <td class="text-end">
+              <div class="dropdown">
+                <button class="btn btn-xs btn-outline-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end bg-dark border-light-subtle">
+                  <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="previewReport('${item.name}')"><i class="bi bi-eye text-primary me-2"></i> Preview</a></li>
+                  <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="duplicateReport('${item.id}')"><i class="bi bi-files text-info me-2"></i> Duplicate</a></li>
+                  <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="downloadReport('${item.name}', '${item.format}')"><i class="bi bi-download text-success me-2"></i> Download</a></li>
+                  <li><a class="dropdown-item text-muted" href="javascript:void(0)" onclick="triggerEmailModal('${item.name}')"><i class="bi bi-envelope text-warning me-2"></i> Email File</a></li>
+                  <li><hr class="dropdown-divider border-light-subtle"></li>
+                  <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="triggerDeleteModal('${item.id}')"><i class="bi bi-trash me-2"></i> Delete</a></li>
+                </ul>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      // --- FILTERS LOGIC ---
+      function applyDynamicFilters() {
+        const searchTerm = document.getElementById("filter-search-term").value.toLowerCase();
+        const typeFilter = document.getElementById("filter-report-type").value;
+        const statusFilter = document.getElementById("filter-status").value;
+        const cityFilter = document.getElementById("filter-city").value;
+
+        // Advanced Panel Elements (Check existence)
+        const agentFilter = document.getElementById("filter-agent") ? document.getElementById("filter-agent").value : "";
+        const customerFilter = document.getElementById("filter-customer") ? document.getElementById("filter-customer").value : "";
+        const propTypeFilter = document.getElementById("filter-property-type") ? document.getElementById("filter-property-type").value : "";
+        const startDate = document.getElementById("filter-start-date") ? document.getElementById("filter-start-date").value : "";
+        const endDate = document.getElementById("filter-end-date") ? document.getElementById("filter-end-date").value : "";
+
+        const filtered = reportsDatabase.filter(item => {
+          const matchSearch = item.name.toLowerCase().includes(searchTerm) || item.generatedBy.toLowerCase().includes(searchTerm);
+          const matchType = !typeFilter || item.type.toLowerCase().includes(typeFilter.toLowerCase());
+          const matchStatus = !statusFilter || item.status === statusFilter;
+          const matchAgent = !agentFilter || item.generatedBy.toLowerCase().includes(agentFilter.toLowerCase());
+          
+          let matchDate = true;
+          if (startDate && endDate) {
+            matchDate = item.date >= startDate && item.date <= endDate;
+          }
+
+          return matchSearch && matchType && matchStatus && matchAgent && matchDate;
+        });
+
+        renderReportsTable(filtered);
+      }
+
+      function resetFilterParameters() {
+        document.getElementById("filter-search-term").value = "";
+        document.getElementById("filter-report-type").value = "";
+        document.getElementById("filter-status").value = "";
+        document.getElementById("filter-city").value = "";
+
+        if (document.getElementById("filter-agent")) document.getElementById("filter-agent").value = "";
+        if (document.getElementById("filter-customer")) document.getElementById("filter-customer").value = "";
+        if (document.getElementById("filter-property-type")) document.getElementById("filter-property-type").value = "";
+        if (document.getElementById("filter-start-date")) document.getElementById("filter-start-date").value = "";
+        if (document.getElementById("filter-end-date")) document.getElementById("filter-end-date").value = "";
+
+        renderReportsTable(reportsDatabase);
+      }
+
+      function toggleAdvancedFilterContainer() {
+        const advancedPanel = document.getElementById("advanced-filters-panel");
+        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(advancedPanel);
+        bsCollapse.toggle();
+      }
+
+      // --- QUICK REPORT CARDS FILTERING ---
+      function filterGeneratorCards(category, btn) {
+        const cards = document.querySelectorAll(".generator-report-card");
+        const buttons = document.querySelectorAll("#generator-category-filters button");
+
+        buttons.forEach(b => b.classList.remove("active", "btn-primary"));
+        buttons.forEach(b => b.classList.add("btn-outline-secondary"));
+
+        btn.classList.add("active", "btn-primary");
+        btn.classList.remove("btn-outline-secondary");
+
+        cards.forEach(card => {
+          if (category === "all") {
+            card.style.display = "block";
+          } else {
+            const cardCat = card.getAttribute("data-category");
+            if (cardCat === category) {
+              card.style.display = "block";
+            } else {
+              card.style.display = "none";
+            }
+          }
+        });
+      }
+
+      // --- BULK OPERATIONS ENGINE ---
+      function toggleBulkSelectAll(masterCheckbox) {
+        const items = document.querySelectorAll(".bulk-checkbox-item");
+        items.forEach(box => {
+          box.checked = masterCheckbox.checked;
+        });
+        updateBulkContainerState();
+      }
+
+      function handleRowCheckboxSelect() {
+        updateBulkContainerState();
+      }
+
+      function updateBulkContainerState() {
+        const checkedItems = document.querySelectorAll(".bulk-checkbox-item:checked");
+        const bulkContainer = document.getElementById("bulk-actions-container");
+        const bulkCounter = document.getElementById("bulk-selected-counter");
+
+        if (checkedItems.length > 0) {
+          bulkContainer.classList.remove("d-none");
+          bulkCounter.textContent = checkedItems.length;
+        } else {
+          bulkContainer.classList.add("d-none");
+        }
+      }
+
+      function triggerBulkSelectedAction(action) {
+        const checkedItems = document.querySelectorAll(".bulk-checkbox-item:checked");
+        const ids = Array.from(checkedItems).map(item => item.getAttribute("data-id"));
+
+        if (action === "delete") {
+          reportsDatabase = reportsDatabase.filter(item => !ids.includes(item.id));
+          showToast(`Bulk deleted ${ids.length} reports successfully.`);
+        } else if (action === "archive") {
+          reportsDatabase.forEach(item => {
+            if (ids.includes(item.id)) item.status = "Archived";
+          });
+          showToast(`Bulk archived ${ids.length} reports.`);
+        } else if (action === "download") {
+          showToast(`Synthesizing download package for ${ids.length} files...`);
+        } else if (action === "share") {
+          showToast(`Package shared with board members.`);
+        }
+
+        document.getElementById("bulk-select-all").checked = false;
+        updateBulkContainerState();
+        renderReportsTable(reportsDatabase);
+      }
+
+      // --- SIMULATOR CONTROLS ---
+      function switchSimulatorState(state) {
+        const successContent = document.getElementById("state-success-content");
+        const loadingSkeleton = document.getElementById("state-loading-skeleton");
+        const emptyState = document.getElementById("state-empty");
+        const errorState = document.getElementById("state-error");
+
+        // Hide all
+        successContent.classList.add("skeleton-hidden");
+        loadingSkeleton.classList.add("skeleton-hidden");
+        emptyState.classList.add("skeleton-hidden");
+        errorState.classList.add("skeleton-hidden");
+
+        // Deactivate all buttons
+        document.getElementById("sim-btn-success").classList.remove("active");
+        document.getElementById("sim-btn-loading").classList.remove("active");
+        document.getElementById("sim-btn-empty").classList.remove("active");
+        document.getElementById("sim-btn-error").classList.remove("active");
+
+        if (state === "success") {
+          successContent.classList.remove("skeleton-hidden");
+          document.getElementById("sim-btn-success").classList.add("active");
+        } else if (state === "loading") {
+          loadingSkeleton.classList.remove("skeleton-hidden");
+          document.getElementById("sim-btn-loading").classList.add("active");
+        } else if (state === "empty") {
+          emptyState.classList.remove("skeleton-hidden");
+          document.getElementById("sim-btn-empty").classList.add("active");
+        } else if (state === "error") {
+          errorState.classList.remove("skeleton-hidden");
+          document.getElementById("sim-btn-error").classList.add("active");
+        }
+      }
+
+      // --- DYNAMIC ACTIONS & MODALS ---
+      function openGenerateModal() {
+        const modal = new bootstrap.Modal(document.getElementById("generateReportModal"));
+        modal.show();
+      }
+
+      function handleGenerateSubmit(event) {
+        event.preventDefault();
+        const title = document.getElementById("m-report-title").value;
+        const category = document.getElementById("m-report-category").value;
+        const format = document.querySelector('input[name="m-report-format"]:checked').value;
+
+        // Create new item
+        const newReport = {
+          id: `REP-${Math.floor(1000 + Math.random() * 9000)}`,
+          name: title,
+          generatedBy: "Sarah Jenkins",
+          date: new Date().toISOString().split("T")[0],
+          type: category,
+          format: format,
+          size: "4.2 MB",
+          status: "Completed"
+        };
+
+        // Prepend and render
+        reportsDatabase.unshift(newReport);
+        renderReportsTable(reportsDatabase);
+
+        // Hide modal & show toast
+        bootstrap.Modal.getInstance(document.getElementById("generateReportModal")).hide();
+        showToast(`Report '${title}' compiled in ${format} format successfully.`);
+
+        // Reset form
+        document.getElementById("generate-custom-report-form").reset();
+      }
+
+      function generateReport(name, category) {
+        showToast(`Starting dynamic compilation: ${name}...`);
+        setTimeout(() => {
+          const newReport = {
+            id: `REP-${Math.floor(1000 + Math.random() * 9000)}`,
+            name: `${name} (Dynamic)`,
+            generatedBy: "System (Auto)",
+            date: new Date().toISOString().split("T")[0],
+            type: category,
+            format: "PDF",
+            size: "3.5 MB",
+            status: "Completed"
+          };
+          reportsDatabase.unshift(newReport);
+          renderReportsTable(reportsDatabase);
+          showToast(`Successfully compiled: ${name}. Added to recent table.`);
+        }, 800);
+      }
+
+      function previewReport(name) {
+        activePreviewReportName = name;
+        document.getElementById("preview-title").textContent = name;
+        const modal = new bootstrap.Modal(document.getElementById("previewReportModal"));
+        modal.show();
+      }
+
+      function duplicateReport(id) {
+        const found = reportsDatabase.find(item => item.id === id);
+        if (found) {
+          const copy = { ...found, id: `REP-${Math.floor(1000 + Math.random() * 9000)}`, name: `${found.name} (Copy)` };
+          reportsDatabase.unshift(copy);
+          renderReportsTable(reportsDatabase);
+          showToast(`Duplicated '${found.name}' into new entry.`);
+        }
+      }
+
+      function triggerDeleteModal(id) {
+        activeDeleteId = id;
+        const modal = new bootstrap.Modal(document.getElementById("deleteReportModal"));
+        modal.show();
+      }
+
+      function confirmDeleteReport() {
+        if (activeDeleteId) {
+          reportsDatabase = reportsDatabase.filter(item => item.id !== activeDeleteId);
+          renderReportsTable(reportsDatabase);
+          showToast("Report deleted permanently.");
+          bootstrap.Modal.getInstance(document.getElementById("deleteReportModal")).hide();
+          activeDeleteId = null;
+        }
+      }
+
+      function triggerExport(format) {
+        const msg = document.getElementById("export-success-message");
+        msg.textContent = `Your active report logs have been successfully compiled in high-density ${format} package structure.`;
+        const modal = new bootstrap.Modal(document.getElementById("exportStatusModal"));
+        modal.show();
+      }
+
+      function downloadReport(name, format) {
+        showToast(`Downloading '${name}' as ${format}...`);
+      }
+
+      function triggerEmailModal(name) {
+        document.getElementById("email-subject").value = `UrbanHub Performance Report: ${name}`;
+        const modal = new bootstrap.Modal(document.getElementById("emailReportModal"));
+        modal.show();
+      }
+
+      function openEmailModal() {
+        document.getElementById("email-subject").value = `UrbanHub Compiled Performance Reports Package`;
+        const modal = new bootstrap.Modal(document.getElementById("emailReportModal"));
+        modal.show();
+      }
+
+      function handleEmailSubmit(event) {
+        event.preventDefault();
+        const recipient = document.getElementById("email-recipient").value;
+        showToast(`Transmitting document packets securely to: ${recipient}...`);
+        bootstrap.Modal.getInstance(document.getElementById("emailReportModal")).hide();
+        setTimeout(() => {
+          showToast(`Secure handshake success. Mail package dispatched.`);
+        }, 1200);
+      }
+
+      function triggerSyncRefresh() {
+        showToast("Synchronizing with remote cloud cluster nodes...");
+        switchSimulatorState("loading");
+        setTimeout(() => {
+          switchSimulatorState("success");
+          showToast("Sync database refresh completed. 100% records matched.");
+        }, 1200);
+      }
+
+      // Toast Display Helper
+      function showToast(message) {
+        const toast = document.createElement("div");
+        toast.style.position = "fixed";
+        toast.style.bottom = "20px";
+        toast.style.right = "20px";
+        toast.style.backgroundColor = "var(--uh-bg-card)";
+        toast.style.color = "var(--uh-text-main)";
+        toast.style.border = "1px solid var(--uh-primary)";
+        toast.style.boxShadow = "var(--uh-shadow-lg)";
+        toast.style.padding = "0.75rem 1.5rem";
+        toast.style.borderRadius = "8px";
+        toast.style.zIndex = "9999";
+        toast.style.fontSize = "0.85rem";
+        toast.style.fontWeight = "600";
+        toast.style.display = "flex";
+        toast.style.alignItems = "center";
+        toast.style.gap = "0.5rem";
+        toast.innerHTML = `<i class="bi bi-info-circle-fill text-primary"></i> ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transition = "opacity 0.5s ease-out";
+          setTimeout(() => toast.remove(), 500);
+        }, 3000);
+      }
+
+      function handleGlobalReportsSearch(val) {
+        const query = val.toLowerCase();
+        const filtered = reportsDatabase.filter(item => {
+          return item.name.toLowerCase().includes(query) || item.generatedBy.toLowerCase().includes(query);
+        });
+        renderReportsTable(filtered);
+      }
+
+      // --- INITIALIZE THE 5 MINI CHART.JS PREVIEWS ---
+      function initializeMiniCharts() {
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const primaryColor = isDark ? '#D4AF37' : '#B8860B';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        const textColor = isDark ? '#94A3B8' : '#64748B';
+
+        const commonOptions = {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { display: false } },
+            y: { grid: { display: false }, ticks: { display: false } }
+          }
+        };
+
+        // 1. Sales Summary (Bar)
+        const salesCtx = document.getElementById("salesChart");
+        if (salesCtx) {
+          new Chart(salesCtx, {
+            type: "bar",
+            data: {
+              labels: ["W1", "W2", "W3", "W4", "W5"],
+              datasets: [{
+                data: [12, 19, 14, 25, 22],
+                backgroundColor: primaryColor,
+                borderRadius: 4
+              }]
+            },
+            options: commonOptions
+          });
+        }
+
+        // 2. Revenue Summary (Line / Area)
+        const revenueCtx = document.getElementById("revenueChart");
+        if (revenueCtx) {
+          new Chart(revenueCtx, {
+            type: "line",
+            data: {
+              labels: ["M1", "M2", "M3", "M4", "M5"],
+              datasets: [{
+                data: [250, 310, 280, 420, 390],
+                borderColor: "#10B981",
+                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2
+              }]
+            },
+            options: commonOptions
+          });
+        }
+
+        // 3. Lead Summary (Line)
+        const leadCtx = document.getElementById("leadChart");
+        if (leadCtx) {
+          new Chart(leadCtx, {
+            type: "line",
+            data: {
+              labels: ["Q1", "Q2", "Q3", "Q4"],
+              datasets: [{
+                data: [150, 190, 240, 210],
+                borderColor: "#3B82F6",
+                tension: 0.1,
+                borderWidth: 2
+              }]
+            },
+            options: commonOptions
+          });
+        }
+
+        // 4. Property Summary (Doughnut)
+        const propertyCtx = document.getElementById("propertyChart");
+        if (propertyCtx) {
+          new Chart(propertyCtx, {
+            type: "doughnut",
+            data: {
+              labels: ["Condo", "Villa", "Office"],
+              datasets: [{
+                data: [45, 30, 25],
+                backgroundColor: [primaryColor, "#10B981", "#3B82F6"],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              ...commonOptions,
+              cutout: "70%"
+            }
+          });
+        }
+
+        // 5. Customer Summary (Bar)
+        const customerCtx = document.getElementById("customerChart");
+        if (customerCtx) {
+          new Chart(customerCtx, {
+            type: "bar",
+            data: {
+              labels: ["Jan", "Feb", "Mar", "Apr", "May"],
+              datasets: [{
+                data: [80, 110, 140, 160, 200],
+                backgroundColor: "#A855F7",
+                borderRadius: 4
+              }]
+            },
+            options: commonOptions
+          });
+        }
+
+        // Re-render charts on theme change
+        window.addEventListener('themeChanged', (e) => {
+          initializeMiniCharts();
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1963 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Settings Center - UrbanHub</title>
+
+    <!-- Pre-load LocalStorage theme choice to prevent visual flicker before render -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Style additions to coordinate settings workspace */
+      .state-simulator {
+        background-color: rgba(var(--uh-primary-rgb), 0.05);
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.15);
+        border-radius: 12px;
+      }
+      .settings-section-card {
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--uh-shadow-sm);
+        transition: var(--uh-transition-smooth);
+      }
+      .settings-section-card:hover {
+        border-color: rgba(var(--uh-primary-rgb), 0.2);
+        box-shadow: var(--uh-shadow-md);
+      }
+      
+      /* Vertical Tabs on Desktop, Horizontal Scrollable on Mobile */
+      @media (max-width: 991.98px) {
+        .settings-nav-wrapper {
+          overflow-x: auto;
+          white-space: nowrap;
+          -webkit-overflow-scrolling: touch;
+          padding-bottom: 0.5rem;
+          margin-bottom: 1.5rem;
+          border-bottom: 1px solid var(--uh-border-color);
+        }
+        .settings-nav {
+          flex-direction: row !important;
+          flex-wrap: nowrap !important;
+          gap: 0.5rem;
+        }
+        .settings-nav .nav-link {
+          white-space: nowrap;
+          border-bottom: 2px solid transparent;
+          border-radius: 0;
+          padding: 0.5rem 1rem;
+          color: var(--uh-text-muted);
+          font-weight: 500;
+        }
+        .settings-nav .nav-link.active {
+          background-color: transparent !important;
+          color: var(--uh-primary) !important;
+          border-bottom-color: var(--uh-primary) !important;
+          font-weight: 600;
+        }
+      }
+      @media (min-width: 992px) {
+        .settings-nav-wrapper {
+          position: sticky;
+          top: calc(var(--uh-header-height) + 1.5rem);
+          background-color: var(--uh-bg-sidebar);
+          border: 1px solid var(--uh-border-color);
+          border-radius: 12px;
+          padding: 0.75rem;
+          box-shadow: var(--uh-shadow-sm);
+        }
+        .settings-nav .nav-link {
+          text-align: left;
+          border-radius: 8px;
+          padding: 0.75rem 1rem;
+          color: var(--uh-text-muted);
+          font-weight: 500;
+          transition: var(--uh-transition-smooth);
+          margin-bottom: 0.25rem;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+        .settings-nav .nav-link:hover {
+          color: var(--uh-text-main);
+          background-color: rgba(var(--uh-primary-rgb), 0.03);
+        }
+        .settings-nav .nav-link.active {
+          color: var(--uh-primary) !important;
+          background-color: rgba(var(--uh-primary-rgb), 0.08) !important;
+          font-weight: 600;
+        }
+      }
+
+      /* Logo Drag and Drop area */
+      .logo-dropzone {
+        border: 2px dashed var(--uh-border-color);
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        background: rgba(var(--uh-primary-rgb), 0.01);
+        transition: var(--uh-transition-smooth);
+        cursor: pointer;
+      }
+      .logo-dropzone:hover {
+        border-color: var(--uh-primary);
+        background: rgba(var(--uh-primary-rgb), 0.03);
+      }
+
+      /* Dynamic radius preview card */
+      .radius-preview-card {
+        background-color: var(--uh-bg-card);
+        border: 1.5px solid var(--uh-primary);
+        padding: 1.25rem;
+        box-shadow: var(--uh-shadow-md);
+        transition: border-radius 0.15s ease-out;
+      }
+
+      /* Key value API badge styles */
+      .badge-status {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 0.25em 0.6em;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+      }
+      .badge-status-connected {
+        background-color: rgba(16, 185, 129, 0.12);
+        color: #10B981;
+      }
+      .badge-status-inactive {
+        background-color: rgba(148, 163, 184, 0.12);
+        color: #94A3B8;
+      }
+
+      /* Bottom sticky action bar */
+      .settings-action-bar {
+        position: sticky;
+        bottom: 1.5rem;
+        background: var(--uh-glass-bg);
+        backdrop-filter: var(--uh-glass-blur);
+        -webkit-backdrop-filter: var(--uh-glass-blur);
+        border: 1px solid var(--uh-glass-border);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        box-shadow: var(--uh-shadow-lg);
+        z-index: 1000;
+        margin-top: 2rem;
+      }
+
+      /* Custom floating notifications container */
+      .toast-container-custom {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 1080;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-width: 350px;
+        width: 100%;
+      }
+
+      /* Loading Skeleton Animation */
+      .skeleton-animation {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255,255,255,0.06) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.5s infinite;
+        border-radius: 6px;
+      }
+      @keyframes skeleton-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+
+      .focus-visible-indicator:focus-visible {
+        outline: 2.5px solid var(--uh-primary) !important;
+        outline-offset: 2px;
+      }
+
+      /* Animation for row deletion */
+      .row-fade-out {
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.3s ease-out;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Overlay Backdrop for Mobile Sidebar -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- FIXED LEFT SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <i class="bi bi-building-up"></i>
+          </div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <!-- Scrollable Navigation Menu -->
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="transactions.html" class="sidebar-menu-link">
+                <i class="bi bi-currency-exchange"></i>
+                <span>Transactions</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Intelligence</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Analytics</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="calendar.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar3"></i>
+                <span>Calendar</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="tasks.html" class="sidebar-menu-link">
+                <i class="bi bi-check2-square"></i>
+                <span>Tasks</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reviews.html" class="sidebar-menu-link">
+                <i class="bi bi-star"></i>
+                <span>Reviews</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link active">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card text-decoration-none">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name mb-0">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn" aria-label="Toggle Navigation Sidebar">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input focus-visible-indicator" id="top-toolbar-search" placeholder="Search system parameters..." onkeyup="handleQuickSearch(this.value)" aria-label="Search settings parameters" />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <button id="theme-toggle" class="header-btn focus-visible-indicator" title="Switch Theme" aria-label="Toggle Dark Light Mode">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE BODY CONTAINER -->
+        <div class="page-body">
+          
+          <!-- STATE SIMULATOR BAR -->
+          <div class="state-simulator mb-4 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2 btn-no-print" data-aos="fade-down">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-gear-wide-connected text-primary animate-spin"></i>
+              <span class="small fw-bold text-main">UI Reusable States Simulator:</span>
+            </div>
+            <div class="d-flex gap-1 flex-wrap">
+              <button class="btn btn-xs btn-outline-primary active" id="sim-success" onclick="setUIState('success')"><i class="bi bi-check-circle-fill me-1"></i> Success State</button>
+              <button class="btn btn-xs btn-outline-secondary" id="sim-loading" onclick="setUIState('loading')"><i class="bi bi-hourglass-split me-1"></i> Loading Skeleton</button>
+              <button class="btn btn-xs btn-outline-warning" id="sim-empty" onclick="setUIState('empty')"><i class="bi bi-slash-circle me-1"></i> Empty State</button>
+              <button class="btn btn-xs btn-outline-danger" id="sim-error" onclick="setUIState('error')"><i class="bi bi-exclamation-triangle-fill me-1"></i> Error State</button>
+            </div>
+          </div>
+
+          <!-- BREADCRUMB & HEADER PANEL -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-up" data-aos-delay="50">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Settings</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">System Settings Center</h1>
+            </div>
+
+            <!-- Quick Action buttons -->
+            <div class="d-flex align-items-center flex-wrap gap-2 btn-no-print">
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5 focus-visible-indicator" onclick="openImportModal()">
+                <i class="bi bi-upload"></i> <span>Import Config</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5 focus-visible-indicator" onclick="exportConfiguration()">
+                <i class="bi bi-download"></i> <span>Export Config</span>
+              </button>
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 focus-visible-indicator" onclick="triggerRefresh()">
+                <i class="bi bi-arrow-clockwise"></i> <span>Sync Gateway</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SKELETON PRELOAD STATE -->
+          <div id="loading-state" class="d-none">
+            <div class="row g-4">
+              <!-- Left Menu Skeleton -->
+              <div class="col-12 col-lg-3">
+                <div class="uh-card p-3">
+                  <div class="skeleton-animation mb-3" style="width: 80%; height: 35px;"></div>
+                  <div class="skeleton-animation mb-2" style="width: 100%; height: 40px;"></div>
+                  <div class="skeleton-animation mb-2" style="width: 100%; height: 40px;"></div>
+                  <div class="skeleton-animation mb-2" style="width: 100%; height: 40px;"></div>
+                  <div class="skeleton-animation mb-2" style="width: 100%; height: 40px;"></div>
+                  <div class="skeleton-animation mb-2" style="width: 100%; height: 40px;"></div>
+                </div>
+              </div>
+              <!-- Right Panel Skeleton -->
+              <div class="col-12 col-lg-9">
+                <div class="uh-card p-4 mb-4">
+                  <div class="skeleton-animation mb-4" style="width: 35%; height: 28px;"></div>
+                  <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                      <div class="skeleton-animation mb-2" style="width: 40%; height: 14px;"></div>
+                      <div class="skeleton-animation" style="width: 100%; height: 42px;"></div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <div class="skeleton-animation mb-2" style="width: 40%; height: 14px;"></div>
+                      <div class="skeleton-animation" style="width: 100%; height: 42px;"></div>
+                    </div>
+                    <div class="col-12">
+                      <div class="skeleton-animation mb-2" style="width: 20%; height: 14px;"></div>
+                      <div class="skeleton-animation" style="width: 100%; height: 80px;"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="uh-card p-4">
+                  <div class="skeleton-animation mb-3" style="width: 25%; height: 24px;"></div>
+                  <div class="skeleton-animation mb-2" style="width: 100%; height: 14px;"></div>
+                  <div class="skeleton-animation" style="width: 90%; height: 14px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE PANEL -->
+          <div id="empty-state" class="d-none text-center py-5">
+            <div class="uh-card p-5 mx-auto" style="max-width: 550px;">
+              <div class="text-warning mb-3"><i class="bi bi-slash-circle animate-pulse" style="font-size: 3.5rem;"></i></div>
+              <h4 class="font-title fw-bold text-main mb-2">Configurations Purged</h4>
+              <p class="text-muted small mb-4">The local configuration databases have been disconnected. The operational parameters are currently unpopulated. Press the button below to re-seed default system attributes.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-primary" onclick="resetToDefaults()"><i class="bi bi-bootstrap-reboot me-1"></i> Re-seed Defaults</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="setUIState('success')">Dismiss Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ERROR STATE PANEL -->
+          <div id="error-state" class="d-none text-center py-5">
+            <div class="uh-card p-5 mx-auto border-danger" style="max-width: 550px;">
+              <div class="text-danger mb-3"><i class="bi bi-exclamation-triangle-fill" style="font-size: 3.5rem;"></i></div>
+              <h4 class="font-title fw-bold text-danger mb-2">Database Connection Failure</h4>
+              <p class="text-muted small mb-4">The API Gateway reported a protocol handshake violation while validating system schema settings. This might represent missing credentials or localized secure socket drops.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-danger" onclick="triggerRefresh()"><i class="bi bi-arrow-clockwise me-1"></i> Retry Connection</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="setUIState('success')">Bypass Block</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUCCESS STATE: MAIN WORKSPACE -->
+          <div id="success-state" class="d-block" data-aos="fade-up" data-aos-delay="100">
+            <form id="settingsMasterForm" onsubmit="event.preventDefault();">
+              <div class="row g-4">
+                
+                <!-- Left Nav Tabs Sidebar -->
+                <div class="col-12 col-lg-3">
+                  <div class="settings-nav-wrapper">
+                    <div class="nav flex-column nav-pills settings-nav" id="settingsTabs" role="tablist" aria-orientation="vertical">
+                      <button class="nav-link active" id="tab-general" data-bs-toggle="pill" data-bs-target="#content-general" type="button" role="tab" aria-controls="content-general" aria-selected="true">
+                        <i class="bi bi-info-circle"></i> <span>General</span>
+                      </button>
+                      <button class="nav-link" id="tab-company" data-bs-toggle="pill" data-bs-target="#content-company" type="button" role="tab" aria-controls="content-company" aria-selected="false">
+                        <i class="bi bi-building"></i> <span>Company</span>
+                      </button>
+                      <button class="nav-link" id="tab-branding" data-bs-toggle="pill" data-bs-target="#content-branding" type="button" role="tab" aria-controls="content-branding" aria-selected="false">
+                        <i class="bi bi-palette"></i> <span>Branding</span>
+                      </button>
+                      <button class="nav-link" id="tab-localization" data-bs-toggle="pill" data-bs-target="#content-localization" type="button" role="tab" aria-controls="content-localization" aria-selected="false">
+                        <i class="bi bi-globe"></i> <span>Localization</span>
+                      </button>
+                      <button class="nav-link" id="tab-theme" data-bs-toggle="pill" data-bs-target="#content-theme" type="button" role="tab" aria-controls="content-theme" aria-selected="false">
+                        <i class="bi bi-window-sidebar"></i> <span>Theme Engine</span>
+                      </button>
+                      <button class="nav-link" id="tab-notifications" data-bs-toggle="pill" data-bs-target="#content-notifications" type="button" role="tab" aria-controls="content-notifications" aria-selected="false">
+                        <i class="bi bi-bell"></i> <span>Notifications</span>
+                      </button>
+                      <button class="nav-link" id="tab-email" data-bs-toggle="pill" data-bs-target="#content-email" type="button" role="tab" aria-controls="content-email" aria-selected="false">
+                        <i class="bi bi-envelope-at"></i> <span>SMTP Settings</span>
+                      </button>
+                      <button class="nav-link" id="tab-security" data-bs-toggle="pill" data-bs-target="#content-security" type="button" role="tab" aria-controls="content-security" aria-selected="false">
+                        <i class="bi bi-shield-lock"></i> <span>Security</span>
+                      </button>
+                      <button class="nav-link" id="tab-integrations" data-bs-toggle="pill" data-bs-target="#content-integrations" type="button" role="tab" aria-controls="content-integrations" aria-selected="false">
+                        <i class="bi bi-plugin"></i> <span>Integrations</span>
+                      </button>
+                      <button class="nav-link" id="tab-roles" data-bs-toggle="pill" data-bs-target="#content-roles" type="button" role="tab" aria-controls="content-roles" aria-selected="false">
+                        <i class="bi bi-person-workspace"></i> <span>Roles & Permissions</span>
+                      </button>
+                      <button class="nav-link" id="tab-backup" data-bs-toggle="pill" data-bs-target="#content-backup" type="button" role="tab" aria-controls="content-backup" aria-selected="false">
+                        <i class="bi bi-cloud-arrow-up"></i> <span>Backup & Restore</span>
+                      </button>
+                      <button class="nav-link" id="tab-sysinfo" data-bs-toggle="pill" data-bs-target="#content-sysinfo" type="button" role="tab" aria-controls="content-sysinfo" aria-selected="false">
+                        <i class="bi bi-cpu"></i> <span>System Info</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Content Panel -->
+                <div class="col-12 col-lg-9">
+                  <div class="tab-content" id="settingsTabsContent">
+                    
+                    <!-- TAB: GENERAL -->
+                    <div class="tab-pane fade show active" id="content-general" role="tabpanel" aria-labelledby="tab-general">
+                      <div class="settings-section-card">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">General Contact Information</h4>
+                        <p class="text-muted small mb-4">Set up primary parameters regarding corporate headquarters and client interactions.</p>
+                        
+                        <div class="row g-3">
+                          <div class="col-12 col-md-6">
+                            <label for="general-company-name" class="form-label text-muted small fw-semibold mb-1">Company Name</label>
+                            <input type="text" class="form-control bg-body border-light-subtle text-main" id="general-company-name" value="UrbanHub Realty Group" required />
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="general-company-email" class="form-label text-muted small fw-semibold mb-1">Company Email</label>
+                            <input type="email" class="form-control bg-body border-light-subtle text-main" id="general-company-email" value="contact@urbanhub.com" required />
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="general-company-phone" class="form-label text-muted small fw-semibold mb-1">Corporate Phone</label>
+                            <input type="text" class="form-control bg-body border-light-subtle text-main" id="general-company-phone" value="+1 (555) 345-9876" />
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="general-company-website" class="form-label text-muted small fw-semibold mb-1">Company Website</label>
+                            <input type="url" class="form-control bg-body border-light-subtle text-main" id="general-company-website" value="https://www.urbanhub.com" />
+                          </div>
+                          <div class="col-12">
+                            <label for="general-company-address" class="form-label text-muted small fw-semibold mb-1">Corporate Headquarters Address</label>
+                            <input type="text" class="form-control bg-body border-light-subtle text-main" id="general-company-address" value="450 Luxury Way, Suite 100, Beverly Hills, CA 90210" />
+                          </div>
+                          <div class="col-12">
+                            <label for="general-business-hours" class="form-label text-muted small fw-semibold mb-1">Standard Business Hours</label>
+                            <input type="text" class="form-control bg-body border-light-subtle text-main" id="general-business-hours" value="Mon-Fri: 9:00 AM - 6:00 PM, Sat: 10:00 AM - 4:00 PM, Sun: Closed" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TAB: COMPANY -->
+                    <div class="tab-pane fade" id="content-company" role="tabpanel" aria-labelledby="tab-company">
+                      <div class="settings-section-card">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">Corporate Profile & Legalities</h4>
+                        <p class="text-muted small mb-4">Manage organizational parameters, regulatory tax registrations, and operational size.</p>
+                        
+                        <div class="row g-3">
+                          <div class="col-12 col-md-6">
+                            <label for="company-legal-name" class="form-label text-muted small fw-semibold mb-1">Legal Registered Entity Name</label>
+                            <input type="text" class="form-control bg-body border-light-subtle text-main" id="company-legal-name" value="UrbanHub Real Estate Advisors LLC" />
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="company-tax-id" class="form-label text-muted small fw-semibold mb-1">Federal EIN / Tax Identification</label>
+                            <input type="text" class="form-control bg-body border-light-subtle text-main" id="company-tax-id" value="XX-XXXXXXX" />
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="company-reg-no" class="form-label text-muted small fw-semibold mb-1">Corporate Registration Code</label>
+                            <input type="text" class="form-control bg-body border-light-subtle text-main" id="company-reg-no" value="CRN-876543-B" />
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="company-headcount" class="form-label text-muted small fw-semibold mb-1">Workforce Size Tier</label>
+                            <select class="form-select bg-body border-light-subtle text-main" id="company-headcount">
+                              <option value="1-10">1 - 10 Employees</option>
+                              <option value="10-50">10 - 50 Employees</option>
+                              <option value="50-100" selected>50 - 100 Employees</option>
+                              <option value="100-500">100 - 500 Employees</option>
+                              <option value="500+">500+ Enterprise Employees</option>
+                            </select>
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="company-valuation" class="form-label text-muted small fw-semibold mb-1">Capital Class Volume</label>
+                            <select class="form-select bg-body border-light-subtle text-main" id="company-valuation">
+                              <option>$0M - $1M</option>
+                              <option>$1M - $5M</option>
+                              <option selected>$5M - $10M</option>
+                              <option>$10M - $50M</option>
+                              <option>$50M+</option>
+                            </select>
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="company-jurisdiction" class="form-label text-muted small fw-semibold mb-1">Primary State Jurisdiction</label>
+                            <input type="text" class="form-control bg-body border-light-subtle text-main" id="company-jurisdiction" value="California (CA)" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TAB: BRANDING -->
+                    <div class="tab-pane fade" id="content-branding" role="tabpanel" aria-labelledby="tab-branding">
+                      <div class="settings-section-card">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">Company Branding Asset Hub</h4>
+                        <p class="text-muted small mb-4">Configure visual components, upload logo assets, and review system representation card previews.</p>
+
+                        <div class="row g-4">
+                          <!-- Logo drag and drop -->
+                          <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                              <label class="form-label text-muted small fw-semibold mb-1">Header Corporate Logo</label>
+                              <div class="logo-dropzone" onclick="simulateFileUpload('logo')">
+                                <i class="bi bi-image text-primary fs-2 mb-2"></i>
+                                <p class="small fw-semibold text-main mb-1">Click or drag logo to replace</p>
+                                <span class="text-muted" style="font-size: 0.72rem;">Accepts SVG, PNG, WebP (Max 500KB)</span>
+                              </div>
+                            </div>
+                            <div>
+                              <label class="form-label text-muted small fw-semibold mb-1">Browser Favicon Icon</label>
+                              <div class="logo-dropzone py-3" onclick="simulateFileUpload('favicon')">
+                                <i class="bi bi-app-indicator text-secondary fs-4 mb-1"></i>
+                                <p class="small fw-semibold text-main mb-0">Click to upload favicon .ico</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Brand Card Previews -->
+                          <div class="col-12 col-md-6">
+                            <label class="form-label text-muted small fw-semibold mb-2">System Asset Preview Cards</label>
+                            
+                            <!-- Header representation mockup -->
+                            <div class="p-3 mb-3 border border-light-subtle rounded bg-body-tertiary">
+                              <span class="text-muted d-block font-mono mb-2" style="font-size: 0.65rem;">NAVBAR MOCKUP</span>
+                              <div class="d-flex align-items-center bg-dark p-2 border rounded" style="background-color: var(--uh-bg-sidebar) !important;">
+                                <div class="logo-icon me-2" style="width: 28px; height: 28px; font-size: 0.9rem; background-color: var(--uh-primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white;">
+                                  <i class="bi bi-building-up"></i>
+                                </div>
+                                <span class="fw-bold font-title text-main" style="font-size: 0.95rem;">UrbanHub<span class="text-primary">.</span></span>
+                              </div>
+                            </div>
+
+                            <!-- Executive Business card mockup -->
+                            <div class="p-3 border border-light-subtle rounded bg-body-tertiary hover-lift">
+                              <span class="text-muted d-block font-mono mb-2" style="font-size: 0.65rem;">EXECUTIVE BRAND CARD</span>
+                              <div class="p-3 bg-dark text-white rounded border" style="background: radial-gradient(circle at 100% 0%, rgba(var(--uh-primary-rgb), 0.15) 0%, rgba(0,0,0,0) 70%), var(--uh-bg-card) !important;">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                  <div>
+                                    <h6 class="font-title fw-bold text-main mb-0" style="font-size: 0.85rem;">Sarah Jenkins</h6>
+                                    <span class="text-muted" style="font-size: 0.68rem;">Managing Director</span>
+                                  </div>
+                                  <div class="logo-icon" style="width: 24px; height: 24px; background-color: var(--uh-primary); border-radius: 5px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                    <i class="bi bi-building-up"></i>
+                                  </div>
+                                </div>
+                                <div style="font-size: 0.65rem;" class="text-muted font-mono">
+                                  <div><i class="bi bi-telephone text-primary me-1"></i> +1 (555) 345-9876</div>
+                                  <div><i class="bi bi-envelope text-primary me-1"></i> s.jenkins@urbanhub.com</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TAB: LOCALIZATION -->
+                    <div class="tab-pane fade" id="content-localization" role="tabpanel" aria-labelledby="tab-localization">
+                      <div class="settings-section-card">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">Regional & Localization Parameters</h4>
+                        <p class="text-muted small mb-4">Set up default client languages, localized timezone, date schedules, and standard transaction currencies.</p>
+
+                        <div class="row g-3">
+                          <div class="col-12 col-md-6">
+                            <label for="local-lang" class="form-label text-muted small fw-semibold mb-1">Default System Language</label>
+                            <select class="form-select bg-body border-light-subtle text-main" id="local-lang">
+                              <option value="en-US" selected>English (United States)</option>
+                              <option value="es-ES">Spanish (Español)</option>
+                              <option value="fr-FR">French (Français)</option>
+                              <option value="de-DE">German (Deutsch)</option>
+                              <option value="it-IT">Italian (Italiano)</option>
+                              <option value="zh-CN">Mandarin (简体中文)</option>
+                            </select>
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="local-timezone" class="form-label text-muted small fw-semibold mb-1">Office Timezone Coordinate</label>
+                            <select class="form-select bg-body border-light-subtle text-main" id="local-timezone">
+                              <option value="GMT-8" selected>UTC-08:00 (Pacific Standard Time - PST)</option>
+                              <option value="GMT-5">UTC-05:00 (Eastern Standard Time - EST)</option>
+                              <option value="GMT+0">UTC+00:00 (Greenwich Mean Time - GMT)</option>
+                              <option value="GMT+1">UTC+01:00 (Central European Time - CET)</option>
+                              <option value="GMT+8">UTC+08:00 (Singapore / Beijing Time)</option>
+                            </select>
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="local-date-format" class="form-label text-muted small fw-semibold mb-1">Calendar Date Format</label>
+                            <select class="form-select bg-body border-light-subtle text-main" id="local-date-format">
+                              <option value="YYYY-MM-DD" selected>YYYY-MM-DD (Standard ISO)</option>
+                              <option value="MM/DD/YYYY">MM/DD/YYYY (US Format)</option>
+                              <option value="DD/MM/YYYY">DD/MM/YYYY (EU Format)</option>
+                            </select>
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="local-time-format" class="form-label text-muted small fw-semibold mb-1">Clocks representation</label>
+                            <select class="form-select bg-body border-light-subtle text-main" id="local-time-format">
+                              <option value="12" selected>12-Hour standard clock (AM/PM)</option>
+                              <option value="24">24-Hour military configuration</option>
+                            </select>
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="local-currency" class="form-label text-muted small fw-semibold mb-1">Primary Sales & Asset Currency</label>
+                            <select class="form-select bg-body border-light-subtle text-main" id="local-currency">
+                              <option value="USD" selected>USD ($) - United States Dollar</option>
+                              <option value="EUR">EUR (€) - Eurozone Euro</option>
+                              <option value="GBP">GBP (£) - British Pound Sterling</option>
+                              <option value="JPY">JPY (¥) - Japanese Yen</option>
+                              <option value="CAD">CAD ($) - Canadian Dollar</option>
+                            </select>
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="local-unit" class="form-label text-muted small fw-semibold mb-1">Default Property Area Unit</label>
+                            <select class="form-select bg-body border-light-subtle text-main" id="local-unit">
+                              <option value="sqft" selected>Square Feet (sq ft)</option>
+                              <option value="sqm">Square Meters (sq m)</option>
+                              <option value="acres">Acres (ac)</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TAB: THEME ENGINE -->
+                    <div class="tab-pane fade" id="content-theme" role="tabpanel" aria-labelledby="tab-theme">
+                      <div class="settings-section-card">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">Visual Aesthetics Theme Engine</h4>
+                        <p class="text-muted small mb-4">Customize the UI density options, configure border parameters, and toggle layouts.</p>
+
+                        <div class="row g-4">
+                          <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                              <label class="form-label text-muted small fw-semibold d-block mb-1">Interface Base Theme</label>
+                              <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center">
+                                <span class="text-main small">Synchronize Theme Option</span>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="themeSwitchBtn" onchange="toggleFormThemeChoice(this)">
+                              </div>
+                              <span class="text-muted d-block mt-1" style="font-size: 0.68rem;">Toggles between Space Matte Dark and Swiss Minimal Light options globally.</span>
+                            </div>
+
+                            <div class="mb-3">
+                              <label for="theme-sidebar-style" class="form-label text-muted small fw-semibold mb-1">Sidebar Visual Frame Style</label>
+                              <select class="form-select bg-body border-light-subtle text-main" id="theme-sidebar-style">
+                                <option value="matte" selected>Extremely Dark Matte Charcoal (Default)</option>
+                                <option value="glass">Modern Glass Translucent Blur</option>
+                                <option value="light">Classic Off-White Clean Border</option>
+                                <option value="compact">Compact Miniature Icon Sidebar</option>
+                              </select>
+                            </div>
+
+                            <div class="mb-3">
+                              <label for="theme-container-width" class="form-label text-muted small fw-semibold mb-1">Workspace Stage Bounds</label>
+                              <select class="form-select bg-body border-light-subtle text-main" id="theme-container-width">
+                                <option value="fluid" selected>Full Width Grid Canvas (Fluid)</option>
+                                <option value="boxed">Boxed Stage Frame Max 1400px</option>
+                              </select>
+                            </div>
+
+                            <div class="mb-0">
+                              <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center">
+                                <span class="text-main small">Enable Workspace AOS Transitions</span>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="theme-aos-toggle" checked>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Border Radius Slider & Realtime Preview Card -->
+                          <div class="col-12 col-md-6">
+                            <div class="p-3 border border-light-subtle rounded h-100 d-flex flex-column justify-content-between bg-body-tertiary">
+                              <div>
+                                <label for="radiusSlider" class="form-label text-muted small fw-semibold mb-1">System Border Card Corner Radius</label>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                  <span class="text-main small font-mono" id="radiusValLabel">12px</span>
+                                  <span class="text-muted" style="font-size: 0.72rem;">Drag to morph components</span>
+                                </div>
+                                <input type="range" class="form-range focus-visible-indicator mb-3" id="radiusSlider" min="0" max="24" value="12" oninput="morphRadiusPreview(this.value)">
+                              </div>
+
+                              <div class="radius-preview-card" id="radiusPreviewCard" style="border-radius: 12px;">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                  <i class="bi bi-intersect text-primary fs-5"></i>
+                                  <span class="fw-bold text-main small font-title">Realtime Visual Target</span>
+                                </div>
+                                <p class="text-muted mb-0" style="font-size: 0.75rem; line-height: 1.35;">Watch all panels, container widgets and active inputs sync dynamically to this border curves config.</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TAB: NOTIFICATIONS -->
+                    <div class="tab-pane fade" id="content-notifications" role="tabpanel" aria-labelledby="tab-notifications">
+                      <div class="settings-section-card">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">System Communications & Notifications</h4>
+                        <p class="text-muted small mb-4">Synchronize webhook relays, configure automated notifications dispatchers, and toggle sounds.</p>
+
+                        <div class="row g-4">
+                          <div class="col-12 col-md-6">
+                            <h6 class="font-title fw-bold text-main border-bottom pb-2 mb-3 small uppercase tracking-wider">Email Channels</h6>
+                            <div class="d-flex flex-column gap-2.5">
+                              <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                                <label class="form-check-label text-muted small" for="notify-email-leads">New Lead Intake Notifications</label>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="notify-email-leads" checked>
+                              </div>
+                              <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                                <label class="form-check-label text-muted small" for="notify-email-inquiry">Direct Property Inquiries</label>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="notify-email-inquiry" checked>
+                              </div>
+                              <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                                <label class="form-check-label text-muted small" for="notify-email-invoices">Financial Statements & Receipts</label>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="notify-email-invoices">
+                              </div>
+                              <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                                <label class="form-check-label text-muted small" for="notify-email-performance">Weekly Agent Performance Summary</label>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="notify-email-performance" checked>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="col-12 col-md-6">
+                            <h6 class="font-title fw-bold text-main border-bottom pb-2 mb-3 small uppercase tracking-wider">Mobile SMS Alerts</h6>
+                            <div class="d-flex flex-column gap-2.5">
+                              <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                                <label class="form-check-label text-muted small" for="notify-sms-appointments">Appointment Schedule Reminders</label>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="notify-sms-appointments" checked>
+                              </div>
+                              <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                                <label class="form-check-label text-muted small" for="notify-sms-leads">Critical Lead Milestones</label>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="notify-sms-leads">
+                              </div>
+                              <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                                <label class="form-check-label text-muted small" for="notify-sms-chats">Agent Secure Messaging Alerts</label>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="notify-sms-chats" checked>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="col-12 col-md-6">
+                            <h6 class="font-title fw-bold text-main border-bottom pb-2 mb-3 small uppercase tracking-wider">Browser Core Notifications</h6>
+                            <div class="d-flex flex-column gap-2.5">
+                              <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                                <label class="form-check-label text-muted small" for="notify-browser-realtime">Show Realtime Desktop Toast Alerts</label>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="notify-browser-realtime" checked>
+                              </div>
+                              <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                                <label class="form-check-label text-muted small" for="notify-browser-sound">Toggle Navigation UI Sound FX</label>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="notify-browser-sound">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TAB: EMAIL (SMTP UI Only) -->
+                    <div class="tab-pane fade" id="content-email" role="tabpanel" aria-labelledby="tab-email">
+                      <div class="settings-section-card">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">Outbound Mail Delivery (SMTP Setup)</h4>
+                        <p class="text-muted small mb-4">Set up primary mail transport relays to ensure CRM system notification dispatching.</p>
+
+                        <div class="row g-3 mb-4">
+                          <div class="col-12 col-md-9">
+                            <label for="smtp-host" class="form-label text-muted small fw-semibold mb-1">SMTP Outbound Host Relay</label>
+                            <input type="text" class="form-control bg-body border-light-subtle text-main" id="smtp-host" value="smtp.urbanhub.com" />
+                          </div>
+                          <div class="col-12 col-md-3">
+                            <label for="smtp-port" class="form-label text-muted small fw-semibold mb-1">Secure Port</label>
+                            <input type="number" class="form-control bg-body border-light-subtle text-main" id="smtp-port" value="587" />
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="smtp-user" class="form-label text-muted small fw-semibold mb-1">Secure SMTP Account Username</label>
+                            <input type="text" class="form-control bg-body border-light-subtle text-main" id="smtp-user" value="smtp_relay@urbanhub.com" />
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="smtp-pass" class="form-label text-muted small fw-semibold mb-1">SMTP Secret Password</label>
+                            <div class="input-group">
+                              <input type="password" class="form-control bg-body border-light-subtle text-main" id="smtp-pass" value="superSecretPassword99" />
+                              <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordDisplay('smtp-pass', this)" aria-label="Toggle password view"><i class="bi bi-eye"></i></button>
+                            </div>
+                          </div>
+                          <div class="col-12 col-md-6">
+                            <label for="smtp-encryption" class="form-label text-muted small fw-semibold mb-1">Transport Security Type</label>
+                            <select class="form-select bg-body border-light-subtle text-main" id="smtp-encryption">
+                              <option value="tls" selected>TLS (Cryptographic Socket handshake - Recommended)</option>
+                              <option value="ssl">SSL (Implicit Security Protocol)</option>
+                              <option value="none">None (Plaintext Socket transport - Insecure)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="p-3 border border-light-subtle rounded bg-body-tertiary d-flex justify-content-between align-items-center flex-wrap gap-2">
+                          <span class="text-muted small">Send test package to verify mailbox parameters before applying.</span>
+                          <button class="btn btn-sm btn-outline-primary" id="smtpTestBtn" type="button" onclick="simulateSMTPVerification()"><i class="bi bi-send-check me-1.5"></i> Test Core SMTP Connection</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TAB: SECURITY -->
+                    <div class="tab-pane fade" id="content-security" role="tabpanel" aria-labelledby="tab-security">
+                      <div class="settings-section-card mb-4">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">Cryptographic & Session Credentials</h4>
+                        <p class="text-muted small mb-4">Update local administrative passwords, configure 2FA, and configure auto timeout criteria.</p>
+
+                        <div class="row g-3 mb-4">
+                          <div class="col-12 col-md-4">
+                            <label for="sec-curr-pass" class="form-label text-muted small fw-semibold mb-1">Current Password</label>
+                            <input type="password" class="form-control bg-body border-light-subtle text-main" id="sec-curr-pass" placeholder="••••••••••••••" />
+                          </div>
+                          <div class="col-12 col-md-4">
+                            <label for="sec-new-pass" class="form-label text-muted small fw-semibold mb-1">New Administrative Password</label>
+                            <input type="password" class="form-control bg-body border-light-subtle text-main" id="sec-new-pass" placeholder="••••••••••••••" />
+                          </div>
+                          <div class="col-12 col-md-4">
+                            <label for="sec-conf-pass" class="form-label text-muted small fw-semibold mb-1">Confirm New Password</label>
+                            <input type="password" class="form-control bg-body border-light-subtle text-main" id="sec-conf-pass" placeholder="••••••••••••••" />
+                          </div>
+                        </div>
+
+                        <div class="row g-3 border-top pt-4">
+                          <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                              <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center">
+                                <label class="form-check-label text-main fw-semibold small" for="sec-2fa-switch">Two-Factor Authentication (2FA)</label>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="sec-2fa-switch" onchange="toggle2FADisplay(this)">
+                              </div>
+                              <span class="text-muted d-block mt-1" style="font-size: 0.68rem;">Enforces multi-tier authentication validation during administrative login sequences.</span>
+                            </div>
+
+                            <!-- 2FA Setup QR Code Slide-in -->
+                            <div id="sec-2fa-setup-section" class="d-none border p-3 rounded bg-body-tertiary mt-2">
+                              <div class="d-flex align-items-center gap-3">
+                                <div class="bg-white p-1 rounded" style="width: 80px; height: 80px;">
+                                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=UrbanHub_Auth_Token_XYZ" alt="Mock 2FA QR Code" class="img-fluid" />
+                                </div>
+                                <div class="flex-grow-1">
+                                  <span class="d-block fw-bold text-main small font-title mb-1">Interactive authenticator binding</span>
+                                  <p class="text-muted mb-2" style="font-size: 0.7rem; line-height: 1.3;">Scan the QR code with Google Authenticator or Microsoft Auth, then enter the validation token below.</p>
+                                  <input type="text" class="form-control form-control-sm bg-body border-light-subtle text-main text-center font-mono w-50" style="letter-spacing: 3px;" placeholder="000000" aria-label="Verification Token" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                              <label for="sec-timeout" class="form-label text-muted small fw-semibold mb-1">Automated Session Expiry Timeout</label>
+                              <select class="form-select bg-body border-light-subtle text-main" id="sec-timeout">
+                                <option value="15">15 Minutes of user inactivity</option>
+                                <option value="30" selected>30 Minutes of user inactivity</option>
+                                <option value="60">1 Hour of user inactivity</option>
+                                <option value="240">4 Hours of user inactivity</option>
+                                <option value="0">Never Expire Administrative Sessions</option>
+                              </select>
+                            </div>
+                            <div>
+                              <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center">
+                                <label class="form-check-label text-muted small" for="sec-alert-login">Notify on new browser/location login</label>
+                                <input class="form-check-input ms-0 focus-visible-indicator" type="checkbox" id="sec-alert-login" checked>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Active Session Devices -->
+                      <div class="settings-section-card">
+                        <h5 class="h6 font-title fw-bold text-main border-bottom pb-2 mb-3">Currently Active System Sessions</h5>
+                        <div class="table-responsive">
+                          <table class="table table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                            <thead>
+                              <tr class="text-muted">
+                                <th>Device / Secure Browser</th>
+                                <th>Location Context</th>
+                                <th>Operational Activity</th>
+                                <th class="text-end">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody id="session-devices-tbody">
+                              <tr id="session-device-1">
+                                <td><i class="bi bi-laptop text-primary me-2"></i> Safari on macOS (Apple Silicon M3 Pro)</td>
+                                <td>Beverly Hills, CA <span class="badge bg-success-subtle text-success ms-1" style="font-size: 0.6rem;">CURRENT</span></td>
+                                <td>Active System Configurator</td>
+                                <td class="text-end"><span class="text-muted small">Current Session</span></td>
+                              </tr>
+                              <tr id="session-device-2">
+                                <td><i class="bi bi-phone text-muted me-2"></i> Chrome Mobile on iPhone 15 Pro Max</td>
+                                <td>Santa Monica, CA</td>
+                                <td>3 hours ago</td>
+                                <td class="text-end">
+                                  <button class="btn btn-xs btn-outline-danger focus-visible-indicator" type="button" onclick="revokeActiveDevice('session-device-2', 'iPhone 15')"><i class="bi bi-x-circle"></i> Revoke</button>
+                                </td>
+                              </tr>
+                              <tr id="session-device-3">
+                                <td><i class="bi bi-pc-display text-muted me-2"></i> Chrome on Windows Terminal workstation</td>
+                                <td>San Francisco, CA</td>
+                                <td>2 days ago</td>
+                                <td class="text-end">
+                                  <button class="btn btn-xs btn-outline-danger focus-visible-indicator" type="button" onclick="revokeActiveDevice('session-device-3', 'Windows Station')"><i class="bi bi-x-circle"></i> Revoke</button>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TAB: INTEGRATIONS -->
+                    <div class="tab-pane fade" id="content-integrations" role="tabpanel" aria-labelledby="tab-integrations">
+                      <div class="settings-section-card">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">Third-Party Gateway API Integrations</h4>
+                        <p class="text-muted small mb-4">Connect and secure your external system tokens, maps, and financial APIs.</p>
+
+                        <div class="d-flex flex-column gap-3">
+                          <!-- Integration Node 1 -->
+                          <div class="p-3 border border-light-subtle rounded bg-body-tertiary">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                              <div class="d-flex align-items-center gap-2.5">
+                                <i class="bi bi-map text-primary fs-4"></i>
+                                <div>
+                                  <span class="d-block fw-bold text-main font-title" style="font-size: 0.85rem;">Google Maps Platform</span>
+                                  <span class="text-muted" style="font-size: 0.72rem;">Handles property geolocation mapping & places search</span>
+                                </div>
+                              </div>
+                              <span class="badge-status badge-status-connected"><i class="bi bi-plug-fill me-1"></i> Connected</span>
+                            </div>
+                            <div class="row g-2 align-items-center">
+                              <div class="col-12 col-md-9">
+                                <input type="password" class="form-control form-control-sm bg-body text-main border-light-subtle font-mono" id="api-gmaps" value="AIzaSyA88924uJzX991823Hksld8912" />
+                              </div>
+                              <div class="col-12 col-md-3">
+                                <button class="btn btn-sm btn-outline-secondary w-100" type="button" onclick="togglePasswordDisplay('api-gmaps', this)"><i class="bi bi-eye me-1.5"></i> Show Key</button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Integration Node 2 -->
+                          <div class="p-3 border border-light-subtle rounded bg-body-tertiary">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                              <div class="d-flex align-items-center gap-2.5">
+                                <i class="bi bi-graph-up-arrow text-success fs-4"></i>
+                                <div>
+                                  <span class="d-block fw-bold text-main font-title" style="font-size: 0.85rem;">Google Analytics (G4)</span>
+                                  <span class="text-muted" style="font-size: 0.72rem;">Aggregates visitor telemetry and advertising statistics</span>
+                                </div>
+                              </div>
+                              <span class="badge-status badge-status-connected"><i class="bi bi-plug-fill me-1"></i> Connected</span>
+                            </div>
+                            <div class="row g-2 align-items-center">
+                              <div class="col-12 col-md-9">
+                                <input type="text" class="form-control form-control-sm bg-body text-main border-light-subtle font-mono" id="api-ganalytics" value="G-87654321-X" />
+                              </div>
+                              <div class="col-12 col-md-3">
+                                <span class="text-muted small d-block text-center">Measurement ID</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Integration Node 3 -->
+                          <div class="p-3 border border-light-subtle rounded bg-body-tertiary">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                              <div class="d-flex align-items-center gap-2.5">
+                                <i class="bi bi-credit-card-2-front text-info fs-4"></i>
+                                <div>
+                                  <span class="d-block fw-bold text-main font-title" style="font-size: 0.85rem;">Stripe Financial Platform</span>
+                                  <span class="text-muted" style="font-size: 0.72rem;">Secures customer credit deposit handling and invoice settlement</span>
+                                </div>
+                              </div>
+                              <span class="badge-status badge-status-connected"><i class="bi bi-plug-fill me-1"></i> Connected</span>
+                            </div>
+                            <div class="row g-2">
+                              <div class="col-12 col-md-6 mb-2">
+                                <label class="text-muted small font-mono" style="font-size: 0.65rem;">Publishable Token Key</label>
+                                <input type="text" class="form-control form-control-sm bg-body text-main border-light-subtle font-mono" value="pk_test_51MzX90182_928391hjk" />
+                              </div>
+                              <div class="col-12 col-md-6 mb-2">
+                                <label class="text-muted small font-mono" style="font-size: 0.65rem;">Secret Key</label>
+                                <input type="password" class="form-control form-control-sm bg-body text-main border-light-subtle font-mono" id="api-stripe-secret" value="sk_test_51MzX90182_881920_SecretToken" />
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Integration Node 4 -->
+                          <div class="p-3 border border-light-subtle rounded bg-body-tertiary">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                              <div class="d-flex align-items-center gap-2.5">
+                                <i class="bi bi-paypal text-warning fs-4"></i>
+                                <div>
+                                  <span class="d-block fw-bold text-main font-title" style="font-size: 0.85rem;">PayPal Payment Gateway</span>
+                                  <span class="text-muted" style="font-size: 0.72rem;">Secondary wire transfer support</span>
+                                </div>
+                              </div>
+                              <span class="badge-status badge-status-inactive"><i class="bi bi-dash-circle me-1"></i> Inactive</span>
+                            </div>
+                          </div>
+
+                          <!-- Integration Node 5 -->
+                          <div class="p-3 border border-light-subtle rounded bg-body-tertiary">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                              <div class="d-flex align-items-center gap-2.5">
+                                <i class="bi bi-chat-quote text-danger fs-4"></i>
+                                <div>
+                                  <span class="d-block fw-bold text-main font-title" style="font-size: 0.85rem;">Twilio Communications API</span>
+                                  <span class="text-muted" style="font-size: 0.72rem;">Coordinates automated SMS dispatch queues</span>
+                                </div>
+                              </div>
+                              <span class="badge-status badge-status-inactive"><i class="bi bi-dash-circle me-1"></i> Inactive</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TAB: ROLES & PERMISSIONS -->
+                    <div class="tab-pane fade" id="content-roles" role="tabpanel" aria-labelledby="tab-roles">
+                      <div class="settings-section-card">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">System Roles & Permissions</h4>
+                        <p class="text-muted small mb-4">View and inspect administrative access permissions, workforce headcounts and operational scopes.</p>
+
+                        <div class="row g-3">
+                          <!-- Role Card 1 -->
+                          <div class="col-12 col-md-6">
+                            <div class="p-3 border border-light-subtle rounded bg-body-tertiary h-100">
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-main font-title" style="font-size: 0.85rem;">Super Administrator</span>
+                                <span class="badge bg-primary rounded-pill" style="font-size: 0.65rem;">2 active</span>
+                              </div>
+                              <p class="text-muted mb-3" style="font-size: 0.72rem;">Full core credentials read, write, update, delete backups, delete properties, and API tokens modifications.</p>
+                              <div class="d-flex gap-2">
+                                <span class="badge bg-success-subtle text-success" style="font-size: 0.6rem;"><i class="bi bi-check2"></i> Root Access</span>
+                                <span class="badge bg-success-subtle text-success" style="font-size: 0.6rem;"><i class="bi bi-check2"></i> API Write</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Role Card 2 -->
+                          <div class="col-12 col-md-6">
+                            <div class="p-3 border border-light-subtle rounded bg-body-tertiary h-100">
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-main font-title" style="font-size: 0.85rem;">Advisory Manager</span>
+                                <span class="badge bg-primary rounded-pill" style="font-size: 0.65rem;">4 active</span>
+                              </div>
+                              <p class="text-muted mb-3" style="font-size: 0.72rem;">Can modify property details, edit agent status lists, access transactions sheets. Cannot purge secure database backups.</p>
+                              <div class="d-flex gap-2">
+                                <span class="badge bg-success-subtle text-success" style="font-size: 0.6rem;"><i class="bi bi-check2"></i> Properties Write</span>
+                                <span class="badge bg-success-subtle text-success" style="font-size: 0.6rem;"><i class="bi bi-check2"></i> Analytics Read</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Role Card 3 -->
+                          <div class="col-12 col-md-6">
+                            <div class="p-3 border border-light-subtle rounded bg-body-tertiary h-100">
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-main font-title" style="font-size: 0.85rem;">Sales Agent Broker</span>
+                                <span class="badge bg-primary rounded-pill" style="font-size: 0.65rem;">15 active</span>
+                              </div>
+                              <p class="text-muted mb-3" style="font-size: 0.72rem;">Allowed to create leads, register appointments, send secure CRM messages and upload assign property files.</p>
+                              <div class="d-flex gap-2">
+                                <span class="badge bg-success-subtle text-success" style="font-size: 0.6rem;"><i class="bi bi-check2"></i> Leads Write</span>
+                                <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.6rem;"><i class="bi bi-x"></i> No API Keys</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Role Card 4 -->
+                          <div class="col-12 col-md-6">
+                            <div class="p-3 border border-light-subtle rounded bg-body-tertiary h-100">
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-main font-title" style="font-size: 0.85rem;">Billing / Viewer Staff</span>
+                                <span class="badge bg-primary rounded-pill" style="font-size: 0.65rem;">8 active</span>
+                              </div>
+                              <p class="text-muted mb-3" style="font-size: 0.72rem;">Provides invoice composition parameters, invoice printing, leads inspection, and basic viewing analytics.</p>
+                              <div class="d-flex gap-2">
+                                <span class="badge bg-success-subtle text-success" style="font-size: 0.6rem;"><i class="bi bi-check2"></i> Invoices Write</span>
+                                <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.6rem;"><i class="bi bi-x"></i> Read Only Data</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TAB: BACKUP & RESTORE -->
+                    <div class="tab-pane fade" id="content-backup" role="tabpanel" aria-labelledby="tab-backup">
+                      <div class="settings-section-card mb-4">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">System Backups & Configuration Recovery</h4>
+                        <p class="text-muted small mb-4">Secure system parameters schema with direct backups, SQL dumps, and JSON recovery configurations.</p>
+
+                        <div class="row g-2">
+                          <div class="col-6 col-md-3">
+                            <button class="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center gap-1.5 focus-visible-indicator" type="button" onclick="triggerManualBackup()"><i class="bi bi-cloud-arrow-up-fill"></i> Create Backup</button>
+                          </div>
+                          <div class="col-6 col-md-3">
+                            <button class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-1.5 focus-visible-indicator" type="button" onclick="triggerRestorePrompt()"><i class="bi bi-cloud-arrow-down-fill"></i> Restore Backup</button>
+                          </div>
+                          <div class="col-6 col-md-3">
+                            <button class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-1.5 focus-visible-indicator" type="button" onclick="openImportModal()"><i class="bi bi-upload"></i> Import Parameters</button>
+                          </div>
+                          <div class="col-6 col-md-3">
+                            <button class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-1.5 focus-visible-indicator" type="button" onclick="exportConfiguration()"><i class="bi bi-download"></i> Export JSON</button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="settings-section-card">
+                        <h5 class="h6 font-title fw-bold text-main border-bottom pb-2 mb-3">Backup Snapshots History Logs</h5>
+                        <div class="table-responsive">
+                          <table class="table table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                            <thead>
+                              <tr class="text-muted">
+                                <th>Filename Target</th>
+                                <th>File Size</th>
+                                <th>Created Timestamp</th>
+                                <th>Trigger Source</th>
+                                <th class="text-end">Recovery Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody id="backup-history-tbody">
+                              <tr id="backup-row-1">
+                                <td><i class="bi bi-file-zip text-warning me-2"></i> urbanhub_backup_2026_07_10.sql</td>
+                                <td class="font-mono">4.2 MB</td>
+                                <td>2026-07-10 22:52:12</td>
+                                <td><span class="badge bg-secondary-subtle text-muted">Automated Cron</span></td>
+                                <td class="text-end">
+                                  <button class="btn btn-xs btn-outline-primary focus-visible-indicator" type="button" onclick="restoreSnapshot('urbanhub_backup_2026_07_10.sql')"><i class="bi bi-arrow-counterclockwise"></i> Restore</button>
+                                  <button class="btn btn-xs btn-outline-danger focus-visible-indicator" type="button" onclick="deleteSnapshot('backup-row-1', 'urbanhub_backup_2026_07_10.sql')"><i class="bi bi-trash"></i></button>
+                                </td>
+                              </tr>
+                              <tr id="backup-row-2">
+                                <td><i class="bi bi-file-zip text-warning me-2"></i> urbanhub_backup_2026_06_30.sql</td>
+                                <td class="font-mono">4.1 MB</td>
+                                <td>2026-06-30 00:00:05</td>
+                                <td><span class="badge bg-secondary-subtle text-muted">Automated Cron</span></td>
+                                <td class="text-end">
+                                  <button class="btn btn-xs btn-outline-primary focus-visible-indicator" type="button" onclick="restoreSnapshot('urbanhub_backup_2026_06_30.sql')"><i class="bi bi-arrow-counterclockwise"></i> Restore</button>
+                                  <button class="btn btn-xs btn-outline-danger focus-visible-indicator" type="button" onclick="deleteSnapshot('backup-row-2', 'urbanhub_backup_2026_06_30.sql')"><i class="bi bi-trash"></i></button>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TAB: SYSTEM INFO -->
+                    <div class="tab-pane fade" id="content-sysinfo" role="tabpanel" aria-labelledby="tab-sysinfo">
+                      <div class="settings-section-card">
+                        <h4 class="h5 mb-1 font-title fw-bold text-main">System Health & Diagnostic Parameters</h4>
+                        <p class="text-muted small mb-4">View diagnostic specifications regarding local workspace, container servers, and browser clients.</p>
+
+                        <div class="row g-4 align-items-center">
+                          <div class="col-12 col-md-6">
+                            <div class="table-responsive">
+                              <table class="table table-sm table-borderless align-middle mb-0 text-main" style="font-size: 0.85rem;">
+                                <tbody>
+                                  <tr>
+                                    <td class="text-muted fw-semibold">Dashboard Version</td>
+                                    <td class="font-mono">v4.2.1-stable</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text-muted fw-semibold">Design Template Tier</td>
+                                    <td class="font-mono">v2.0.0-gold-premium</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text-muted fw-semibold">Bootstrap CSS Version</td>
+                                    <td class="font-mono">5.3.3 (CDN Loaded)</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text-muted fw-semibold">Client Engine Browser</td>
+                                    <td class="font-mono text-break" id="sys-client-browser">Loading...</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text-muted fw-semibold">Active Workspace Mode</td>
+                                    <td class="font-mono" id="sys-theme-mode">Space Matte Dark Mode</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+
+                          <!-- Progress chart for storage -->
+                          <div class="col-12 col-md-6 border-start ps-md-4">
+                            <label class="form-label text-muted small fw-semibold d-block mb-1">Local Config Storage Volume</label>
+                            <div class="d-flex justify-content-between align-items-center mb-1.5">
+                              <span class="text-main fw-bold font-title small" id="storage-indicator-text">42.8 KB used</span>
+                              <span class="text-muted font-mono" style="font-size: 0.72rem;">Limit: 5.0 MB (LocalDB)</span>
+                            </div>
+                            <div class="progress mb-3" style="height: 8px;">
+                              <div class="progress-bar bg-primary" id="storage-progress-bar" role="progressbar" style="width: 1%;" aria-valuenow="1" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p class="text-muted mb-0" style="font-size: 0.72rem; line-height: 1.35;">Your client-side parameters and layout configurations are kept securely inside sandbox variables. Clean caches to completely release.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- STICKY BOTTOM ACTION BAR -->
+              <div class="settings-action-bar btn-no-print d-flex justify-content-between align-items-center flex-wrap gap-2" data-aos="fade-up">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-muted small"><i class="bi bi-info-circle me-1"></i> Unsaved system modifications require verification</span>
+                </div>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-secondary focus-visible-indicator" type="button" onclick="cancelSettingsEditing()">Cancel</button>
+                  <button class="btn btn-sm btn-outline-danger focus-visible-indicator" type="button" onclick="triggerResetConfirmation()">Reset Defaults</button>
+                  <button class="btn btn-sm btn-primary focus-visible-indicator" type="submit" onclick="submitSettingsMaster()"><i class="bi bi-check2-circle me-1"></i> Save Parameters</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- MODAL: CONFIRM SAVE SYSTEM CONFIG -->
+    <div class="modal fade" id="saveConfirmModal" tabindex="-1" aria-labelledby="saveConfirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-body border border-light-subtle">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h6 class="modal-title font-title fw-bold text-main" id="saveConfirmModalLabel"><i class="bi bi-shield-check text-primary me-1"></i> Verify Parameters</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-main mb-0 small">Are you ready to commit these settings to the local administrative database? Active client sessions will sync automatically.</p>
+          </div>
+          <div class="modal-footer border-top border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="commitSettingsMasterForm()">Save Commit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: RESET CONFIRMATION -->
+    <div class="modal fade" id="resetConfirmModal" tabindex="-1" aria-labelledby="resetConfirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-body border border-light-subtle">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h6 class="modal-title font-title fw-bold text-danger" id="resetConfirmModalLabel"><i class="bi bi-exclamation-triangle-fill me-1"></i> Confirm System Reset</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-main mb-0 small">Are you absolutely sure you want to reset all dashboard, theme, security and communication preferences? This clears localized overrides.</p>
+          </div>
+          <div class="modal-footer border-top border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="commitResetToDefaults()">Reset Defaults</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: IMPORT CONFIGURATION -->
+    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-body border border-light-subtle">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h5 class="modal-title font-title fw-bold text-main" id="importModalLabel">Import System Configuration</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="import-json-area" class="form-label text-muted small fw-semibold mb-1">Paste Configuration JSON Payload</label>
+              <textarea class="form-control bg-body text-main border-light-subtle font-mono small" id="import-json-area" rows="6" placeholder='{ "general": { "company": "UrbanHub" }, ... }'></textarea>
+            </div>
+            <p class="text-muted mb-0" style="font-size: 0.72rem;">Warning: Importing configurations instantly overwrites current localized values and reloads the parameters gateway.</p>
+          </div>
+          <div class="modal-footer border-top border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="commitConfigurationImport()">Verify & Import</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST ALERTS -->
+    <div class="toast-container-custom" id="toast-container"></div>
+
+    <!-- Core Javascript Scripts CDN -->
+    <!-- AOS Animation Library JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Main JS Script -->
+    <script src="/assets/js/main.js"></script>
+
+    <!-- INLINE SETTINGS SYSTEM MODULE ENGINE -->
+    <script>
+      // Initial active configurations variables
+      let settingsDb = {};
+      let activeState = 'success'; // 'success' | 'loading' | 'empty' | 'error'
+
+      // DOM Elements
+      const toastContainer = document.getElementById('toast-container');
+      const backupHistoryTbody = document.getElementById('backup-history-tbody');
+      const sessionDevicesTbody = document.getElementById('session-devices-tbody');
+
+      // Default System Configurations Fallback Structure
+      const DEFAULT_SETTINGS = {
+        companyName: "UrbanHub Realty Group",
+        companyEmail: "contact@urbanhub.com",
+        phone: "+1 (555) 345-9876",
+        website: "https://www.urbanhub.com",
+        address: "450 Luxury Way, Suite 100, Beverly Hills, CA 90210",
+        businessHours: "Mon-Fri: 9:00 AM - 6:00 PM, Sat: 10:00 AM - 4:00 PM, Sun: Closed",
+        legalName: "UrbanHub Real Estate Advisors LLC",
+        taxId: "XX-XXXXXXX",
+        regNo: "CRN-876543-B",
+        headcount: "50-100",
+        valuation: "$5M - $10M",
+        jurisdiction: "California (CA)",
+        localLang: "en-US",
+        localTimezone: "GMT-8",
+        localDateFormat: "YYYY-MM-DD",
+        localTimeFormat: "12",
+        localCurrency: "USD",
+        localUnit: "sqft",
+        themeSidebarStyle: "matte",
+        themeContainerWidth: "fluid",
+        themeAosToggle: true,
+        borderRadius: 12,
+        smtpHost: "smtp.urbanhub.com",
+        smtpPort: 587,
+        smtpUser: "smtp_relay@urbanhub.com",
+        smtpPass: "superSecretPassword99",
+        smtpEncryption: "tls"
+      };
+
+      // Initializer hook
+      document.addEventListener('DOMContentLoaded', () => {
+        initConfigurationDb();
+        updateBrowserDiagnostics();
+        calculateStorageUsage();
+        
+        // Match slider and labels with initial db value
+        if (settingsDb.borderRadius !== undefined) {
+          document.getElementById('radiusSlider').value = settingsDb.borderRadius;
+          morphRadiusPreview(settingsDb.borderRadius);
+        }
+
+        // Sync inline switcher with current theme
+        const currentThemeChoice = document.documentElement.getAttribute('data-bs-theme');
+        document.getElementById('themeSwitchBtn').checked = (currentThemeChoice === 'dark');
+      });
+
+      // Local Settings Storage Engines
+      function initConfigurationDb() {
+        const stored = localStorage.getItem('urbanhub_settings_db');
+        if (stored) {
+          try {
+            settingsDb = JSON.parse(stored);
+          } catch(e) {
+            settingsDb = Object.assign({}, DEFAULT_SETTINGS);
+          }
+        } else {
+          settingsDb = Object.assign({}, DEFAULT_SETTINGS);
+          saveConfigurationDb();
+        }
+        populateFormFields();
+      }
+
+      function saveConfigurationDb() {
+        localStorage.setItem('urbanhub_settings_db', JSON.stringify(settingsDb));
+      }
+
+      // Populate Inputs from local DB
+      function populateFormFields() {
+        // General
+        setValIfExists('general-company-name', settingsDb.companyName);
+        setValIfExists('general-company-email', settingsDb.companyEmail);
+        setValIfExists('general-company-phone', settingsDb.phone);
+        setValIfExists('general-company-website', settingsDb.website);
+        setValIfExists('general-company-address', settingsDb.address);
+        setValIfExists('general-business-hours', settingsDb.businessHours);
+        
+        // Company
+        setValIfExists('company-legal-name', settingsDb.legalName);
+        setValIfExists('company-tax-id', settingsDb.taxId);
+        setValIfExists('company-reg-no', settingsDb.regNo);
+        setValIfExists('company-headcount', settingsDb.headcount);
+        setValIfExists('company-valuation', settingsDb.valuation);
+        setValIfExists('company-jurisdiction', settingsDb.jurisdiction);
+
+        // Localization
+        setValIfExists('local-lang', settingsDb.localLang);
+        setValIfExists('local-timezone', settingsDb.localTimezone);
+        setValIfExists('local-date-format', settingsDb.localDateFormat);
+        setValIfExists('local-time-format', settingsDb.localTimeFormat);
+        setValIfExists('local-currency', settingsDb.localCurrency);
+        setValIfExists('local-unit', settingsDb.localUnit);
+
+        // Theme Style
+        setValIfExists('theme-sidebar-style', settingsDb.themeSidebarStyle);
+        setValIfExists('theme-container-width', settingsDb.themeContainerWidth);
+        const aosBox = document.getElementById('theme-aos-toggle');
+        if (aosBox) {
+          aosBox.checked = settingsDb.themeAosToggle !== false;
+        }
+
+        // SMTP
+        setValIfExists('smtp-host', settingsDb.smtpHost);
+        setValIfExists('smtp-port', settingsDb.smtpPort);
+        setValIfExists('smtp-user', settingsDb.smtpUser);
+        setValIfExists('smtp-pass', settingsDb.smtpPass);
+        setValIfExists('smtp-encryption', settingsDb.smtpEncryption);
+      }
+
+      function setValIfExists(id, val) {
+        const el = document.getElementById(id);
+        if (el && val !== undefined) {
+          el.value = val;
+        }
+      }
+
+      // Dynamic Browser specs hook
+      function updateBrowserDiagnostics() {
+        const browserLabel = document.getElementById('sys-client-browser');
+        if (browserLabel) {
+          const userAgent = navigator.userAgent;
+          let match = "Secure User Agent Client";
+          if (userAgent.indexOf("Chrome") > -1) match = "Google Chrome Engine";
+          else if (userAgent.indexOf("Safari") > -1) match = "Apple Safari Web Client";
+          else if (userAgent.indexOf("Firefox") > -1) match = "Mozilla Firefox Suite";
+          else if (userAgent.indexOf("MSIE") > -1 || !!document.documentMode) match = "Internet Explorer legacy";
+          browserLabel.textContent = `${match} (${window.innerWidth}x${window.innerHeight})`;
+        }
+        
+        const modeLabel = document.getElementById('sys-theme-mode');
+        if (modeLabel) {
+          const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+          modeLabel.textContent = isDark ? "Space Matte Dark Mode" : "Swiss Minimal Light Mode";
+        }
+      }
+
+      // Morphs Component border curves in real-time
+      function morphRadiusPreview(val) {
+        const valLabel = document.getElementById('radiusValLabel');
+        if (valLabel) valLabel.textContent = `${val}px`;
+        
+        const previewCard = document.getElementById('radiusPreviewCard');
+        if (previewCard) {
+          previewCard.style.borderRadius = `${val}px`;
+        }
+      }
+
+      // Password visibilty toggle eye button
+      function togglePasswordDisplay(inputId, button) {
+        const input = document.getElementById(inputId);
+        if (input) {
+          const isPass = input.type === "password";
+          input.type = isPass ? "text" : "password";
+          const icon = button.querySelector('i');
+          if (icon) {
+            icon.className = isPass ? "bi bi-eye-slash" : "bi bi-eye";
+          }
+        }
+      }
+
+      // Mock Logo File selection
+      function simulateFileUpload(type) {
+        showToast(`Simulated Drag & Drop upload triggered for brand ${type} asset.`, 'info');
+      }
+
+      // Toggle QR section for 2FA validation
+      function toggle2FADisplay(checkbox) {
+        const section = document.getElementById('sec-2fa-setup-section');
+        if (section) {
+          if (checkbox.checked) {
+            section.classList.remove('d-none');
+            showToast('Secure QR handshake generated. Please configure authentication terminal.', 'info');
+          } else {
+            section.classList.add('d-none');
+            showToast('Two-Factor access tokens disabled.', 'warning');
+          }
+        }
+      }
+
+      // Revoke Session devices
+      function revokeActiveDevice(rowId, deviceName) {
+        const row = document.getElementById(rowId);
+        if (row) {
+          row.classList.add('row-fade-out');
+          setTimeout(() => {
+            row.remove();
+            showToast(`Secure token keys for ${deviceName} successfully flushed and session revoked.`, 'danger');
+            calculateStorageUsage();
+          }, 300);
+        }
+      }
+
+      // SMTP validation simulation
+      function simulateSMTPVerification() {
+        const btn = document.getElementById('smtpTestBtn');
+        const host = document.getElementById('smtp-host').value.trim();
+        if (!host) {
+          showToast('Failed SMTP handshake: Host parameter empty.', 'danger');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1.5" role="status" aria-hidden="true"></span> Handshaking...`;
+        
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.innerHTML = `<i class="bi bi-send-check me-1.5"></i> Test Core SMTP Connection`;
+          showToast(`SMTP Connection Successful! Outbound relay ${host} ready.`, 'success');
+        }, 2200);
+      }
+
+      // Manual Backup creator
+      function triggerManualBackup() {
+        showToast('Initiating manual backup dump...', 'info');
+        setTimeout(() => {
+          const timestamp = new Date().toISOString().slice(0, 19).replace(/T|:/g, '_');
+          const filename = `urbanhub_backup_${timestamp}.sql`;
+          
+          const tr = document.createElement('tr');
+          tr.id = `backup-row-new-${Date.now()}`;
+          tr.innerHTML = `
+            <td><i class="bi bi-file-zip text-warning me-2"></i> ${filename}</td>
+            <td class="font-mono">4.3 MB</td>
+            <td>Just now</td>
+            <td><span class="badge bg-primary text-white">Manual Admin</span></td>
+            <td class="text-end">
+              <button class="btn btn-xs btn-outline-primary focus-visible-indicator" type="button" onclick="restoreSnapshot('${filename}')"><i class="bi bi-arrow-counterclockwise"></i> Restore</button>
+              <button class="btn btn-xs btn-outline-danger focus-visible-indicator" type="button" onclick="deleteSnapshot('${tr.id}', '${filename}')"><i class="bi bi-trash"></i></button>
+            </td>
+          `;
+          backupHistoryTbody.prepend(tr);
+          showToast(`Backup snapshot ${filename} safely committed to directory logs.`, 'success');
+          calculateStorageUsage();
+        }, 1200);
+      }
+
+      function triggerRestorePrompt() {
+        showToast('Please select a system snapshot filename row to trigger manual gateway restoration.', 'info');
+      }
+
+      function restoreSnapshot(filename) {
+        showToast(`Locating target package ${filename}...`, 'info');
+        setTimeout(() => {
+          showToast(`System parameters database successfully restored from ${filename}.`, 'success');
+        }, 1500);
+      }
+
+      function deleteSnapshot(rowId, filename) {
+        const row = document.getElementById(rowId);
+        if (row) {
+          row.classList.add('row-fade-out');
+          setTimeout(() => {
+            row.remove();
+            showToast(`Backup record ${filename} safely deleted.`, 'danger');
+            calculateStorageUsage();
+          }, 300);
+        }
+      }
+
+      // Export Parameters to raw file
+      function exportConfiguration() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(settingsDb, null, 2));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", `urbanhub_config_backup_${new Date().toISOString().slice(0, 10)}.json`);
+        dlAnchorElem.click();
+        showToast('JSON configurations successfully packed and downloaded.', 'success');
+      }
+
+      // Import configuration modals
+      function openImportModal() {
+        const modal = new bootstrap.Modal(document.getElementById('importModal'));
+        modal.show();
+      }
+
+      function commitConfigurationImport() {
+        const jsonArea = document.getElementById('import-json-area');
+        const text = jsonArea.value.trim();
+        if (!text) {
+          showToast('JSON input payload is empty.', 'danger');
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(text);
+          settingsDb = Object.assign({}, DEFAULT_SETTINGS, parsed);
+          saveConfigurationDb();
+          populateFormFields();
+          
+          const modalEl = document.getElementById('importModal');
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          modalInstance.hide();
+          
+          showToast('System variables verified and successfully imported!', 'success');
+          triggerRefresh();
+        } catch(e) {
+          showToast('Failed to parse configurations. Invalid JSON format.', 'danger');
+        }
+      }
+
+      // Save configurations Master Form Actions
+      function submitSettingsMaster() {
+        const form = document.getElementById('settingsMasterForm');
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('saveConfirmModal'));
+        modal.show();
+      }
+
+      function commitSettingsMasterForm() {
+        // Collect general parameters
+        settingsDb.companyName = document.getElementById('general-company-name').value;
+        settingsDb.companyEmail = document.getElementById('general-company-email').value;
+        settingsDb.phone = document.getElementById('general-company-phone').value;
+        settingsDb.website = document.getElementById('general-company-website').value;
+        settingsDb.address = document.getElementById('general-company-address').value;
+        settingsDb.businessHours = document.getElementById('general-business-hours').value;
+
+        // Legal profile
+        settingsDb.legalName = document.getElementById('company-legal-name').value;
+        settingsDb.taxId = document.getElementById('company-tax-id').value;
+        settingsDb.regNo = document.getElementById('company-reg-no').value;
+        settingsDb.headcount = document.getElementById('company-headcount').value;
+        settingsDb.valuation = document.getElementById('company-valuation').value;
+        settingsDb.jurisdiction = document.getElementById('company-jurisdiction').value;
+
+        // Localization settings
+        settingsDb.localLang = document.getElementById('local-lang').value;
+        settingsDb.localTimezone = document.getElementById('local-timezone').value;
+        settingsDb.localDateFormat = document.getElementById('local-date-format').value;
+        settingsDb.localTimeFormat = document.getElementById('local-time-format').value;
+        settingsDb.localCurrency = document.getElementById('local-currency').value;
+        settingsDb.localUnit = document.getElementById('local-unit').value;
+
+        // Visual layout configs
+        settingsDb.themeSidebarStyle = document.getElementById('theme-sidebar-style').value;
+        settingsDb.themeContainerWidth = document.getElementById('theme-container-width').value;
+        settingsDb.themeAosToggle = document.getElementById('theme-aos-toggle').checked;
+        settingsDb.borderRadius = parseInt(document.getElementById('radiusSlider').value);
+
+        // SMTP connection parameters
+        settingsDb.smtpHost = document.getElementById('smtp-host').value;
+        settingsDb.smtpPort = parseInt(document.getElementById('smtp-port').value);
+        settingsDb.smtpUser = document.getElementById('smtp-user').value;
+        settingsDb.smtpPass = document.getElementById('smtp-pass').value;
+        settingsDb.smtpEncryption = document.getElementById('smtp-encryption').value;
+
+        saveConfigurationDb();
+        calculateStorageUsage();
+
+        // Close Confirm Save Modal
+        const modalEl = document.getElementById('saveConfirmModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        modalInstance.hide();
+
+        showToast('System configuration committed and synced successfully!', 'success');
+      }
+
+      function cancelSettingsEditing() {
+        showToast('Editing cancelled. Rolling back unsaved parameters.', 'info');
+        populateFormFields();
+      }
+
+      // Reset configurations defaults
+      function triggerResetConfirmation() {
+        const modal = new bootstrap.Modal(document.getElementById('resetConfirmModal'));
+        modal.show();
+      }
+
+      function commitResetToDefaults() {
+        settingsDb = Object.assign({}, DEFAULT_SETTINGS);
+        saveConfigurationDb();
+        populateFormFields();
+        calculateStorageUsage();
+        
+        // Match range slider visually
+        document.getElementById('radiusSlider').value = DEFAULT_SETTINGS.borderRadius;
+        morphRadiusPreview(DEFAULT_SETTINGS.borderRadius);
+
+        // Close Reset Modal
+        const modalEl = document.getElementById('resetConfirmModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        modalInstance.hide();
+
+        showToast('Administrative variables restored to pristine defaults.', 'success');
+        triggerRefresh();
+      }
+
+      // Quick parameters filter search bar in the top navigation panel
+      function handleQuickSearch(val) {
+        const query = val.toLowerCase().trim();
+        if (!query) {
+          // Remove highlight effects if empty query
+          document.querySelectorAll('.settings-section-card h4').forEach(h => {
+            h.style.color = '';
+          });
+          return;
+        }
+
+        // Search within active form inputs and highlights matches labels
+        let found = false;
+        document.querySelectorAll('.settings-section-card').forEach(card => {
+          const text = card.innerText.toLowerCase();
+          const title = card.querySelector('h4, h5');
+          if (text.includes(query)) {
+            if (title) {
+              title.style.color = 'var(--uh-primary)';
+              if (!found) {
+                // Scroll to matching card elegantly
+                title.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                found = true;
+              }
+            }
+          } else {
+            if (title) title.style.color = '';
+          }
+        });
+      }
+
+      // Sync inline switcher with the page base theme
+      function toggleFormThemeChoice(switcher) {
+        const themeChoice = switcher.checked ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-bs-theme', themeChoice);
+        localStorage.setItem('theme', themeChoice);
+        
+        // Sync header theme-toggle button state visually
+        const themeIcon = document.getElementById('theme-icon');
+        if (themeIcon) {
+          themeIcon.className = switcher.checked ? 'bi bi-sun' : 'bi bi-moon-stars';
+        }
+
+        showToast(`Workspace theme morphing: applied ${themeChoice.toUpperCase()} parameters.`, 'success');
+        updateBrowserDiagnostics();
+      }
+
+      // Reusable Toast Alerts Generator
+      function showToast(message, type = 'success') {
+        const id = 'toast_' + Date.now();
+        const icon = type === 'success' ? 'bi-check-circle-fill text-success' :
+                     type === 'danger' ? 'bi-exclamation-triangle-fill text-danger' :
+                     type === 'warning' ? 'bi-exclamation-circle-fill text-warning' : 'bi-info-circle-fill text-primary';
+        
+        const toastHTML = `
+          <div id="${id}" class="toast align-items-center bg-body border border-light-subtle shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+              <div class="toast-body d-flex align-items-center gap-2">
+                <i class="bi ${icon}"></i>
+                <span class="small fw-semibold text-main">${message}</span>
+              </div>
+              <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+          </div>
+        `;
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+        const toastEl = document.getElementById(id);
+        const bsToast = new bootstrap.Toast(toastEl, { delay: 4000 });
+        bsToast.show();
+        
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+      }
+
+      // Storage Diagnostic calculator
+      function calculateStorageUsage() {
+        const textDb = localStorage.getItem('urbanhub_settings_db') || '';
+        const bytes = textDb.length * 2; // UTF-16 size estimation
+        const kb = (bytes / 1024).toFixed(2);
+        
+        const storageLabel = document.getElementById('storage-indicator-text');
+        if (storageLabel) {
+          storageLabel.textContent = `${kb} KB committed`;
+        }
+
+        const progressBar = document.getElementById('storage-progress-bar');
+        if (progressBar) {
+          // Local storage target cap: 5MB
+          const pct = Math.max(1, Math.min(100, Math.round((bytes / (5 * 1024 * 1024)) * 100)));
+          progressBar.style.width = `${pct}%`;
+          progressBar.setAttribute('aria-valuenow', pct);
+        }
+      }
+
+      // State Simulator
+      function setUIState(state) {
+        activeState = state;
+        
+        // Remove active class from buttons
+        document.querySelectorAll('.state-simulator button').forEach(b => b.classList.remove('active'));
+        
+        // Add active class
+        if (state === 'success') document.getElementById('sim-success').classList.add('active');
+        if (state === 'loading') document.getElementById('sim-loading').classList.add('active');
+        if (state === 'empty') document.getElementById('sim-empty').classList.add('active');
+        if (state === 'error') document.getElementById('sim-error').classList.add('active');
+
+        // Toggle layout panels
+        const loadingBox = document.getElementById('loading-state');
+        const emptyBox = document.getElementById('empty-state');
+        const errorBox = document.getElementById('error-state');
+        const successBox = document.getElementById('success-state');
+
+        loadingBox.classList.add('d-none');
+        emptyBox.classList.add('d-none');
+        errorBox.classList.add('d-none');
+        successBox.classList.add('d-none');
+
+        if (state === 'success') {
+          successBox.classList.remove('d-none');
+        } else if (state === 'loading') {
+          loadingBox.classList.remove('d-none');
+        } else if (state === 'empty') {
+          emptyBox.classList.remove('d-none');
+        } else if (state === 'error') {
+          errorBox.classList.remove('d-none');
+        }
+      }
+
+      // Simulation of a refreshing sync
+      function triggerRefresh() {
+        setUIState('loading');
+        setTimeout(() => {
+          setUIState('success');
+          showToast('Administrative settings database successfully synced with API gateway.', 'success');
+        }, 1200);
+      }
+    </script>
+  </body>
+</html>

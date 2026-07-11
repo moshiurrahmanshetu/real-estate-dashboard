@@ -1,0 +1,2093 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agents - UrbanHub Real Estate CRM</title>
+
+    <!-- Pre-load LocalStorage theme choice to prevent visual flicker before render -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Page specific additions for Agents Directory */
+      .agent-card-premium {
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 14px;
+        overflow: hidden;
+        transition: var(--uh-transition-smooth);
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .agent-card-premium:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--uh-shadow-lg);
+        border-color: rgba(var(--uh-primary-rgb), 0.3);
+      }
+
+      .agent-avatar-wrapper {
+        position: relative;
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        background-color: #000;
+      }
+
+      .agent-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .agent-card-premium:hover .agent-img {
+        transform: scale(1.06);
+      }
+
+      .agent-status-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 2;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        backdrop-filter: blur(6px);
+      }
+
+      .status-available {
+        background-color: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+      }
+
+      .status-busy {
+        background-color: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.25);
+      }
+
+      .status-leave {
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+      }
+
+      .status-offline {
+        background-color: rgba(148, 163, 184, 0.15);
+        color: #94a3b8;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+      }
+
+      .agent-favorite-btn {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 2;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(17, 17, 20, 0.6);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        cursor: pointer;
+        transition: var(--uh-transition-smooth);
+      }
+
+      .agent-favorite-btn:hover, .agent-favorite-btn.active {
+        background: #fff;
+        color: #dc3545;
+        border-color: #fff;
+        transform: scale(1.1);
+      }
+
+      .agent-verified-badge {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        z-index: 2;
+        background-color: var(--uh-primary);
+        color: #111;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        box-shadow: 0 2px 6px rgba(var(--uh-primary-rgb), 0.4);
+      }
+
+      /* Card layout enhancements */
+      .agent-info-section {
+        padding: 16px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .agent-designation {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--uh-primary);
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .agent-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        border-top: 1px solid var(--uh-border-card);
+        border-bottom: 1px solid var(--uh-border-card);
+        padding: 12px 0;
+        margin: 12px 0;
+      }
+
+      .agent-meta-item {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .agent-meta-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        color: var(--uh-text-muted);
+        letter-spacing: 0.5px;
+      }
+
+      .agent-meta-value {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--uh-text-main);
+      }
+
+      /* Grid / List View Toggle Classes */
+      #grid-view-container.hidden, #list-view-container.hidden {
+        display: none !important;
+      }
+
+      /* Advanced Filters Styles */
+      .filters-card-premium {
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 14px;
+        overflow: hidden;
+        transition: var(--uh-transition-smooth);
+      }
+
+      /* Bulk Actions Sticky Floating Bar */
+      .bulk-actions-bar {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        z-index: 1050;
+        background-color: var(--uh-bg-sidebar);
+        border: 1px solid var(--uh-primary);
+        border-radius: 30px;
+        padding: 10px 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      .bulk-actions-bar.active {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* Top performers mini avatar item */
+      .performer-item-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        background: rgba(var(--uh-primary-rgb), 0.01);
+        transition: var(--uh-transition-smooth);
+      }
+      .performer-item-row:hover {
+        background: rgba(var(--uh-primary-rgb), 0.04);
+        border-color: rgba(var(--uh-primary-rgb), 0.1);
+      }
+
+      /* Skeleton styles */
+      .skeleton-placeholder {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255, 255, 255, 0.05) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 4px;
+      }
+
+      @keyframes skeleton-loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+
+      .card-glow-effect {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        background: radial-gradient(circle 80px at var(--mouse-x, 0) var(--mouse-y, 0), rgba(var(--uh-primary-rgb), 0.08), transparent 80%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 1;
+      }
+
+      .agent-card-premium:hover .card-glow-effect {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Overlay backdrop for mobile sidebars -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon"><i class="bi bi-building-up"></i></div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link active">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="login.html" class="sidebar-menu-link text-danger">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input" id="global-search-agents" placeholder="Quick find agent..." />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <button id="theme-toggle" class="header-btn" title="Switch Theme">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-bell"></i>
+                <span class="header-btn-badge bg-primary"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="width: 300px;">
+                <li><span class="dropdown-header">System Notifications</span></li>
+                <li><a class="dropdown-item py-2 border-bottom border-light-subtle text-wrap" style="font-size: 0.8rem;" href="messages.html">New appraisal request assigned to <strong>Marcus Vance</strong>.</a></li>
+                <li><a class="dropdown-item py-2 text-wrap" style="font-size: 0.8rem;" href="appointments.html">Monthly performance review ready. 3 agents updated.</a></li>
+              </ul>
+            </div>
+          </div>
+        </header>
+
+        <!-- CONTAINER -->
+        <div class="page-body">
+          <!-- BREADCRUMBS & PAGE HEADER -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 animate-fade-down">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Agents</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Agents Directory</h1>
+              <p class="text-muted mb-0" style="font-size: 0.85rem;">Enterprise CRM roster management, active performance indexes, and pipeline metrics.</p>
+            </div>
+          </div>
+
+          <!-- TOP TOOLBAR -->
+          <div class="uh-card p-3 mb-4 animate-fade-up">
+            <div class="row g-2 align-items-center justify-content-between">
+              <!-- Search and Filters Trigger -->
+              <div class="col-12 col-lg-5 d-flex gap-2">
+                <div class="input-group">
+                  <span class="input-group-text bg-body-tertiary border-end-0"><i class="bi bi-search text-muted"></i></span>
+                  <input type="text" class="form-control bg-body-tertiary border-start-0" id="search-agent-input" placeholder="Search by name, ID or specialty..." />
+                </div>
+                <button class="btn btn-outline-secondary d-flex align-items-center gap-2" id="toggle-filter-btn">
+                  <i class="bi bi-funnel"></i> <span>Filters</span>
+                </button>
+              </div>
+
+              <!-- View Toggles, Exports, and Adds -->
+              <div class="col-12 col-lg-6 d-flex justify-content-lg-end align-items-center gap-2 flex-wrap">
+                <div class="btn-group me-2" role="group" aria-label="View Toggle">
+                  <button type="button" class="btn btn-outline-secondary active" id="view-grid-btn" title="Grid View">
+                    <i class="bi bi-grid-fill"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" id="view-list-btn" title="List View">
+                    <i class="bi bi-list-task"></i>
+                  </button>
+                </div>
+
+                <button class="btn btn-outline-secondary" id="refresh-roster-btn" title="Refresh Roster">
+                  <i class="bi bi-arrow-clockwise"></i>
+                </button>
+
+                <button class="btn btn-outline-secondary d-flex align-items-center gap-2" onclick="exportCSVData()">
+                  <i class="bi bi-download"></i> <span>Export CSV</span>
+                </button>
+
+                <button class="btn btn-outline-secondary" onclick="window.print()" title="Print Page">
+                  <i class="bi bi-printer"></i>
+                </button>
+
+                <a href="coming-soon.html" class="btn btn-primary d-flex align-items-center gap-2">
+                  <i class="bi bi-plus-lg"></i> <span>Add Agent</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- ADVANCED FILTERS (Collapsible) -->
+          <div class="filters-card-premium p-4 mb-4 d-none" id="advanced-filters-panel" data-aos="fade-down">
+            <h5 class="font-title fw-bold mb-3"><i class="bi bi-sliders me-2"></i>Advanced CRM Roster Filters</h5>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label" style="font-size: 0.8rem;">Agent Name</label>
+                <input type="text" class="form-control form-control-sm bg-body" id="filter-name" placeholder="e.g. Marcus" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" style="font-size: 0.8rem;">Agent ID</label>
+                <input type="text" class="form-control form-control-sm bg-body" id="filter-id" placeholder="e.g. AGT-302" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" style="font-size: 0.8rem;">Availability Status</label>
+                <select class="form-select form-select-sm bg-body" id="filter-status">
+                  <option value="All">All Statuses</option>
+                  <option value="Available">Available</option>
+                  <option value="Busy">Busy</option>
+                  <option value="On Leave">On Leave</option>
+                  <option value="Offline">Offline</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" style="font-size: 0.8rem;">Department</label>
+                <select class="form-select form-select-sm bg-body" id="filter-department">
+                  <option value="All">All Departments</option>
+                  <option value="Residential">Residential Sales</option>
+                  <option value="Commercial">Commercial Portfolio</option>
+                  <option value="Luxury">Luxury Portfolio</option>
+                  <option value="Advisory">Client Advisory</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" style="font-size: 0.8rem;">Specialization</label>
+                <select class="form-select form-select-sm bg-body" id="filter-specialization">
+                  <option value="All">All Specialties</option>
+                  <option value="High-Rise Penthouse">High-Rise Penthouse</option>
+                  <option value="Waterfront Estate">Waterfront Estate</option>
+                  <option value="Historic Mansion">Historic Mansion</option>
+                  <option value="Retail Center">Retail Center</option>
+                  <option value="Industrial Asset">Industrial Asset</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" style="font-size: 0.8rem;">Metropolitan City</label>
+                <select class="form-select form-select-sm bg-body" id="filter-city">
+                  <option value="All">All Cities</option>
+                  <option value="Beverly Hills">Beverly Hills</option>
+                  <option value="Manhattan">Manhattan</option>
+                  <option value="Miami Beach">Miami Beach</option>
+                  <option value="San Francisco">San Francisco</option>
+                  <option value="Chicago">Chicago</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" style="font-size: 0.8rem;">Minimum Experience (Years)</label>
+                <input type="number" class="form-control form-control-sm bg-body" id="filter-experience" min="0" placeholder="e.g. 5" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" style="font-size: 0.8rem;">Minimum Rating</label>
+                <select class="form-select form-select-sm bg-body" id="filter-rating">
+                  <option value="All">All Ratings</option>
+                  <option value="4.5">4.5+ Stars</option>
+                  <option value="4.8">4.8+ Stars</option>
+                  <option value="4.9">4.9+ Stars</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" style="font-size: 0.8rem;">Languages Spoken</label>
+                <select class="form-select form-select-sm bg-body" id="filter-language">
+                  <option value="All">All Languages</option>
+                  <option value="English">English</option>
+                  <option value="Spanish">Spanish</option>
+                  <option value="Mandarin">Mandarin</option>
+                  <option value="French">French</option>
+                  <option value="Japanese">Japanese</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" style="font-size: 0.8rem;">Joined After</label>
+                <input type="date" class="form-control form-control-sm bg-body" id="filter-date" />
+              </div>
+              <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                <button class="btn btn-outline-secondary btn-sm px-3" onclick="resetAdvancedFilters()">Reset Filters</button>
+                <button class="btn btn-primary btn-sm px-4" onclick="applyAdvancedFilters()">Apply Filters</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STATISTICS SECTION -->
+          <div class="row g-3 mb-4 animate-fade-up">
+            <!-- 1. Total Agents -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+              <div class="uh-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-muted" style="font-size: 0.8rem; text-transform: uppercase;">Total Active Roster</span>
+                  <div class="bg-primary-subtle text-primary p-2 rounded-3"><i class="bi bi-people-fill"></i></div>
+                </div>
+                <h3 class="font-title fw-bold mb-1 animate-counter-uh" data-target="154">0</h3>
+                <div class="d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                  <span class="text-success"><i class="bi bi-arrow-up-right me-1"></i>+12%</span>
+                  <span class="text-muted">this quarter</span>
+                </div>
+              </div>
+            </div>
+            <!-- 2. Active Agents -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+              <div class="uh-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-muted" style="font-size: 0.8rem; text-transform: uppercase;">Active Campaigners</span>
+                  <div class="bg-success-light text-success p-2 rounded-3"><i class="bi bi-person-check-fill"></i></div>
+                </div>
+                <h3 class="font-title fw-bold mb-1 animate-counter-uh" data-target="128">0</h3>
+                <div class="d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                  <span class="text-success"><i class="bi bi-arrow-up-right"></i>83%</span>
+                  <span class="text-muted">utilization rate</span>
+                </div>
+              </div>
+            </div>
+            <!-- 3. Inactive Agents -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+              <div class="uh-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-muted" style="font-size: 0.8rem; text-transform: uppercase;">Inactive Partners</span>
+                  <div class="bg-body-tertiary text-muted p-2 rounded-3"><i class="bi bi-person-dash-fill"></i></div>
+                </div>
+                <h3 class="font-title fw-bold mb-1 animate-counter-uh" data-target="26">0</h3>
+                <div class="d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                  <span class="text-danger"><i class="bi bi-arrow-down-left"></i>-4%</span>
+                  <span class="text-muted">vs last month</span>
+                </div>
+              </div>
+            </div>
+            <!-- 4. Top Performers -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+              <div class="uh-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-muted" style="font-size: 0.8rem; text-transform: uppercase;">Chairman's Club</span>
+                  <div class="bg-warning-light text-warning p-2 rounded-3"><i class="bi bi-trophy-fill"></i></div>
+                </div>
+                <h3 class="font-title fw-bold mb-1 animate-counter-uh" data-target="15">0</h3>
+                <div class="d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                  <span class="text-success">Elite Index</span>
+                  <span class="text-muted">outstanding status</span>
+                </div>
+              </div>
+            </div>
+            <!-- 5. Available Agents -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+              <div class="uh-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-muted" style="font-size: 0.8rem; text-transform: uppercase;">Available On-Demand</span>
+                  <div class="bg-info-light text-info p-2 rounded-3"><i class="bi bi-telephone-inbound-fill"></i></div>
+                </div>
+                <h3 class="font-title fw-bold mb-1 animate-counter-uh" data-target="94">0</h3>
+                <div class="d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                  <span class="text-info"><i class="bi bi-info-circle"></i> Instant Reply</span>
+                  <span class="text-muted">live dispatchable</span>
+                </div>
+              </div>
+            </div>
+            <!-- 6. Busy Agents -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+              <div class="uh-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-muted" style="font-size: 0.8rem; text-transform: uppercase;">Currently Engaged</span>
+                  <div class="bg-danger-subtle text-danger p-2 rounded-3"><i class="bi bi-clock-history"></i></div>
+                </div>
+                <h3 class="font-title fw-bold mb-1 animate-counter-uh" data-target="24">0</h3>
+                <div class="d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                  <span class="text-warning">Negotiating escrow</span>
+                  <span class="text-muted">with buyers</span>
+                </div>
+              </div>
+            </div>
+            <!-- 7. New This Month -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+              <div class="uh-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-muted" style="font-size: 0.8rem; text-transform: uppercase;">Onboarded This Month</span>
+                  <div class="bg-primary-subtle text-primary p-2 rounded-3"><i class="bi bi-person-plus-fill"></i></div>
+                </div>
+                <h3 class="font-title fw-bold mb-1 animate-counter-uh" data-target="18">0</h3>
+                <div class="d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                  <span class="text-success"><i class="bi bi-graph-up-arrow"></i>+24%</span>
+                  <span class="text-muted">growth rate</span>
+                </div>
+              </div>
+            </div>
+            <!-- 8. Average Rating -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+              <div class="uh-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-muted" style="font-size: 0.8rem; text-transform: uppercase;">Roster Rating Index</span>
+                  <div class="bg-warning-light text-warning p-2 rounded-3"><i class="bi bi-star-fill"></i></div>
+                </div>
+                <div class="d-flex align-items-baseline gap-1">
+                  <h3 class="font-title fw-bold mb-1">4.8</h3>
+                  <span class="text-muted" style="font-size: 0.8rem;">/ 5.0</span>
+                </div>
+                <div class="d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                  <span class="text-warning"><i class="bi bi-shield-check"></i> Premium</span>
+                  <span class="text-muted">client advisory standard</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BULK ACTIONS FLOATING BAR -->
+          <div class="bulk-actions-bar" id="bulk-actions-bar">
+            <span class="text-muted" style="font-size: 0.85rem;"><i class="bi bi-check2-circle text-primary me-2"></i><span id="bulk-select-count" class="fw-bold text-main">0</span> Selected</span>
+            <div class="vr bg-secondary"></div>
+            <select class="form-select form-select-sm bg-body" id="bulk-action-select" style="width: 140px;">
+              <option value="">Bulk Actions...</option>
+              <option value="Assign">Assign Team</option>
+              <option value="Deactivate">Deactivate Roster</option>
+              <option value="Export">Export CSV Dossier</option>
+              <option value="Delete">Purge Record</option>
+            </select>
+            <button class="btn btn-primary btn-sm px-3" onclick="executeBulkAction()">Execute</button>
+          </div>
+
+          <!-- SKELETON LOADERS CONTAINER (Simulates active data fetch when filters/refreshes run) -->
+          <div class="row g-3 d-none" id="skeleton-loader-container">
+            <div class="col-12 col-md-6 col-xl-4" style="height: 480px;">
+              <div class="uh-card h-100 p-3">
+                <div class="skeleton-placeholder w-100 mb-3" style="height: 180px; border-radius: 12px;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 20px; width: 40%;"></div>
+                <div class="skeleton-placeholder mb-3" style="height: 25px; width: 70%;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 15px; width: 100%;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 15px; width: 85%;"></div>
+                <div class="skeleton-placeholder mb-3" style="height: 15px; width: 60%;"></div>
+                <hr class="border-secondary opacity-25" />
+                <div class="skeleton-placeholder" style="height: 40px; width: 100%; border-radius: 8px;"></div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-4" style="height: 480px;">
+              <div class="uh-card h-100 p-3">
+                <div class="skeleton-placeholder w-100 mb-3" style="height: 180px; border-radius: 12px;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 20px; width: 40%;"></div>
+                <div class="skeleton-placeholder mb-3" style="height: 25px; width: 70%;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 15px; width: 100%;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 15px; width: 85%;"></div>
+                <div class="skeleton-placeholder mb-3" style="height: 15px; width: 60%;"></div>
+                <hr class="border-secondary opacity-25" />
+                <div class="skeleton-placeholder" style="height: 40px; width: 100%; border-radius: 8px;"></div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-4" style="height: 480px;">
+              <div class="uh-card h-100 p-3">
+                <div class="skeleton-placeholder w-100 mb-3" style="height: 180px; border-radius: 12px;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 20px; width: 40%;"></div>
+                <div class="skeleton-placeholder mb-3" style="height: 25px; width: 70%;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 15px; width: 100%;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 15px; width: 85%;"></div>
+                <div class="skeleton-placeholder mb-3" style="height: 15px; width: 60%;"></div>
+                <hr class="border-secondary opacity-25" />
+                <div class="skeleton-placeholder" style="height: 40px; width: 100%; border-radius: 8px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GRID VIEW CONTAINER (Default) -->
+          <div class="row g-3" id="grid-view-container">
+            <!-- 12 Agent Cards will be populated here dynamically via Vanilla JS for absolute clean rendering and dynamic live-filtering -->
+          </div>
+
+          <!-- LIST VIEW CONTAINER (Table layout) -->
+          <div class="uh-card p-0 overflow-hidden d-none" id="list-view-container">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0" id="list-view-table">
+                <thead class="table-dark" style="--bs-table-bg: var(--uh-bg-sidebar); --bs-table-border-color: var(--uh-border-card);">
+                  <tr>
+                    <th style="width: 40px;" class="ps-3">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="bulk-select-all-list" onclick="toggleAllListCheckboxes(this)" />
+                      </div>
+                    </th>
+                    <th>Photo</th>
+                    <th>Name</th>
+                    <th>ID</th>
+                    <th>Designation</th>
+                    <th>Metropolitan City</th>
+                    <th>Listed Properties</th>
+                    <th>Sold Properties</th>
+                    <th>Average Rating</th>
+                    <th>Status</th>
+                    <th class="pe-3 text-end">Action Dossier</th>
+                  </tr>
+                </thead>
+                <tbody id="list-view-tbody" style="background-color: var(--uh-bg-card);">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE CONTAINER (Shown if filtering matches 0 elements) -->
+          <div class="uh-card text-center p-5 d-none mb-4" id="empty-state-container" data-aos="zoom-in">
+            <div class="mb-4">
+              <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                <i class="bi bi-person-x fs-1"></i>
+              </div>
+            </div>
+            <h4 class="font-title fw-bold text-main">No Matching Agents Found</h4>
+            <p class="text-muted mx-auto" style="max-width: 480px; font-size: 0.9rem;">Your search queries or filters yielded no matched entries in the enterprise directory database index. Try adjusting the query string, rating value, or specialization variables.</p>
+            <div class="d-flex justify-content-center gap-2 mt-2">
+              <button class="btn btn-outline-secondary btn-sm" onclick="resetAdvancedFilters()">Reset Query Variables</button>
+              <a href="coming-soon.html" class="btn btn-primary btn-sm"><i class="bi bi-person-plus me-1"></i> Onboard New Agent</a>
+            </div>
+          </div>
+
+          <!-- SECONDARY SECTION: DUAL PANEL PERFORMANCE ANALYTICS & RECENTLY JOINED -->
+          <div class="row g-4 mt-2 mb-4">
+            <!-- Top Performers & Recently Joined -->
+            <div class="col-12 col-xl-4 d-flex flex-column gap-4">
+              <!-- Top Performers Section -->
+              <div class="uh-card p-3 flex-grow-1" data-aos="fade-up">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="font-title fw-bold mb-0"><i class="bi bi-award text-warning me-2"></i>Top Performance Leaders</h5>
+                  <span class="badge bg-primary-subtle text-primary" style="font-size: 0.7rem;">Elite 5</span>
+                </div>
+                <div class="d-flex flex-column gap-2" id="top-performers-container">
+                  <!-- Populated Dynamically -->
+                </div>
+              </div>
+
+              <!-- Recently Joined Agents Section -->
+              <div class="uh-card p-3" data-aos="fade-up">
+                <h5 class="font-title fw-bold mb-3"><i class="bi bi-hourglass-split text-info me-2"></i>Recently Onboarded Assets</h5>
+                <div class="d-flex flex-column gap-2" id="recent-agents-container">
+                  <!-- Populated Dynamically -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Performance Analytics Chart panels -->
+            <div class="col-12 col-xl-8" data-aos="fade-up" data-aos-delay="100">
+              <div class="uh-card p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                  <div>
+                    <h5 class="font-title fw-bold mb-0"><i class="bi bi-graph-up-arrow text-primary me-2"></i>CRM Performance Metrics</h5>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem;">Interactive sales cycles, commission indices, and volume outputs.</p>
+                  </div>
+                  <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary active" id="chart-sales-toggle" onclick="toggleAnalyticsView('sales')">Volume & Revenue</button>
+                    <button type="button" class="btn btn-outline-secondary" id="chart-properties-toggle" onclick="toggleAnalyticsView('properties')">Properties Listed/Sold</button>
+                    <button type="button" class="btn btn-outline-secondary" id="chart-commission-toggle" onclick="toggleAnalyticsView('commission')">Commission Overview</button>
+                  </div>
+                </div>
+
+                <div style="position: relative; height: 320px; width: 100%;">
+                  <canvas id="performanceAnalyticsChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- THIRD SECTION: AVAILABILITY BREAKDOWNS & QUICK CONTACT FORMS -->
+          <div class="row g-4 mb-4">
+            <!-- Agent Availability Breakdown Cards -->
+            <div class="col-12 col-xl-6" data-aos="fade-up">
+              <div class="uh-card p-3 h-100">
+                <h5 class="font-title fw-bold mb-3"><i class="bi bi-calendar-check me-2"></i> Roster Dispatch & Shift Breakdown</h5>
+                <p class="text-muted mb-4" style="font-size: 0.75rem;">Instant visual dashboard to analyze workforce state and dispatch availability parameters.</p>
+                <div class="row g-2">
+                  <!-- Available -->
+                  <div class="col-6">
+                    <div class="p-3 border rounded-3 bg-body d-flex align-items-center justify-content-between">
+                      <div>
+                        <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Available</span>
+                        <h4 class="font-title fw-bold mb-0 text-success">94 Agents</h4>
+                      </div>
+                      <div class="p-2 bg-success-light text-success rounded-circle" style="font-size: 1.25rem;"><i class="bi bi-person-check"></i></div>
+                    </div>
+                  </div>
+                  <!-- Busy -->
+                  <div class="col-6">
+                    <div class="p-3 border rounded-3 bg-body d-flex align-items-center justify-content-between">
+                      <div>
+                        <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Busy / Appraising</span>
+                        <h4 class="font-title fw-bold mb-0 text-warning">24 Agents</h4>
+                      </div>
+                      <div class="p-2 bg-warning-light text-warning rounded-circle" style="font-size: 1.25rem;"><i class="bi bi-hourglass-split"></i></div>
+                    </div>
+                  </div>
+                  <!-- On Leave -->
+                  <div class="col-6">
+                    <div class="p-3 border rounded-3 bg-body d-flex align-items-center justify-content-between">
+                      <div>
+                        <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">On Leave</span>
+                        <h4 class="font-title fw-bold mb-0 text-danger">6 Agents</h4>
+                      </div>
+                      <div class="p-2 bg-danger-subtle text-danger rounded-circle" style="font-size: 1.25rem;"><i class="bi bi-airplane-engines"></i></div>
+                    </div>
+                  </div>
+                  <!-- Offline -->
+                  <div class="col-6">
+                    <div class="p-3 border rounded-3 bg-body d-flex align-items-center justify-content-between">
+                      <div>
+                        <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Offline / Idle</span>
+                        <h4 class="font-title fw-bold mb-0 text-secondary">30 Agents</h4>
+                      </div>
+                      <div class="p-2 bg-body-tertiary text-muted rounded-circle" style="font-size: 1.25rem;"><i class="bi bi-power"></i></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Contact Panel -->
+            <div class="col-12 col-xl-6" data-aos="fade-up" data-aos-delay="100">
+              <div class="uh-card p-3 h-100">
+                <h5 class="font-title fw-bold mb-1"><i class="bi bi-telephone-outbound text-primary me-2"></i>Quick Dispatch Desk</h5>
+                <p class="text-muted mb-3" style="font-size: 0.75rem;">Instantly route and dispatch real estate queries, appointments or customer cases.</p>
+                <form id="quick-dispatch-form" class="needs-validation" novalidate onsubmit="submitQuickDispatch(event)">
+                  <div class="row g-2">
+                    <div class="col-md-6">
+                      <label class="form-label" style="font-size: 0.75rem;">Select Agent</label>
+                      <select class="form-select form-select-sm bg-body" id="dispatch-agent-select" required>
+                        <!-- Loaded dynamically -->
+                      </select>
+                      <div class="invalid-feedback">Choose an agent first.</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label" style="font-size: 0.75rem;">Action Route Type</label>
+                      <select class="form-select form-select-sm bg-body" id="dispatch-action-type" required>
+                        <option value="Call">Direct Call Dial</option>
+                        <option value="Email">Send CRM Email Campaign</option>
+                        <option value="Message">SMS Notification Alert</option>
+                        <option value="Meeting">Schedule Client Appraisal</option>
+                      </select>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label" style="font-size: 0.75rem;">Dispatch Campaign Notes</label>
+                      <textarea class="form-control form-control-sm bg-body" id="dispatch-notes" rows="2" placeholder="Instruction/appraisal notes details for immediate routing..." required></textarea>
+                      <div class="invalid-feedback">Brief notes required.</div>
+                    </div>
+                    <div class="col-12 text-end mt-2">
+                      <button type="submit" class="btn btn-primary btn-sm px-4">Execute Dispatch Sequence</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- QUICK VIEW MODAL (CRM Dossier Details) -->
+    <div class="modal fade" id="quickViewAgentModal" tabindex="-1" aria-labelledby="quickViewAgentModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border border-light-subtle rounded-4" style="background-color: var(--uh-bg-card); color: var(--uh-text-main);">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="quickViewAgentModalLabel"><i class="bi bi-file-earmark-person me-2 text-primary"></i>Agent CRM Dossier</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="quick-view-modal-body">
+            <!-- Loaded dynamically via JavaScript -->
+          </div>
+          <div class="modal-footer border-top border-light-subtle">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close Dossier</button>
+            <a href="agent-details.html" id="quick-view-full-profile-btn" class="btn btn-primary btn-sm px-4">View Full Profile Profile</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border border-danger rounded-4" style="background-color: var(--uh-bg-card); color: var(--uh-text-main);">
+          <div class="modal-header border-bottom-0">
+            <h5 class="modal-title font-title fw-bold text-danger" id="deleteConfirmModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Purge</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body py-2">
+            <p class="mb-2">Are you absolutely sure you wish to delete and purge this agent's CRM record from the enterprise system database index?</p>
+            <p class="text-danger fw-bold font-title mb-0" id="delete-agent-display-name" style="font-size: 0.95rem;"></p>
+            <span class="text-muted d-block mt-1" id="delete-agent-display-id" style="font-size: 0.8rem;"></span>
+          </div>
+          <div class="modal-footer border-top-0 gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger btn-sm px-4" id="confirm-delete-action-btn">Purge Record</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUCCESS DISPATCH TOAST -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+      <div id="dispatch-success-toast" class="toast align-items-center text-white bg-success border-0 rounded-3" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle-fill"></i>
+            <span id="toast-message-text">CRM Dispatch campaign routed successfully!</span>
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- AOS Animation Library JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Main JS Script -->
+    <script src="/assets/js/main.js"></script>
+
+    <script>
+      // ----------------------------------------------------
+      // CRM ROSTER DATASET - 12 Premium Agent Cards (and lists)
+      // ----------------------------------------------------
+      let agentsData = [
+        {
+          id: "AGT-301",
+          name: "Marcus Vance",
+          designation: "Executive Managing Partner",
+          department: "Luxury",
+          specialization: "High-Rise Penthouse",
+          city: "Beverly Hills",
+          phone: "+1 (310) 555-0192",
+          email: "m.vance@urbanhub.com",
+          experience: 12,
+          propertiesListed: 48,
+          propertiesSold: 39,
+          revenueGenerated: 124500000,
+          rating: 4.9,
+          status: "Available",
+          verified: true,
+          photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=250&auto=format&fit=crop",
+          skills: ["Portfolio Liquidation", "Advisory Spec", "Taxation Architecture"],
+          joinedDate: "2021-03-15"
+        },
+        {
+          id: "AGT-302",
+          name: "Sofia Alistair",
+          designation: "Senior Luxury Associate",
+          department: "Luxury",
+          specialization: "Waterfront Estate",
+          city: "Miami Beach",
+          phone: "+1 (305) 555-0144",
+          email: "s.alistair@urbanhub.com",
+          experience: 8,
+          propertiesListed: 32,
+          propertiesSold: 28,
+          revenueGenerated: 85200000,
+          rating: 4.8,
+          status: "Busy",
+          verified: true,
+          photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=250&auto=format&fit=crop",
+          skills: ["Negotiation", "Escrow Logistics", "Client Acquisition"],
+          joinedDate: "2022-06-20"
+        },
+        {
+          id: "AGT-303",
+          name: "Kenji Sato",
+          designation: "Commercial Advisor",
+          department: "Commercial",
+          specialization: "Retail Center",
+          city: "San Francisco",
+          phone: "+1 (415) 555-0181",
+          email: "k.sato@urbanhub.com",
+          experience: 10,
+          propertiesListed: 22,
+          propertiesSold: 18,
+          revenueGenerated: 142000000,
+          rating: 4.9,
+          status: "Available",
+          verified: true,
+          photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=250&auto=format&fit=crop",
+          skills: ["Corporate Syndication", "REIT Advisory", "Cap-Rate Optimization"],
+          joinedDate: "2020-11-01"
+        },
+        {
+          id: "AGT-304",
+          name: "Amara Okonjo",
+          designation: "Senior Residential Lead",
+          department: "Residential",
+          specialization: "Historic Mansion",
+          city: "Manhattan",
+          phone: "+1 (212) 555-0177",
+          email: "a.okonjo@urbanhub.com",
+          experience: 7,
+          propertiesListed: 64,
+          propertiesSold: 56,
+          revenueGenerated: 91000000,
+          rating: 4.7,
+          status: "Available",
+          verified: false,
+          photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=250&auto=format&fit=crop",
+          skills: ["Relocation Spec", "Heritage Appraisals", "MLS Overwrite"],
+          joinedDate: "2023-01-10"
+        },
+        {
+          id: "AGT-305",
+          name: "Daniel Alvarez",
+          designation: "Investment Analyst & Broker",
+          department: "Advisory",
+          specialization: "Industrial Asset",
+          city: "Chicago",
+          phone: "+1 (312) 555-0129",
+          email: "d.alvarez@urbanhub.com",
+          experience: 9,
+          propertiesListed: 15,
+          propertiesSold: 11,
+          revenueGenerated: 64000000,
+          rating: 4.6,
+          status: "On Leave",
+          verified: true,
+          photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=250&auto=format&fit=crop",
+          skills: ["Financial Modelling", "Leveraged Leases", "Asset Swapping"],
+          joinedDate: "2021-08-18"
+        },
+        {
+          id: "AGT-306",
+          name: "Elena Rostova",
+          designation: "Luxury Portfolio Director",
+          department: "Luxury",
+          specialization: "Waterfront Estate",
+          city: "Beverly Hills",
+          phone: "+1 (310) 555-0210",
+          email: "e.rostova@urbanhub.com",
+          experience: 11,
+          propertiesListed: 39,
+          propertiesSold: 35,
+          revenueGenerated: 118000000,
+          rating: 4.9,
+          status: "Available",
+          verified: true,
+          photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=250&auto=format&fit=crop",
+          skills: ["Ultra-High Net Worth", "Concierge Sales", "Off-Market Sourcing"],
+          joinedDate: "2020-05-12"
+        },
+        {
+          id: "AGT-307",
+          name: "Liam O'Connor",
+          designation: "Residential Consultant",
+          department: "Residential",
+          specialization: "Historic Mansion",
+          city: "Manhattan",
+          phone: "+1 (212) 555-0222",
+          email: "l.oconnor@urbanhub.com",
+          experience: 5,
+          propertiesListed: 42,
+          propertiesSold: 33,
+          revenueGenerated: 38500000,
+          rating: 4.5,
+          status: "Offline",
+          verified: false,
+          photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=250&auto=format&fit=crop",
+          skills: ["Buyer Brokerage", "Strategic Staging", "Virtual Walkthroughs"],
+          joinedDate: "2024-02-14"
+        },
+        {
+          id: "AGT-308",
+          name: "Chloe Dubois",
+          designation: "International Client Advisor",
+          department: "Advisory",
+          specialization: "High-Rise Penthouse",
+          city: "Miami Beach",
+          phone: "+1 (305) 555-0233",
+          email: "c.dubois@urbanhub.com",
+          experience: 6,
+          propertiesListed: 25,
+          propertiesSold: 21,
+          revenueGenerated: 54200000,
+          rating: 4.7,
+          status: "Busy",
+          verified: true,
+          photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=250&auto=format&fit=crop",
+          skills: ["Cross-Border Escrow", "Multilingual Escrow", "Offshore Portfolios"],
+          joinedDate: "2023-09-01"
+        },
+        {
+          id: "AGT-309",
+          name: "Zayn Malik",
+          designation: "Commercial Lease Specialist",
+          department: "Commercial",
+          specialization: "Retail Center",
+          city: "Chicago",
+          phone: "+1 (312) 555-0244",
+          email: "z.malik@urbanhub.com",
+          experience: 7,
+          propertiesListed: 19,
+          propertiesSold: 15,
+          revenueGenerated: 49800000,
+          rating: 4.6,
+          status: "Available",
+          verified: false,
+          photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=250&auto=format&fit=crop",
+          skills: ["Tenant Representation", "Lease Restructuring", "Ancillary Income"],
+          joinedDate: "2022-10-15"
+        },
+        {
+          id: "AGT-310",
+          name: "Isabella Martinez",
+          designation: "Senior Residential Advisor",
+          department: "Residential",
+          specialization: "High-Rise Penthouse",
+          city: "San Francisco",
+          phone: "+1 (415) 555-0255",
+          email: "i.martinez@urbanhub.com",
+          experience: 8,
+          propertiesListed: 51,
+          propertiesSold: 47,
+          revenueGenerated: 79500000,
+          rating: 4.8,
+          status: "Available",
+          verified: true,
+          photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=250&auto=format&fit=crop",
+          skills: ["Asset Appraisals", "First-time Buyers", "Refinance Consulting"],
+          joinedDate: "2021-12-05"
+        },
+        {
+          id: "AGT-311",
+          name: "Xavier Wu",
+          designation: "Industrial Portfolio Manager",
+          department: "Commercial",
+          specialization: "Industrial Asset",
+          city: "Chicago",
+          phone: "+1 (312) 555-0266",
+          email: "x.wu@urbanhub.com",
+          experience: 11,
+          propertiesListed: 14,
+          propertiesSold: 12,
+          revenueGenerated: 115000000,
+          rating: 4.9,
+          status: "Busy",
+          verified: true,
+          photo: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=250&auto=format&fit=crop",
+          skills: ["Logistics Parks", "Cold Storage Syndication", "Zoning Clearance"],
+          joinedDate: "2019-07-22"
+        },
+        {
+          id: "AGT-312",
+          name: "Samantha Wright",
+          designation: "Client Advisory Lead",
+          department: "Advisory",
+          specialization: "Waterfront Estate",
+          city: "Miami Beach",
+          phone: "+1 (305) 555-0277",
+          email: "s.wright@urbanhub.com",
+          experience: 6,
+          propertiesListed: 30,
+          propertiesSold: 26,
+          revenueGenerated: 42000000,
+          rating: 4.6,
+          status: "Available",
+          verified: false,
+          photo: "https://images.unsplash.com/photo-1554151228-14d9def656e4?q=80&w=250&auto=format&fit=crop",
+          skills: ["Asset Re-allocation", "Relocation Staging", "Fiduciary Trust"],
+          joinedDate: "2023-11-30"
+        }
+      ];
+
+      // Favorite and selection persistence
+      let favorites = JSON.parse(localStorage.getItem('agent_favorites') || '[]');
+      let selectedAgentIds = [];
+      let activeFilterSet = {
+        search: '',
+        name: '',
+        id: '',
+        status: 'All',
+        department: 'All',
+        specialization: 'All',
+        city: 'All',
+        experience: '',
+        rating: 'All',
+        language: 'All',
+        date: ''
+      };
+
+      let currentChart = null;
+      let activeAnalyticsView = 'sales'; // sales, properties, commission
+
+      // Initialize Page Elements
+      document.addEventListener('DOMContentLoaded', () => {
+        initRosterView();
+        initPerformanceAnalyticsChart();
+        populateDispatchSelect();
+
+        // Register core event handlers
+        const filterToggleBtn = document.getElementById('toggle-filter-btn');
+        if (filterToggleBtn) {
+          filterToggleBtn.addEventListener('click', () => {
+            const panel = document.getElementById('advanced-filters-panel');
+            panel.classList.toggle('d-none');
+            filterToggleBtn.classList.toggle('btn-primary');
+            filterToggleBtn.classList.toggle('btn-outline-secondary');
+          });
+        }
+
+        // Search inputs
+        const searchInput = document.getElementById('search-agent-input');
+        if (searchInput) {
+          searchInput.addEventListener('input', (e) => {
+            activeFilterSet.search = e.target.value.toLowerCase().trim();
+            filterAndRender();
+          });
+        }
+
+        const globalSearch = document.getElementById('global-search-agents');
+        if (globalSearch) {
+          globalSearch.addEventListener('input', (e) => {
+            activeFilterSet.search = e.target.value.toLowerCase().trim();
+            if (searchInput) searchInput.value = e.target.value;
+            filterAndRender();
+          });
+        }
+
+        // Grid/List toggle triggers
+        const viewGridBtn = document.getElementById('view-grid-btn');
+        const viewListBtn = document.getElementById('view-list-btn');
+
+        if (viewGridBtn && viewListBtn) {
+          viewGridBtn.addEventListener('click', () => {
+            viewGridBtn.classList.add('active');
+            viewListBtn.classList.remove('active');
+            document.getElementById('grid-view-container').classList.remove('hidden');
+            document.getElementById('list-view-container').classList.add('hidden');
+          });
+
+          viewListBtn.addEventListener('click', () => {
+            viewListBtn.classList.add('active');
+            viewGridBtn.classList.remove('active');
+            document.getElementById('grid-view-container').classList.add('hidden');
+            document.getElementById('list-view-container').classList.remove('hidden');
+          });
+        }
+
+        // Refresh trigger
+        const refreshBtn = document.getElementById('refresh-roster-btn');
+        if (refreshBtn) {
+          refreshBtn.addEventListener('click', () => {
+            refreshBtn.querySelector('i').classList.add('spin-icon-uh');
+            document.getElementById('grid-view-container').classList.add('hidden');
+            document.getElementById('list-view-container').classList.add('hidden');
+            document.getElementById('skeleton-loader-container').classList.remove('d-none');
+
+            setTimeout(() => {
+              refreshBtn.querySelector('i').classList.remove('spin-icon-uh');
+              document.getElementById('skeleton-loader-container').classList.add('d-none');
+              
+              if (document.getElementById('view-grid-btn').classList.contains('active')) {
+                document.getElementById('grid-view-container').classList.remove('hidden');
+              } else {
+                document.getElementById('list-view-container').classList.remove('hidden');
+              }
+              initRosterView();
+              showSuccessToast("Roster synchronized live with database.");
+            }, 1000);
+          });
+        }
+
+        // Listen for Theme Switch custom events to rebuild charts with appropriate theme colors
+        window.addEventListener('themeChanged', (e) => {
+          setTimeout(() => {
+            initPerformanceAnalyticsChart();
+          }, 100);
+        });
+
+        // Initialize mouse-move tilts on cards
+        setupCardMovements();
+      });
+
+      // ----------------------------------------------------
+      // COMPONENT RENDER ENGINE
+      // ----------------------------------------------------
+      function initRosterView() {
+        filterAndRender();
+        renderTopPerformers();
+        renderRecentAgents();
+      }
+
+      function filterAndRender() {
+        let filtered = agentsData.filter(agent => {
+          // Search string match (ID, name, specialization, city)
+          if (activeFilterSet.search) {
+            let s = activeFilterSet.search;
+            let match = agent.name.toLowerCase().includes(s) ||
+                        agent.id.toLowerCase().includes(s) ||
+                        agent.specialization.toLowerCase().includes(s) ||
+                        agent.city.toLowerCase().includes(s) ||
+                        agent.designation.toLowerCase().includes(s);
+            if (!match) return false;
+          }
+
+          // Advanced Filter Matchers
+          if (activeFilterSet.name && !agent.name.toLowerCase().includes(activeFilterSet.name.toLowerCase())) return false;
+          if (activeFilterSet.id && !agent.id.toLowerCase().includes(activeFilterSet.id.toLowerCase())) return false;
+          if (activeFilterSet.status !== 'All' && agent.status !== activeFilterSet.status) return false;
+          if (activeFilterSet.department !== 'All' && agent.department !== activeFilterSet.department) return false;
+          if (activeFilterSet.specialization !== 'All' && agent.specialization !== activeFilterSet.specialization) return false;
+          if (activeFilterSet.city !== 'All' && agent.city !== activeFilterSet.city) return false;
+          if (activeFilterSet.experience && agent.experience < parseInt(activeFilterSet.experience)) return false;
+          
+          if (activeFilterSet.rating !== 'All') {
+            let reqRating = parseFloat(activeFilterSet.rating);
+            if (agent.rating < reqRating) return false;
+          }
+          
+          if (activeFilterSet.language !== 'All') {
+            // For simplicity, assign languages based on criteria
+            let langs = agent.id === "AGT-308" ? ["French", "English"] : ["English", "Spanish"];
+            if (!langs.includes(activeFilterSet.language)) return false;
+          }
+
+          if (activeFilterSet.date) {
+            let filterD = new Date(activeFilterSet.date);
+            let agentD = new Date(agent.joinedDate);
+            if (agentD < filterD) return false;
+          }
+
+          return true;
+        });
+
+        // Handle empty states
+        if (filtered.length === 0) {
+          document.getElementById('empty-state-container').classList.remove('d-none');
+          document.getElementById('grid-view-container').innerHTML = '';
+          document.getElementById('list-view-tbody').innerHTML = '';
+        } else {
+          document.getElementById('empty-state-container').classList.add('d-none');
+          renderGridView(filtered);
+          renderListView(filtered);
+        }
+
+        // Update bulk action status
+        updateBulkStatusBar();
+      }
+
+      function renderGridView(data) {
+        const container = document.getElementById('grid-view-container');
+        container.innerHTML = '';
+
+        data.forEach(agent => {
+          let statusClass = "status-available";
+          if (agent.status === 'Busy') statusClass = "status-busy";
+          if (agent.status === 'On Leave') statusClass = "status-leave";
+          if (agent.status === 'Offline') statusClass = "status-offline";
+
+          let isFav = favorites.includes(agent.id) ? 'active' : '';
+          let isSelected = selectedAgentIds.includes(agent.id) ? 'checked' : '';
+
+          // Target percentage calculation (e.g. Sales / Listed Ratio)
+          let perfPercent = Math.round((agent.propertiesSold / agent.propertiesListed) * 100);
+
+          let cardHTML = `
+            <div class="col-12 col-md-6 col-xl-4 animate-fade-up">
+              <div class="agent-card-premium" id="agent-grid-${agent.id}">
+                <div class="card-glow-effect"></div>
+                <!-- Avatar block -->
+                <div class="agent-avatar-wrapper">
+                  <span class="agent-status-badge ${statusClass}">
+                    <span class="status-bullet-uh pulsing bg-current" style="width: 6px; height: 6px; border-radius: 50%;"></span>
+                    ${agent.status}
+                  </span>
+
+                  <button class="agent-favorite-btn ${isFav}" onclick="toggleFavorite(event, '${agent.id}')" title="Mark as favorite">
+                    <i class="bi ${favorites.includes(agent.id) ? 'bi-heart-fill' : 'bi-heart'}"></i>
+                  </button>
+
+                  <img src="${agent.photo}" alt="${agent.name}" class="agent-img" />
+                  
+                  ${agent.verified ? `<span class="agent-verified-badge" title="Verified Professional"><i class="bi bi-patch-check-fill"></i></span>` : ''}
+                </div>
+
+                <!-- Info Block -->
+                <div class="agent-info-section">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="agent-designation">${agent.designation}</span>
+                    <div class="form-check">
+                      <input class="form-check-input select-agent-checkbox" type="checkbox" id="check-grid-${agent.id}" ${isSelected} onclick="toggleAgentSelection('${agent.id}', this)" />
+                    </div>
+                  </div>
+
+                  <h5 class="font-title fw-bold text-main mb-1">${agent.name}</h5>
+                  <span class="text-muted d-block mb-3 font-mono" style="font-size: 0.75rem;"><i class="bi bi-tag-fill me-1 text-primary"></i>ID: ${agent.id}</span>
+
+                  <div class="d-flex flex-column gap-2" style="font-size: 0.85rem;">
+                    <div class="d-flex align-items-center gap-2"><i class="bi bi-geo-alt-fill text-primary"></i> <span>${agent.city}</span></div>
+                    <div class="d-flex align-items-center gap-2"><i class="bi bi-telephone text-muted"></i> <span>${agent.phone}</span></div>
+                    <div class="d-flex align-items-center gap-2"><i class="bi bi-envelope text-muted"></i> <span class="text-truncate">${agent.email}</span></div>
+                  </div>
+
+                  <!-- CRM Performance metrics -->
+                  <div class="agent-meta-grid">
+                    <div class="agent-meta-item">
+                      <span class="agent-meta-label">Experience</span>
+                      <span class="agent-meta-value">${agent.experience} Yrs</span>
+                    </div>
+                    <div class="agent-meta-item">
+                      <span class="agent-meta-label">Listed / Sold</span>
+                      <span class="agent-meta-value">${agent.propertiesListed} / ${agent.propertiesSold}</span>
+                    </div>
+                    <div class="agent-meta-item">
+                      <span class="agent-meta-label">CRM Revenue</span>
+                      <span class="agent-meta-value text-primary font-mono">${formatCurrency(agent.revenueGenerated)}</span>
+                    </div>
+                    <div class="agent-meta-item">
+                      <span class="agent-meta-label">Avg Rating</span>
+                      <span class="agent-meta-value text-warning"><i class="bi bi-star-fill me-1"></i>${agent.rating}</span>
+                    </div>
+                  </div>
+
+                  <!-- Performance Target Bar -->
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.725rem;">
+                      <span class="text-muted">Direct Sales Conversion</span>
+                      <span class="fw-bold text-main">${perfPercent}%</span>
+                    </div>
+                    <div class="progress" style="height: 5px; background-color: rgba(255,255,255,0.05);">
+                      <div class="progress-bar bg-primary" role="progressbar" style="width: ${perfPercent}%"></div>
+                    </div>
+                  </div>
+
+                  <!-- Social and actions -->
+                  <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top border-light-subtle">
+                    <div class="d-flex gap-2">
+                      <a href="mailto:${agent.email}" class="btn btn-sm btn-outline-secondary rounded-circle" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="Send Email"><i class="bi bi-envelope"></i></a>
+                      <a href="https://linkedin.com" target="_blank" class="btn btn-sm btn-outline-secondary rounded-circle" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="LinkedIn Dossier"><i class="bi bi-linkedin"></i></a>
+                      <a href="sms:${agent.phone}" class="btn btn-sm btn-outline-secondary rounded-circle" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="Direct Message"><i class="bi bi-chat-text"></i></a>
+                    </div>
+
+                    <div class="d-flex gap-1">
+                      <button class="btn btn-sm btn-outline-primary" onclick="showQuickView('${agent.id}')" title="Quick View CRM Profile">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                      <a href="agent-details.html?id=${agent.id}" class="btn btn-sm btn-primary">Profile</a>
+                      <button class="btn btn-sm btn-outline-secondary" onclick="editAgent('${agent.id}')" title="Edit Properties"><i class="bi bi-pencil"></i></button>
+                      <button class="btn btn-sm btn-outline-danger" onclick="triggerDeleteAgent('${agent.id}', '${agent.name}')" title="Purge Record"><i class="bi bi-trash"></i></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          container.insertAdjacentHTML('beforeend', cardHTML);
+        });
+
+        // Re-attach Tilting
+        setupCardMovements();
+      }
+
+      function renderListView(data) {
+        const tbody = document.getElementById('list-view-tbody');
+        tbody.innerHTML = '';
+
+        data.forEach(agent => {
+          let statusClass = "text-success bg-success-light";
+          if (agent.status === 'Busy') statusClass = "text-warning bg-warning-light";
+          if (agent.status === 'On Leave') statusClass = "text-danger bg-danger-subtle";
+          if (agent.status === 'Offline') statusClass = "text-secondary bg-body-tertiary";
+
+          let isSelected = selectedAgentIds.includes(agent.id) ? 'checked' : '';
+
+          let rowHTML = `
+            <tr id="agent-row-${agent.id}">
+              <td class="ps-3">
+                <div class="form-check">
+                  <input class="form-check-input select-agent-checkbox-list" type="checkbox" id="check-list-${agent.id}" ${isSelected} onclick="toggleAgentSelection('${agent.id}', this)" />
+                </div>
+              </td>
+              <td>
+                <img src="${agent.photo}" alt="${agent.name}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" />
+              </td>
+              <td>
+                <div class="fw-semibold text-main">${agent.name}</div>
+                <div class="text-muted" style="font-size: 0.725rem;">${agent.email}</div>
+              </td>
+              <td><span class="font-mono text-muted" style="font-size: 0.75rem;">${agent.id}</span></td>
+              <td><span class="badge bg-secondary-subtle text-muted" style="font-size: 0.7rem;">${agent.designation}</span></td>
+              <td><span style="font-size: 0.85rem;"><i class="bi bi-geo-alt text-primary me-1"></i>${agent.city}</span></td>
+              <td><span class="fw-bold text-main" style="font-size: 0.85rem;">${agent.propertiesListed} Listed</span></td>
+              <td><span class="text-success fw-bold" style="font-size: 0.85rem;">${agent.propertiesSold} Sold</span></td>
+              <td><span class="text-warning"><i class="bi bi-star-fill me-1"></i>${agent.rating}</span></td>
+              <td>
+                <span class="badge ${statusClass}" style="font-size: 0.7rem; text-transform: uppercase;">${agent.status}</span>
+              </td>
+              <td class="pe-3 text-end">
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary rounded-pill py-1 px-3" type="button" data-bs-toggle="dropdown">
+                    Actions <i class="bi bi-chevron-down ms-1" style="font-size: 0.75rem;"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="agent-details.html?id=${agent.id}"><i class="bi bi-person-circle me-2"></i>Full CRM dossier</a></li>
+                    <li><button class="dropdown-item" onclick="showQuickView('${agent.id}')"><i class="bi bi-eye me-2"></i>Quick Inspection</button></li>
+                    <li><a class="dropdown-item" href="mailto:${agent.email}"><i class="bi bi-envelope me-2"></i>Direct Campaign Email</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item" onclick="editAgent('${agent.id}')"><i class="bi bi-pencil me-2"></i>Edit Settings</button></li>
+                    <li><button class="dropdown-item text-danger" onclick="triggerDeleteAgent('${agent.id}', '${agent.name}')"><i class="bi bi-trash me-2"></i>Purge CRM Asset</button></li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          `;
+          tbody.insertAdjacentHTML('beforeend', rowHTML);
+        });
+      }
+
+      function renderTopPerformers() {
+        const container = document.getElementById('top-performers-container');
+        container.innerHTML = '';
+
+        // Sort by revenue generated
+        let topAgents = [...agentsData].sort((a, b) => b.revenueGenerated - a.revenueGenerated).slice(0, 5);
+
+        topAgents.forEach((agent, index) => {
+          let rankIcon = "bi-award";
+          let badgeColor = "bg-primary-subtle text-primary";
+          if (index === 0) { rankIcon = "bi-trophy-fill text-warning"; badgeColor = "bg-warning-light text-warning"; }
+          else if (index === 1) { rankIcon = "bi-award-fill text-secondary"; badgeColor = "bg-secondary-subtle text-secondary"; }
+
+          let itemHTML = `
+            <div class="performer-item-row">
+              <div class="fw-bold text-muted font-title" style="width: 15px;">${index + 1}</div>
+              <img src="${agent.photo}" alt="${agent.name}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" />
+              <div class="flex-grow-1 min-width-0">
+                <div class="fw-bold text-truncate text-main" style="font-size: 0.825rem;">${agent.name}</div>
+                <div class="text-muted text-truncate" style="font-size: 0.7rem;">${agent.designation}</div>
+              </div>
+              <div class="text-end">
+                <span class="d-block fw-bold text-primary font-mono" style="font-size: 0.8rem;">${formatCurrency(agent.revenueGenerated)}</span>
+                <span class="text-muted" style="font-size: 0.65rem;">${agent.propertiesSold} Properties Sold</span>
+              </div>
+            </div>
+          `;
+          container.insertAdjacentHTML('beforeend', itemHTML);
+        });
+      }
+
+      function renderRecentAgents() {
+        const container = document.getElementById('recent-agents-container');
+        container.innerHTML = '';
+
+        // Sort by joinedDate
+        let recent = [...agentsData].sort((a, b) => new Date(b.joinedDate) - new Date(a.joinedDate)).slice(0, 4);
+
+        recent.forEach(agent => {
+          let d = new Date(agent.joinedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          let itemHTML = `
+            <div class="d-flex align-items-center gap-3 p-2 rounded-3 bg-body border border-light-subtle">
+              <img src="${agent.photo}" alt="${agent.name}" class="rounded-circle" style="width: 36px; height: 36px; object-fit: cover;" />
+              <div class="flex-grow-1">
+                <span class="fw-bold text-main d-block" style="font-size: 0.8rem;">${agent.name}</span>
+                <span class="text-muted d-block" style="font-size: 0.7rem;">Joined: ${d}</span>
+              </div>
+              <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">${agent.city}</span>
+            </div>
+          `;
+          container.insertAdjacentHTML('beforeend', itemHTML);
+        });
+      }
+
+      function populateDispatchSelect() {
+        const select = document.getElementById('dispatch-agent-select');
+        select.innerHTML = '<option value="">Select Agent...</option>';
+        agentsData.forEach(agent => {
+          select.insertAdjacentHTML('beforeend', `<option value="${agent.name}">${agent.name} (${agent.id})</option>`);
+        });
+      }
+
+      // ----------------------------------------------------
+      // SELECTION & BULK ACTIONS ENGINE
+      // ----------------------------------------------------
+      function toggleAgentSelection(id, checkbox) {
+        if (checkbox.checked) {
+          if (!selectedAgentIds.includes(id)) selectedAgentIds.push(id);
+        } else {
+          selectedAgentIds = selectedAgentIds.filter(item => item !== id);
+        }
+
+        // Sync visual checkboxes across views
+        const gridBox = document.getElementById(`check-grid-${id}`);
+        const listBox = document.getElementById(`check-list-${id}`);
+        if (gridBox) gridBox.checked = checkbox.checked;
+        if (listBox) listBox.checked = checkbox.checked;
+
+        updateBulkStatusBar();
+      }
+
+      function toggleAllListCheckboxes(masterCheckbox) {
+        const boxes = document.querySelectorAll('.select-agent-checkbox-list');
+        boxes.forEach(box => {
+          box.checked = masterCheckbox.checked;
+          const agentId = box.id.replace('check-list-', '');
+          if (masterCheckbox.checked) {
+            if (!selectedAgentIds.includes(agentId)) selectedAgentIds.push(agentId);
+          } else {
+            selectedAgentIds = selectedAgentIds.filter(item => item !== agentId);
+          }
+          
+          // Sync grid box checkbox
+          const gridBox = document.getElementById(`check-grid-${agentId}`);
+          if (gridBox) gridBox.checked = masterCheckbox.checked;
+        });
+
+        updateBulkStatusBar();
+      }
+
+      function updateBulkStatusBar() {
+        const bar = document.getElementById('bulk-actions-bar');
+        const counter = document.getElementById('bulk-select-count');
+        
+        counter.textContent = selectedAgentIds.length;
+        if (selectedAgentIds.length > 0) {
+          bar.classList.add('active');
+        } else {
+          bar.classList.remove('active');
+        }
+      }
+
+      function executeBulkAction() {
+        const action = document.getElementById('bulk-action-select').value;
+        if (!action) {
+          alert("Please specify a valid bulk action variable.");
+          return;
+        }
+
+        if (confirm(`Execute "${action}" campaign across ${selectedAgentIds.length} chosen CRM records?`)) {
+          showSuccessToast(`Successfully executed "${action}" action on selected agents.`);
+          selectedAgentIds = [];
+          document.querySelectorAll('.select-agent-checkbox').forEach(box => box.checked = false);
+          document.querySelectorAll('.select-agent-checkbox-list').forEach(box => box.checked = false);
+          const masterCheck = document.getElementById('bulk-select-all-list');
+          if (masterCheck) masterCheck.checked = false;
+          updateBulkStatusBar();
+        }
+      }
+
+      // ----------------------------------------------------
+      // ADVANCED FILTERS MANAGEMENT
+      // ----------------------------------------------------
+      function applyAdvancedFilters() {
+        activeFilterSet.name = document.getElementById('filter-name').value;
+        activeFilterSet.id = document.getElementById('filter-id').value;
+        activeFilterSet.status = document.getElementById('filter-status').value;
+        activeFilterSet.department = document.getElementById('filter-department').value;
+        activeFilterSet.specialization = document.getElementById('filter-specialization').value;
+        activeFilterSet.city = document.getElementById('filter-city').value;
+        activeFilterSet.experience = document.getElementById('filter-experience').value;
+        activeFilterSet.rating = document.getElementById('filter-rating').value;
+        activeFilterSet.language = document.getElementById('filter-language').value;
+        activeFilterSet.date = document.getElementById('filter-date').value;
+
+        filterAndRender();
+        showSuccessToast("Advanced filters applied.");
+      }
+
+      function resetAdvancedFilters() {
+        document.getElementById('filter-name').value = '';
+        document.getElementById('filter-id').value = '';
+        document.getElementById('filter-status').value = 'All';
+        document.getElementById('filter-department').value = 'All';
+        document.getElementById('filter-specialization').value = 'All';
+        document.getElementById('filter-city').value = 'All';
+        document.getElementById('filter-experience').value = '';
+        document.getElementById('filter-rating').value = 'All';
+        document.getElementById('filter-language').value = 'All';
+        document.getElementById('filter-date').value = '';
+
+        activeFilterSet = {
+          search: '',
+          name: '',
+          id: '',
+          status: 'All',
+          department: 'All',
+          specialization: 'All',
+          city: 'All',
+          experience: '',
+          rating: 'All',
+          language: 'All',
+          date: ''
+        };
+
+        const search1 = document.getElementById('search-agent-input');
+        const search2 = document.getElementById('global-search-agents');
+        if (search1) search1.value = '';
+        if (search2) search2.value = '';
+
+        filterAndRender();
+        showSuccessToast("CRM Filters reset to system defaults.");
+      }
+
+      // ----------------------------------------------------
+      // FAVORITE & DELETE MUTATIONS
+      // ----------------------------------------------------
+      function toggleFavorite(event, id) {
+        event.stopPropagation();
+        event.preventDefault();
+        const btn = event.currentTarget;
+        const index = favorites.indexOf(id);
+
+        if (index > -1) {
+          favorites.splice(index, 1);
+          btn.classList.remove('active');
+          btn.querySelector('i').className = 'bi bi-heart';
+          showSuccessToast("Agent removed from client watchlist.");
+        } else {
+          favorites.push(id);
+          btn.classList.add('active');
+          btn.querySelector('i').className = 'bi bi-heart-fill';
+          showSuccessToast("Agent added to priority client watchlist.");
+        }
+
+        localStorage.setItem('agent_favorites', JSON.stringify(favorites));
+      }
+
+      let agentIdToDelete = null;
+      function triggerDeleteAgent(id, name) {
+        agentIdToDelete = id;
+        document.getElementById('delete-agent-display-name').textContent = name;
+        document.getElementById('delete-agent-display-id').textContent = `Assigned ID: ${id}`;
+        
+        const myModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        myModal.show();
+      }
+
+      document.getElementById('confirm-delete-action-btn').addEventListener('click', () => {
+        if (agentIdToDelete) {
+          agentsData = agentsData.filter(item => item.id !== agentIdToDelete);
+          initRosterView();
+          populateDispatchSelect();
+          
+          const modalEl = document.getElementById('deleteConfirmModal');
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          if (modalInstance) modalInstance.hide();
+          
+          showSuccessToast(`Agent listing ${agentIdToDelete} purged successfully.`);
+          agentIdToDelete = null;
+        }
+      });
+
+      function editAgent(id) {
+        window.location.href = `add-agent.html?edit=${id}`;
+      }
+
+      // ----------------------------------------------------
+      // QUICK VIEW DOSSIER MODAL
+      // ----------------------------------------------------
+      function showQuickView(id) {
+        const agent = agentsData.find(item => item.id === id);
+        if (!agent) return;
+
+        const body = document.getElementById('quick-view-modal-body');
+        
+        let skillsHTML = agent.skills.map(skill => `<span class="badge bg-secondary-subtle text-muted me-1 mb-1" style="font-size: 0.725rem;">${skill}</span>`).join('');
+        
+        body.innerHTML = `
+          <div class="row g-4">
+            <div class="col-md-4 text-center">
+              <img src="${agent.photo}" alt="${agent.name}" class="img-fluid rounded-3 mb-3 shadow-sm border" style="max-height: 200px; width: 100%; object-fit: cover;" />
+              <span class="badge bg-primary text-black fw-bold px-3 py-2 font-title d-block mb-2" style="font-size: 0.75rem;">${agent.designation}</span>
+              <span class="text-muted d-block font-mono" style="font-size: 0.75rem;"><i class="bi bi-tag"></i> ID: ${agent.id}</span>
+            </div>
+            <div class="col-md-8">
+              <h4 class="font-title fw-bold text-main mb-1">${agent.name}</h4>
+              <p class="text-primary fw-semibold mb-3" style="font-size: 0.85rem;"><i class="bi bi-diagram-3-fill me-1"></i> ${agent.department} Department</p>
+              
+              <div class="row g-3">
+                <div class="col-6">
+                  <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Primary City</span>
+                  <span class="fw-semibold text-main">${agent.city}</span>
+                </div>
+                <div class="col-6">
+                  <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Specialization Area</span>
+                  <span class="fw-semibold text-main">${agent.specialization}</span>
+                </div>
+                <div class="col-6">
+                  <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Direct Line</span>
+                  <span class="fw-semibold text-main">${agent.phone}</span>
+                </div>
+                <div class="col-6">
+                  <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Enterprise Email</span>
+                  <span class="fw-semibold text-main text-truncate d-block">${agent.email}</span>
+                </div>
+              </div>
+
+              <hr class="border-secondary opacity-25" />
+
+              <h6 class="font-title fw-bold text-main mb-2">Operational Analytics</h6>
+              <div class="row g-2">
+                <div class="col-4 text-center bg-body border rounded-2 p-2">
+                  <span class="text-muted d-block" style="font-size: 0.65rem;">Active Listings</span>
+                  <span class="fw-bold font-title text-main" style="font-size: 0.9rem;">${agent.propertiesListed} Assets</span>
+                </div>
+                <div class="col-4 text-center bg-body border rounded-2 p-2">
+                  <span class="text-muted d-block" style="font-size: 0.65rem;">Direct Sales</span>
+                  <span class="fw-bold font-title text-success" style="font-size: 0.9rem;">${agent.propertiesSold} Sold</span>
+                </div>
+                <div class="col-4 text-center bg-body border rounded-2 p-2">
+                  <span class="text-muted d-block" style="font-size: 0.65rem;">Enterprise Volume</span>
+                  <span class="fw-bold font-title text-primary font-mono" style="font-size: 0.85rem;">${formatCurrency(agent.revenueGenerated)}</span>
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <span class="text-muted d-block mb-1" style="font-size: 0.7rem; text-transform: uppercase;">Expertise Credentials</span>
+                <div>${skillsHTML}</div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('quick-view-full-profile-btn').href = `agent-details.html?id=${agent.id}`;
+
+        const myModal = new bootstrap.Modal(document.getElementById('quickViewAgentModal'));
+        myModal.show();
+      }
+
+      // ----------------------------------------------------
+      // DISPATCH sequence
+      // ----------------------------------------------------
+      function submitQuickDispatch(event) {
+        event.preventDefault();
+        const form = document.getElementById('quick-dispatch-form');
+        if (!form.checkValidity()) {
+          event.stopPropagation();
+          form.classList.add('was-validated');
+          return;
+        }
+
+        const agent = document.getElementById('dispatch-agent-select').value;
+        const type = document.getElementById('dispatch-action-type').value;
+        const notes = document.getElementById('dispatch-notes').value;
+
+        showSuccessToast(`Dispatch sequence "${type}" successfully routed to ${agent}.`);
+        form.reset();
+        form.classList.remove('was-validated');
+      }
+
+      // ----------------------------------------------------
+      // CHART.JS CRM ANALYTICS
+      // ----------------------------------------------------
+      function initPerformanceAnalyticsChart() {
+        const ctx = document.getElementById('performanceAnalyticsChart');
+        if (!ctx) return;
+
+        if (currentChart) {
+          currentChart.destroy();
+        }
+
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+        const isDark = currentTheme === 'dark';
+
+        // Styling palettes based on the high fidelity real-estate brand variables
+        const primaryColor = isDark ? '#D4AF37' : '#B8860B'; // Premium Gold
+        const secondaryColor = '#3B82F6'; // Azure Blue
+        const textColor = isDark ? '#94A3B8' : '#64748B'; // Muted Slate
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+
+        let chartData = {};
+
+        if (activeAnalyticsView === 'sales') {
+          chartData = {
+            type: 'bar',
+            data: {
+              labels: ['Marcus', 'Sofia', 'Kenji', 'Amara', 'Daniel', 'Elena', 'Liam', 'Chloe', 'Zayn', 'Isabella', 'Xavier', 'Samantha'],
+              datasets: [
+                {
+                  label: 'CRM Revenue Volume ($ Million)',
+                  data: [124.5, 85.2, 142.0, 91.0, 64.0, 118.0, 38.5, 54.2, 49.8, 79.5, 115.0, 42.0],
+                  backgroundColor: primaryColor,
+                  borderRadius: 6,
+                  borderWidth: 0
+                }
+              ]
+            }
+          };
+        } else if (activeAnalyticsView === 'properties') {
+          chartData = {
+            type: 'line',
+            data: {
+              labels: ['Marcus', 'Sofia', 'Kenji', 'Amara', 'Daniel', 'Elena', 'Liam', 'Chloe', 'Zayn', 'Isabella', 'Xavier', 'Samantha'],
+              datasets: [
+                {
+                  label: 'Properties Listed',
+                  data: [48, 32, 22, 64, 15, 39, 42, 25, 19, 51, 14, 30],
+                  borderColor: secondaryColor,
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  tension: 0.4,
+                  fill: true,
+                  borderWidth: 2
+                },
+                {
+                  label: 'Properties Sold',
+                  data: [39, 28, 18, 56, 11, 35, 33, 21, 15, 47, 12, 26],
+                  borderColor: '#10B981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  tension: 0.4,
+                  fill: true,
+                  borderWidth: 2
+                }
+              ]
+            }
+          };
+        } else if (activeAnalyticsView === 'commission') {
+          chartData = {
+            type: 'radar',
+            data: {
+              labels: ['Luxury Residential', 'High-Rise Penthouse', 'Commercial Lease', 'Retail Center', 'Industrial Assets', 'Waterfront Real Estate'],
+              datasets: [
+                {
+                  label: 'Commission Share Ratio (%)',
+                  data: [90, 85, 70, 75, 60, 80],
+                  borderColor: primaryColor,
+                  backgroundColor: 'rgba(212, 175, 55, 0.15)',
+                  borderWidth: 2
+                }
+              ]
+            },
+            options: {
+              scales: {
+                r: {
+                  grid: { color: gridColor },
+                  angleLines: { color: gridColor },
+                  pointLabels: { color: textColor }
+                }
+              }
+            }
+          };
+        }
+
+        // Generic chart option merging
+        const options = {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: textColor,
+                font: { family: 'Plus Jakarta Sans', weight: '600' }
+              }
+            }
+          },
+          scales: activeAnalyticsView !== 'commission' ? {
+            x: {
+              grid: { color: gridColor },
+              ticks: { color: textColor, font: { size: 10 } }
+            },
+            y: {
+              grid: { color: gridColor },
+              ticks: { color: textColor }
+            }
+          } : {}
+        };
+
+        currentChart = new Chart(ctx, {
+          type: chartData.type,
+          data: chartData.data,
+          options: chartData.options ? Object.assign({}, options, chartData.options) : options
+        });
+      }
+
+      function toggleAnalyticsView(view) {
+        activeAnalyticsView = view;
+        
+        document.getElementById('chart-sales-toggle').classList.remove('active');
+        document.getElementById('chart-properties-toggle').classList.remove('active');
+        document.getElementById('chart-commission-toggle').classList.remove('active');
+
+        document.getElementById(`chart-${view}-toggle`).classList.add('active');
+
+        initPerformanceAnalyticsChart();
+      }
+
+      // ----------------------------------------------------
+      // UTILITY HELPERS
+      // ----------------------------------------------------
+      function formatCurrency(val) {
+        if (val >= 1000000) {
+          return `$${(val / 1000000).toFixed(1)}M`;
+        }
+        return `$${(val / 1000).toFixed(0)}K`;
+      }
+
+      function showSuccessToast(message) {
+        document.getElementById('toast-message-text').textContent = message;
+        const toastEl = document.getElementById('dispatch-success-toast');
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+      }
+
+      function exportCSVData() {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "ID,Name,Designation,City,Phone,Email,Listed,Sold,Revenue,Rating,Status\r\n";
+        
+        agentsData.forEach(agent => {
+          let row = `${agent.id},"${agent.name}","${agent.designation}","${agent.city}","${agent.phone}","${agent.email}",${agent.propertiesListed},${agent.propertiesSold},${agent.revenueGenerated},${agent.rating},"${agent.status}"`;
+          csvContent += row + "\r\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "UrbanHub_CRM_Roster.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showSuccessToast("Dossier list compiled and CSV download initiated.");
+      }
+
+      function setupCardMovements() {
+        const cards = document.querySelectorAll('.agent-card-premium');
+        cards.forEach(card => {
+          card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

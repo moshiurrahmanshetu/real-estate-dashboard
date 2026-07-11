@@ -1,0 +1,1755 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customer Dossier - UrbanHub CRM</title>
+
+    <!-- Theme Choice Initialization -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* High-fidelity detail page custom styles */
+      .glow-card {
+        position: relative;
+        overflow: hidden;
+      }
+      .card-glow-effect {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none;
+        background: radial-gradient(circle 120px at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(var(--uh-primary-rgb), 0.08), transparent 80%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 1;
+      }
+      .glow-card:hover .card-glow-effect {
+        opacity: 1;
+      }
+      .lift-on-hover {
+        transition: var(--uh-transition-smooth);
+      }
+      .lift-on-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--uh-shadow-lg) !important;
+      }
+      .avatar-ring {
+        border: 4px solid var(--uh-border-card);
+        box-shadow: 0 0 0 3px rgba(var(--uh-primary-rgb), 0.25);
+      }
+      .online-dot {
+        position: absolute;
+        bottom: 8px; right: 8px;
+        width: 14px; height: 14px;
+        border-radius: 50%;
+        border: 2px solid var(--uh-bg-card);
+      }
+      .online-dot.active {
+        background-color: var(--uh-success);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+      }
+      .online-dot.inactive {
+        background-color: var(--uh-text-muted);
+      }
+
+      /* Skeletons */
+      .skeleton-placeholder {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255, 255, 255, 0.05) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading-flow 1.5s infinite;
+        border-radius: 6px;
+      }
+      @keyframes skeleton-loading-flow {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-hidden {
+        display: none !important;
+      }
+      .fade-transition {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+
+      /* Custom Mini Timeline */
+      .timeline-badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+
+      /* Print CSS */
+      @media print {
+        .sidebar-wrapper, .top-header, .btn-toolbar-print, .btn-actions-panel, .col-actions-sidebar, .notes-composer {
+          display: none !important;
+        }
+        .main-content-wrapper {
+          margin-left: 0 !important;
+          padding: 0 !important;
+        }
+        .uh-card {
+          border: 1px solid #ddd !important;
+          box-shadow: none !important;
+          background: #fff !important;
+          color: #000 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar mobile overlay backdrop -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon"><i class="bi bi-building-up"></i></div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link active">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input" id="global-search-customers" placeholder="Quick ID search..." onkeydown="handleQuickSearch(event)" />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <!-- Client Selection Dropdown for Easy Switch Demo -->
+            <div class="dropdown me-2">
+              <button class="btn btn-xs btn-outline-primary dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" style="font-size: 0.75rem;">
+                <i class="bi bi-person-circle"></i> Switch Client
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium">
+                <li><a class="dropdown-item" href="customer-details.html?id=CST-5082">Arthur Pendelton (VIP Buyer)</a></li>
+                <li><a class="dropdown-item" href="customer-details.html?id=CST-3194">Isabella Rossi (VIP Seller)</a></li>
+                <li><a class="dropdown-item" href="customer-details.html?id=CST-4211">David Chen (VIP Tenant)</a></li>
+              </ul>
+            </div>
+
+            <button id="theme-toggle" class="header-btn" title="Switch Theme">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE CONTAINER -->
+        <div class="page-body">
+          <!-- BREADCRUMBS & TITLE -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 animate-fade-down">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item"><a href="customers.html" class="text-decoration-none text-muted">Customers</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Customer Details</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Customer CRM Dossier</h1>
+            </div>
+            <div class="d-flex gap-2 btn-toolbar-print">
+              <button class="btn btn-outline-secondary d-flex align-items-center gap-1" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span>Print Profile</span>
+              </button>
+              <a href="customers.html" class="btn btn-outline-primary d-flex align-items-center gap-1">
+                <i class="bi bi-arrow-left"></i> <span>Back to Customers</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- SKELETON LOADERS -->
+          <div id="skeleton-loader">
+            <div class="uh-card p-4 mb-4">
+              <div class="row align-items-center g-3">
+                <div class="col-auto">
+                  <div class="skeleton-placeholder" style="width: 100px; height: 100px; border-radius: 50%;"></div>
+                </div>
+                <div class="col">
+                  <div class="skeleton-placeholder mb-2" style="height: 24px; width: 30%;"></div>
+                  <div class="skeleton-placeholder mb-2" style="height: 16px; width: 20%;"></div>
+                  <div class="skeleton-placeholder" style="height: 14px; width: 40%;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-6 col-md-3" v-for="n in 4">
+                <div class="uh-card p-3">
+                  <div class="skeleton-placeholder mb-2" style="height: 14px; width: 50%;"></div>
+                  <div class="skeleton-placeholder" style="height: 28px; width: 80%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REAL DATA CONTAINER -->
+          <div id="real-data" class="fade-transition skeleton-hidden" style="opacity: 0;">
+            <!-- PROFILE HEADER BLOCK -->
+            <div class="uh-card p-4 mb-4 glow-card" data-aos="fade-up">
+              <div class="card-glow-effect"></div>
+              <div class="row align-items-center g-4 position-relative" style="z-index: 2;">
+                <!-- Photo & Badges -->
+                <div class="col-12 col-md-auto text-center text-md-start">
+                  <div class="position-relative d-inline-block">
+                    <img id="client-photo" src="" class="rounded-circle avatar-ring" style="width: 120px; height: 120px; object-fit: cover;" alt="Avatar" />
+                    <span id="client-online-dot" class="online-dot active"></span>
+                  </div>
+                </div>
+                <!-- Details -->
+                <div class="col-12 col-md text-center text-md-start">
+                  <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2 flex-wrap mb-2">
+                    <h2 id="client-name" class="h3 font-title fw-bold text-main mb-0">Client Name</h2>
+                    <span id="badge-verified" class="text-primary" title="Identity Verified"><i class="bi bi-patch-check-fill" style="font-size: 1.2rem;"></i></span>
+                    <span id="badge-vip" class="badge bg-warning text-dark font-title fw-bold px-2 py-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">VIP CLIENT</span>
+                  </div>
+                  <p class="text-muted mb-2 small">
+                    <span id="client-id" class="fw-semibold text-primary me-3">CST-XXXX</span>
+                    <i class="bi bi-person-fill-gear me-1"></i> <span id="client-type" class="me-3">Buyer</span>
+                    <i class="bi bi-calendar-check me-1"></i> Registered: <span id="client-reg-date">July 10, 2026</span>
+                  </p>
+                  <div class="row g-2 mt-2 max-width-600">
+                    <div class="col-6 col-sm-4 text-start">
+                      <span class="text-muted d-block small uppercase" style="font-size: 0.65rem;">Assigned Advisor</span>
+                      <strong id="client-advisor" class="text-main small">Marcus Vance</strong>
+                    </div>
+                    <div class="col-6 col-sm-4 text-start">
+                      <span class="text-muted d-block small uppercase" style="font-size: 0.65rem;">Interest Profile</span>
+                      <strong id="client-pref-prop" class="text-main small">Luxury Villa</strong>
+                    </div>
+                    <div class="col-12 col-sm-4 text-start">
+                      <span class="text-muted d-block small uppercase" style="font-size: 0.65rem;">Allocated Capital Outlay</span>
+                      <strong id="client-budget" class="text-primary small">$15M - $25M</strong>
+                    </div>
+                  </div>
+                </div>
+                <!-- Core Interactions Line -->
+                <div class="col-12 col-lg-auto text-center text-lg-end d-flex flex-md-row flex-column justify-content-center gap-2">
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-success d-flex align-items-center justify-content-center gap-1" onclick="triggerChannelDispatch('Call')">
+                      <i class="bi bi-telephone-fill"></i> Call
+                    </button>
+                    <button class="btn btn-primary d-flex align-items-center justify-content-center gap-1" onclick="triggerChannelDispatch('Email')">
+                      <i class="bi bi-envelope-fill"></i> Email
+                    </button>
+                    <button class="btn btn-info d-flex align-items-center justify-content-center gap-1 text-white" onclick="triggerChannelDispatch('Message')">
+                      <i class="bi bi-whatsapp"></i> Chat
+                    </button>
+                  </div>
+                  <button class="btn btn-sm btn-outline-primary d-flex align-items-center justify-content-center gap-1" data-bs-toggle="modal" data-bs-target="#scheduleMeetingModal">
+                    <i class="bi bi-calendar-plus"></i> Schedule Meeting
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- CRM METRIC STATS GRID -->
+            <div class="row g-3 mb-4" data-aos="fade-up">
+              <!-- Purchased -->
+              <div class="col-6 col-md-3 col-xl">
+                <div class="uh-card p-3 lift-on-hover text-center">
+                  <span class="text-muted d-block uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">ACQUISITIONS</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                    <h3 class="font-title fw-bold mb-0 animate-counter" id="counter-purchased" data-target="3">0</h3>
+                    <div class="text-success small"><i class="bi bi-house-check-fill"></i></div>
+                  </div>
+                  <span class="text-muted small" style="font-size: 0.7rem;">Properties Purchased</span>
+                </div>
+              </div>
+              <!-- Rented -->
+              <div class="col-6 col-md-3 col-xl">
+                <div class="uh-card p-3 lift-on-hover text-center">
+                  <span class="text-muted d-block uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">LEASES</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                    <h3 class="font-title fw-bold mb-0 animate-counter" id="counter-rented" data-target="1">0</h3>
+                    <div class="text-info small"><i class="bi bi-key-fill"></i></div>
+                  </div>
+                  <span class="text-muted small" style="font-size: 0.7rem;">Active Rental Slots</span>
+                </div>
+              </div>
+              <!-- Visits -->
+              <div class="col-6 col-md-3 col-xl">
+                <div class="uh-card p-3 lift-on-hover text-center">
+                  <span class="text-muted d-block uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">SITE TOURS</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                    <h3 class="font-title fw-bold mb-0 animate-counter" id="counter-visits" data-target="18">0</h3>
+                    <div class="text-warning small"><i class="bi bi-eye-fill"></i></div>
+                  </div>
+                  <span class="text-muted small" style="font-size: 0.7rem;">Inspections Scheduled</span>
+                </div>
+              </div>
+              <!-- Total Transactions -->
+              <div class="col-6 col-md-3 col-xl">
+                <div class="uh-card p-3 lift-on-hover text-center">
+                  <span class="text-muted d-block uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">PIPELINE DEALS</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                    <h3 class="font-title fw-bold mb-0 animate-counter" id="counter-deals" data-target="4">0</h3>
+                    <div class="text-primary small"><i class="bi bi-briefcase-fill"></i></div>
+                  </div>
+                  <span class="text-muted small" style="font-size: 0.7rem;">Contract Signatures</span>
+                </div>
+              </div>
+              <!-- Lifetime Value -->
+              <div class="col-12 col-md-6 col-xl">
+                <div class="uh-card p-3 lift-on-hover text-center">
+                  <span class="text-muted d-block uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">LIFETIME VOLUME</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                    <h3 class="font-title fw-bold text-primary mb-0" id="counter-ltv">$34.5M</h3>
+                    <div class="text-primary small"><i class="bi bi-currency-dollar"></i></div>
+                  </div>
+                  <span class="text-muted small" style="font-size: 0.7rem;">Capital Transactions</span>
+                </div>
+              </div>
+              <!-- Open Inquiries -->
+              <div class="col-4 col-md-3 col-xl">
+                <div class="uh-card p-3 lift-on-hover text-center">
+                  <span class="text-muted d-block uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">INQUIRIES</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                    <h3 class="font-title fw-bold mb-0 animate-counter" id="counter-inquiries" data-target="2">0</h3>
+                    <div class="text-info small"><i class="bi bi-chat-dots-fill"></i></div>
+                  </div>
+                  <span class="text-muted small" style="font-size: 0.7rem;">Pending Solicitations</span>
+                </div>
+              </div>
+              <!-- Appointments -->
+              <div class="col-4 col-md-3 col-xl">
+                <div class="uh-card p-3 lift-on-hover text-center">
+                  <span class="text-muted d-block uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">APPOINTMENTS</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                    <h3 class="font-title fw-bold mb-0 animate-counter" id="counter-appts" data-target="3">0</h3>
+                    <div class="text-danger small"><i class="bi bi-calendar-event-fill"></i></div>
+                  </div>
+                  <span class="text-muted small" style="font-size: 0.7rem;">Scheduled Meetings</span>
+                </div>
+              </div>
+              <!-- Documents Uploaded -->
+              <div class="col-4 col-md-3 col-xl">
+                <div class="uh-card p-3 lift-on-hover text-center">
+                  <span class="text-muted d-block uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">DOCUMENTS</span>
+                  <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                    <h3 class="font-title fw-bold mb-0 animate-counter" id="counter-docs" data-target="8">0</h3>
+                    <div class="text-secondary small"><i class="bi bi-file-earmark-lock-fill"></i></div>
+                  </div>
+                  <span class="text-muted small" style="font-size: 0.7rem;">Secured Credentials</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DUAL-COLUMN LAYOUT -->
+            <div class="row g-4">
+              <!-- LEFT COLUMN (8/12) -->
+              <div class="col-12 col-lg-8">
+                <!-- BIOGRAPHY & ABOUT PANEL -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h4 class="font-title fw-bold mb-3"><i class="bi bi-file-person text-primary me-2"></i>Executive Summary</h4>
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <p id="client-bio" class="text-muted mb-3" style="font-size: 0.9rem; line-height: 1.6;">Biography loading...</p>
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Occupation</span>
+                      <strong id="client-job" class="text-main">Principal</strong>
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Corporate Body</span>
+                      <strong id="client-company" class="text-main">Elite Partners</strong>
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Spoken Languages</span>
+                      <strong id="client-languages" class="text-main">English</strong>
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Communication Channel</span>
+                      <strong id="client-comm-method" class="text-main">WhatsApp</strong>
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Household Size</span>
+                      <strong id="client-family" class="text-main">3 Members</strong>
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Portfolio Intent</span>
+                      <strong id="client-intent" class="text-main">Legacy Capital</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CONTACT PARTICULARS -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h4 class="font-title fw-bold mb-3"><i class="bi bi-telephone-outbound text-primary me-2"></i>Contact Particulars</h4>
+                  <div class="row g-3">
+                    <div class="col-12 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Direct Phone</span>
+                      <strong id="contact-phone" class="text-main">+1 (310) 555-0102</strong>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Enterprise Email</span>
+                      <strong id="contact-email" class="text-main">client@elite.com</strong>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Alternative Reach</span>
+                      <strong id="contact-alt" class="text-main">+1 (310) 555-0199</strong>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Residential Address</span>
+                      <strong id="contact-address" class="text-main">Los Angeles, CA</strong>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Executive Office</span>
+                      <strong id="contact-office" class="text-main">Century Plaza Towers</strong>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <span class="text-muted d-block small text-uppercase">Emergency Liaison</span>
+                      <strong id="contact-emergency" class="text-main">Sarah Pendelton</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- INVESTMENT PREFERENCES -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h4 class="font-title fw-bold mb-3"><i class="bi bi-sliders text-primary me-2"></i>Criterion &amp; Preferences</h4>
+                  <div class="row g-3">
+                    <div class="col-6 col-md-3">
+                      <span class="text-muted d-block small text-uppercase">Target Cities</span>
+                      <strong id="pref-city" class="text-main">Malibu</strong>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <span class="text-muted d-block small text-uppercase">Prime Quarters</span>
+                      <strong id="pref-area" class="text-main">Bel Air</strong>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <span class="text-muted d-block small text-uppercase">Budget Framework</span>
+                      <strong id="pref-budget" class="text-primary">$15M - $25M</strong>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <span class="text-muted d-block small text-uppercase">Preferred Area Floor</span>
+                      <strong id="pref-size" class="text-main">8K - 15K sq ft</strong>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <span class="text-muted d-block small text-uppercase">Bedrooms Range</span>
+                      <strong id="pref-beds" class="text-main">5 - 8 Bedrooms</strong>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <span class="text-muted d-block small text-uppercase">Bathrooms Range</span>
+                      <strong id="pref-baths" class="text-main">6 - 10 Bathrooms</strong>
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <span class="text-muted d-block small text-uppercase">Core Features / Amenities</span>
+                      <strong id="pref-amenities" class="text-main">Helipad, Pool, Wine Cellar</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ACTIVE PROPERTY INTEREST PANEL -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h4 class="font-title fw-bold mb-3"><i class="bi bi-houses-fill text-primary me-2"></i>Active Pipeline Interest</h4>
+                  <div class="row g-3" id="properties-grid">
+                    <!-- Dynamic properties cards -->
+                  </div>
+                </div>
+
+                <!-- HISTORICAL FILES TABS -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <ul class="nav nav-tabs nav-tabs-premium mb-3" role="tablist">
+                    <li class="nav-item">
+                      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-deals" type="button">Deals Completed</button>
+                    </li>
+                    <li class="nav-item">
+                      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-inquiries" type="button">Inquiries</button>
+                    </li>
+                    <li class="nav-item">
+                      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-appts" type="button">Tours &amp; Meetings</button>
+                    </li>
+                  </ul>
+                  <div class="tab-content">
+                    <!-- Transactions -->
+                    <div class="tab-pane fade show active" id="tab-deals">
+                      <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                          <thead>
+                            <tr class="small text-muted">
+                              <th>Acquisition Estate</th>
+                              <th>Venture</th>
+                              <th>Investment Value</th>
+                              <th>Closing Date</th>
+                              <th class="text-end">Filing</th>
+                            </tr>
+                          </thead>
+                          <tbody id="deals-table-body"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <!-- Inquiries -->
+                    <div class="tab-pane fade" id="tab-inquiries">
+                      <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                          <thead>
+                            <tr class="small text-muted">
+                              <th>Inquiry Estate</th>
+                              <th>Log Date</th>
+                              <th>Assigned Representative</th>
+                              <th class="text-end">Closing Index</th>
+                            </tr>
+                          </thead>
+                          <tbody id="inquiries-table-body"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <!-- Tours -->
+                    <div class="tab-pane fade" id="tab-appts">
+                      <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                          <thead>
+                            <tr class="small text-muted">
+                              <th>Scheduled Site</th>
+                              <th>Agenda Hour</th>
+                              <th>Assembly Spot</th>
+                              <th class="text-end">Desk Confirmation</th>
+                            </tr>
+                          </thead>
+                          <tbody id="appts-table-body"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- FINANCIAL SUMMARY & CHART -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="font-title fw-bold mb-0"><i class="bi bi-wallet2 text-primary me-2"></i>Financial Capital Ledger</h4>
+                    <span class="badge bg-primary-subtle text-primary small">USD Denominated</span>
+                  </div>
+                  <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3">
+                      <div class="p-3 bg-body rounded border text-center">
+                        <span class="text-muted d-block small">Spend Volume</span>
+                        <strong id="ledger-total" class="h5 font-title text-main">$34,500,000</strong>
+                      </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <div class="p-3 bg-body rounded border text-center">
+                        <span class="text-muted d-block small">Pending Escrow</span>
+                        <strong id="ledger-pending" class="h5 font-title text-warning">$18,200,000</strong>
+                      </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <div class="p-3 bg-body rounded border text-center">
+                        <span class="text-muted d-block small">Paid Volume</span>
+                        <strong id="ledger-completed" class="h5 font-title text-success">$34,500,000</strong>
+                      </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <div class="p-3 bg-body rounded border text-center">
+                        <span class="text-muted d-block small">Escrow Adjustments</span>
+                        <strong id="ledger-refunds" class="h5 font-title text-muted">$0</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Chart Container -->
+                  <div style="position: relative; height: 240px; width: 100%;">
+                    <canvas id="financialChart"></canvas>
+                  </div>
+                </div>
+
+                <!-- TIMELINE PIPELINE -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h4 class="font-title fw-bold mb-4"><i class="bi bi-clock-history text-primary me-2"></i>Pipeline Activity Chronological Timeline</h4>
+                  <div class="timeline-uh" id="timeline-container">
+                    <!-- Timeline items generated -->
+                  </div>
+                </div>
+
+                <!-- INTERACTION & COMMUNICATION HUB -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h4 class="font-title fw-bold mb-3"><i class="bi bi-chat-left-dots text-primary me-2"></i>Dispatched Communications Hub Log</h4>
+                  <div class="d-flex flex-column gap-3 mb-4" id="comm-logs-container">
+                    <!-- Logs go here -->
+                  </div>
+                  <div class="p-3 bg-body rounded border text-start">
+                    <h6 class="font-title fw-bold mb-2">Simulate Custom Outreach Dispatch</h6>
+                    <form id="interaction-sim-form" onsubmit="handleOutreachSubmit(event)">
+                      <div class="row g-2">
+                        <div class="col-sm-4">
+                          <select class="form-select bg-body" id="sim-channel" required>
+                            <option value="WhatsApp">WhatsApp Out</option>
+                            <option value="SMS">Encrypted SMS</option>
+                            <option value="Email">Advisory Mail</option>
+                            <option value="Call Log">Advisor Call Log</option>
+                          </select>
+                        </div>
+                        <div class="col-sm-8 d-flex gap-2">
+                          <input type="text" class="form-control bg-body" id="sim-content" placeholder="Outreach statement summary..." required />
+                          <button class="btn btn-primary d-flex align-items-center gap-1" type="submit">
+                            <i class="bi bi-send-fill"></i> <span>Dispatch</span>
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                <!-- NOTES MANAGER -->
+                <div class="uh-card p-4" data-aos="fade-up">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="font-title fw-bold mb-0"><i class="bi bi-pencil-square text-primary me-2"></i>Interactive Note Ledger Desk</h4>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addNoteModal">
+                      <i class="bi bi-plus-lg"></i> Add Pinned Memo
+                    </button>
+                  </div>
+                  <div class="row g-3" id="notes-grid">
+                    <!-- Note Cards dynamically rendered here -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT COLUMN (4/12) -->
+              <div class="col-12 col-lg-4 col-actions-sidebar">
+                <!-- ASSIGNED ADVISOR CARD -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <span class="text-muted d-block small uppercase mb-3" style="font-size: 0.65rem; letter-spacing: 0.5px;">CRM ACCOUNT OWNER</span>
+                  <div class="text-center">
+                    <img id="agent-photo" src="" class="rounded-circle border border-2 border-primary mb-3" style="width: 90px; height: 90px; object-fit: cover;" alt="Agent" />
+                    <h5 id="agent-name" class="font-title fw-bold mb-1">Agent Name</h5>
+                    <p class="text-muted small mb-3">Managing Director's Office</p>
+                    <div class="d-flex flex-column gap-2 text-start p-2 rounded bg-body border mb-3" style="font-size: 0.8rem;">
+                      <div><i class="bi bi-telephone text-primary me-2"></i> <span id="agent-phone">+1 310-555-0101</span></div>
+                      <div><i class="bi bi-envelope text-primary me-2"></i> <span id="agent-email">advisor@urbanhub.com</span></div>
+                    </div>
+                    <div class="text-start">
+                      <span class="text-muted d-block small text-uppercase mb-2">Advisory Capacity Index</span>
+                      <div class="mb-2" style="font-size: 0.75rem;">
+                        <div class="d-flex justify-content-between mb-1">
+                          <span>Contract Valuation Accuracy</span>
+                          <span class="fw-bold">96%</span>
+                        </div>
+                        <div class="progress" style="height: 5px;"><div class="progress-bar bg-primary" style="width: 96%"></div></div>
+                      </div>
+                      <div class="mb-3" style="font-size: 0.75rem;">
+                        <div class="d-flex justify-content-between mb-1">
+                          <span>Negotiation Velocity</span>
+                          <span class="fw-bold">92%</span>
+                        </div>
+                        <div class="progress" style="height: 5px;"><div class="progress-bar bg-primary" style="width: 92%"></div></div>
+                      </div>
+                    </div>
+                    <a href="agent-details.html" class="btn btn-outline-primary btn-sm w-100 mt-2">
+                      <i class="bi bi-person-lines-fill me-1"></i> View Agent Dossier
+                    </a>
+                  </div>
+                </div>
+
+                <!-- TESTIMONIAL FEEDBACK BOX -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-star-fill text-warning me-2"></i>Client Review &amp; NPS</h5>
+                  <div class="p-3 bg-body rounded border">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <div class="text-warning" id="feedback-stars">
+                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                      </div>
+                      <span class="text-muted small" id="feedback-date">June 30, 2026</span>
+                    </div>
+                    <p class="text-muted small mb-2" style="font-style: italic;" id="feedback-comment">"Highly recommended."</p>
+                    <div class="pt-2 border-top border-light-subtle text-start">
+                      <span class="text-muted small d-block" style="font-size: 0.65rem;">Managing Director Response</span>
+                      <p class="text-main mb-0" style="font-size: 0.75rem;" id="feedback-response">"Thank you."</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CREDENTIAL REPOSITORY -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Secured Credentials File</h5>
+                  <div class="d-flex flex-column gap-2">
+                    <button class="btn btn-outline-secondary btn-sm text-start d-flex justify-content-between align-items-center p-2" onclick="simulateDocDownload('ID')">
+                      <span><i class="bi bi-person-badge-fill me-2 text-primary"></i> National Identity Registry</span>
+                      <i class="bi bi-download"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm text-start d-flex justify-content-between align-items-center p-2" onclick="simulateDocDownload('Passport')">
+                      <span><i class="bi bi-file-earmark-person me-2 text-success"></i> Passport Verification</span>
+                      <i class="bi bi-download"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm text-start d-flex justify-content-between align-items-center p-2" onclick="simulateDocDownload('Agreement')">
+                      <span><i class="bi bi-briefcase-fill me-2 text-info"></i> Representation Agreement</span>
+                      <i class="bi bi-download"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm text-start d-flex justify-content-between align-items-center p-2" onclick="simulateDocDownload('Contract')">
+                      <span><i class="bi bi-file-earmark-check-fill me-2 text-warning"></i> Escrow Settlement Deed</span>
+                      <i class="bi bi-download"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- CRITICAL DESTRUCTION & CONFIG BOX -->
+                <div class="uh-card p-4 mb-4 btn-actions-panel" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-shield-slash-fill text-danger me-2"></i>Dossier Configuration</h5>
+                  <div class="d-flex flex-column gap-2">
+                    <button class="btn btn-outline-primary btn-sm text-start" data-bs-toggle="modal" data-bs-target="#editModal">
+                      <i class="bi bi-pencil-square me-2"></i> Edit Customer Properties
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm text-start" onclick="triggerConfigAction('assign')">
+                      <i class="bi bi-person-gear me-2"></i> Reassign Account Owner
+                    </button>
+                    <button class="btn btn-outline-warning btn-sm text-start text-warning" onclick="triggerConfigAction('invoice')">
+                      <i class="bi bi-receipt-cutoff me-2"></i> Generate Capital Invoice
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm text-start" onclick="triggerConfigAction('archive')">
+                      <i class="bi bi-archive me-2"></i> Archive Archive Client
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm text-start text-danger" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
+                      <i class="bi bi-trash3-fill me-2"></i> Purge Account Directory
+                    </button>
+                  </div>
+                </div>
+
+                <!-- SUGGESTED RELATED CLIENTS -->
+                <div class="uh-card p-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-link-45deg text-primary me-2"></i>Suggested Direct Matches</h5>
+                  <div class="d-flex flex-column gap-3" id="related-clients-box">
+                    <!-- Suggested horizontal clients cards generated -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- BOOTSTRAP MODALS -->
+    <!-- Add Note Modal -->
+    <div class="modal fade" id="addNoteModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main"><i class="bi bi-pencil-square text-primary me-2"></i>Add Pinned Memo</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="add-note-form" onsubmit="handleNewNoteSubmit(event)">
+            <div class="modal-body text-start">
+              <div class="mb-3">
+                <label class="form-label text-muted small fw-semibold">Memo Title</label>
+                <input type="text" class="form-control bg-body" id="note-title" placeholder="e.g. Wire Verification" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label text-muted small fw-semibold">Note Description</label>
+                <textarea class="form-control bg-body" id="note-desc" rows="4" placeholder="Draft note body..." required></textarea>
+              </div>
+            </div>
+            <div class="modal-footer border-top border-light-subtle bg-body">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-sm btn-primary">Pin Memo</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule Meeting Modal -->
+    <div class="modal fade" id="scheduleMeetingModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main"><i class="bi bi-calendar-plus text-primary me-2"></i>Schedule Advisory Meeting</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="schedule-meeting-form" onsubmit="handleMeetingSubmit(event)">
+            <div class="modal-body text-start">
+              <div class="mb-3">
+                <label class="form-label text-muted small fw-semibold">Meeting Target Site / Agenda</label>
+                <input type="text" class="form-control bg-body" id="meet-estate" placeholder="e.g. Bel Air Villa Walking Tour" required />
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <label class="form-label text-muted small fw-semibold">Meeting Date</label>
+                  <input type="date" class="form-control bg-body" id="meet-date" required />
+                </div>
+                <div class="col-6">
+                  <label class="form-label text-muted small fw-semibold">Meeting Hour</label>
+                  <input type="time" class="form-control bg-body" id="meet-time" required />
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label text-muted small fw-semibold">Assembly Location</label>
+                <input type="text" class="form-control bg-body" id="meet-location" placeholder="e.g. Site Entrance Front Gate" required />
+              </div>
+            </div>
+            <div class="modal-footer border-top border-light-subtle bg-body">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-sm btn-primary">Schedule Meeting</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Customer Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main"><i class="bi bi-pencil-square text-primary me-2"></i>Modify Customer Properties</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="edit-customer-form" onsubmit="handleEditSubmit(event)">
+            <div class="modal-body text-start">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label text-muted small fw-semibold">Customer Full Name</label>
+                  <input type="text" class="form-control bg-body" id="edit-name" required />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label text-muted small fw-semibold">Occupation Title</label>
+                  <input type="text" class="form-control bg-body" id="edit-job" required />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label text-muted small fw-semibold">Enterprise Entity</label>
+                  <input type="text" class="form-control bg-body" id="edit-company" required />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label text-muted small fw-semibold">Budget Framework ($)</label>
+                  <input type="text" class="form-control bg-body" id="edit-budget" required />
+                </div>
+                <div class="col-12">
+                  <label class="form-label text-muted small fw-semibold">Biography Summary</label>
+                  <textarea class="form-control bg-body" id="edit-bio" rows="3" required></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer border-top border-light-subtle bg-body">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-danger-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Dossier Purge</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <p class="text-main mb-2">Are you absolutely sure you want to purge <strong id="delete-client-name">Client Name</strong> from the UrbanHub CRM active directory?</p>
+            <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1 text-danger"></i> This administrative action is irreversible. All connected timeline histories, credential files, and active pipeline associations will be unlinked.</p>
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Abort</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="executeDossierPurge()">Execute Purge</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap 5.3 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AOS JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- CRM LOGIC SCRIPT -->
+    <script>
+      // INLINE HIGH-DENSITY CLIENTS DATABASE
+      const CLIENTS_DB = {
+        "CST-5082": {
+          id: "CST-5082",
+          name: "Arthur Pendelton",
+          type: "Buyer",
+          photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop",
+          online: "active",
+          regDate: "March 15, 2024",
+          advisor: "Marcus Vance",
+          advisorContact: { phone: "+1 (310) 555-0100", email: "marcus.vance@urbanhub.com", img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=120&auto=format&fit=crop" },
+          prefProp: "Penthouse & Mansions",
+          budget: "$15,000,000 - $25,000,000",
+          bio: "Arthur Pendelton is the Managing Partner of Elite Capital Holdings, a private equity firm. He has over 25 years of investment experience in global commercial and luxury residential real estate. He regularly splits his time between London, New York, and Los Angeles, seeking high-yielding legacy assets and architectural landmark estates.",
+          job: "Managing Partner / Private Equity",
+          company: "Elite Capital Holdings LLC",
+          languages: "English, French, German",
+          commMethod: "WhatsApp Messenger",
+          family: "3 Members",
+          intent: "Legacy Capital & Wealth Preservation",
+          contact: {
+            phone: "+1 (310) 555-0102",
+            email: "arthur.pendelton@eliteholdings.com",
+            alt: "+1 (310) 555-0199 (Assistant: Clara)",
+            address: "450 Mapleton Dr, Los Angeles, CA 90024",
+            office: "Century Plaza Towers, Suite 4400, LA, CA 90067",
+            emergency: "Sarah Pendelton (+1 310-555-0144)"
+          },
+          pref: {
+            city: "LA, Malibu, Paris",
+            area: "Bel Air, Beverly Hills",
+            budget: "$15M - $25M",
+            size: "8,000 - 15,000 sq ft",
+            beds: "5 - 8 Bedrooms",
+            baths: "6 - 10 Bathrooms",
+            amenities: "Helipad, Infinity Pool, Wine Cellar, Direct Beach Access"
+          },
+          stats: { purchased: 3, rented: 1, visits: 18, deals: 4, ltv: "$34.5M", inquiries: 2, appts: 3, docs: 8 },
+          ledger: { total: "$34.5M", pending: "$18.2M", completed: "$34.5M", refunds: "$0", trend: [110, 125, 115, 145, 150, 168, 172, 169, 185, 192, 210, 225] },
+          properties: [
+            { title: "Bel Air Glass Villa", price: "$18,200,000", status: "Pending Escrow", loc: "Bel Air, Los Angeles", img: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=400&auto=format&fit=crop" },
+            { title: "Malibu Cove Estate", price: "$24,500,000", status: "Active For Sale", loc: "Malibu Beach, CA", img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=400&auto=format&fit=crop" }
+          ],
+          history: [
+            { prop: "Beverly Crest Modern Villa", type: "Purchase", val: "$12,400,000", date: "2026-06-28", status: "Completed" },
+            { prop: "Sunset Strip Loft", type: "Rental", val: "$18,500 / mo", date: "2026-04-20", status: "Completed" }
+          ],
+          inquiries: [
+            { prop: "Bel Air Glass Villa", date: "2026-07-01", agent: "Marcus Vance", status: "Offer Submitted" },
+            { prop: "Malibu Road Coastal Villa", date: "2026-06-15", agent: "Marcus Vance", status: "Awaiting Valuation" }
+          ],
+          appts: [
+            { estate: "Bel Air Glass Villa (Site)", time: "2:30 PM", date: "2026-07-15", loc: "Site Front Gate", status: "Confirmed" },
+            { estate: "UrbanHub Head Office - Room 4B", time: "11:00 AM", date: "2026-07-20", loc: "Office Block", status: "Scheduled" }
+          ],
+          timeline: [
+            { date: "Today, 10:45 AM", badge: "Offer Submitted", title: "Escrow Submission", desc: "Submitted final digital offer sheet for Bel Air Glass Villa ($18.2M)." },
+            { date: "Yesterday, 4:15 PM", badge: "Property Visit", title: "Advisory Walkthrough", desc: "Attended private sunset walkthrough of Bel Air Glass Villa with Marcus Vance." },
+            { date: "Jul 5, 2026", badge: "Property Inquiry", title: "Information Request", desc: "Submitted initial written inquiry about Malibu Cove Estate listing." },
+            { date: "Jun 28, 2026", badge: "Purchase Completed", title: "Escrow Finalization", desc: "Finalized deed transfer and escrow closure for Beverly Crest Modern Villa ($12.4M)." }
+          ],
+          comms: [
+            { channel: "WhatsApp Message", date: "Today, 9:30 AM", content: "Escrow packages are prepared. Will sign off during our scheduled site visit." },
+            { channel: "Call Log Out", date: "Yesterday, 5:00 PM", content: "Discussed structural feedback on Bel Air Villa. Client is extremely positive." },
+            { channel: "Meeting", date: "Jul 6, 2026", content: "Closed briefing on Malibu Cove listing at Century Plaza Office. 2 hours." }
+          ],
+          review: { stars: 5, date: "June 30, 2026", comment: '"Marcus Vance and the entire UrbanHub crew deliver an unmatched advisory level. They treated my capital search with professional discretion."', response: '"It is our absolute privilege to represent your capital, Arthur." - Sarah Jenkins' }
+        },
+        "CST-3194": {
+          id: "CST-3194",
+          name: "Isabella Rossi",
+          type: "Seller",
+          photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop",
+          online: "active",
+          regDate: "January 10, 2025",
+          advisor: "Elena Rostova",
+          advisorContact: { phone: "+1 (310) 555-0105", email: "elena.rostova@urbanhub.com", img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" },
+          prefProp: "Vineyards & Estuary Villas",
+          budget: "$12,000,000 - $18,000,000",
+          bio: "Isabella Rossi is a high-fashion designer and luxury goods magnate based in Milan and Beverly Hills. She is currently liquidating portions of her California residential portfolio to consolidate capital for a boutique luxury resort development in Tuscany.",
+          job: "Fashion Designer / Entrepreneur",
+          company: "Rossi Design Group",
+          languages: "Italian, English, Spanish",
+          commMethod: "Scheduled Zoom Calls",
+          family: "2 Members",
+          intent: "Asset Liquidation & Development Refinancing",
+          contact: {
+            phone: "+1 (424) 555-0118",
+            email: "isabella.rossi@rossidesigns.it",
+            alt: "+1 (424) 555-0191 (Studio Director)",
+            address: "120 El Camino Dr, Beverly Hills, CA 90212",
+            office: "Via della Spiga, 15, Milan, Italy 20121",
+            emergency: "Marco Rossi (+39 02-555-4491)"
+          },
+          pref: {
+            city: "Milan, Florence, Monetcito",
+            area: "Pacific Palisades, Montecito",
+            budget: "$10M - $20M",
+            size: "6,000 - 10,000 sq ft",
+            beds: "4 - 6 Bedrooms",
+            baths: "5 - 7 Bathrooms",
+            amenities: "Vineyard, Winery, Panoramic Ocean Views, Historic Architecture"
+          },
+          stats: { purchased: 1, rented: 0, visits: 11, deals: 2, ltv: "$18.9M", inquiries: 1, appts: 1, docs: 5 },
+          ledger: { total: "$14.5M", pending: "$18.2M", completed: "$14.5M", refunds: "$0", trend: [95, 100, 105, 110, 115, 120, 130, 135, 140, 145, 150, 160] },
+          properties: [
+            { title: "Pasadena Heritage Mansion", price: "$6,250,000", status: "Active For Sale", loc: "Pasadena, CA", img: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=400&auto=format&fit=crop" }
+          ],
+          history: [
+            { prop: "Bel Air Glass Villa", type: "Listing/Sale", val: "$18,200,000", date: "2026-07-01", status: "Pending Escrow" },
+            { prop: "Malibu Cove Estate", type: "Purchase", val: "$14,500,000", date: "2025-05-18", status: "Completed" }
+          ],
+          inquiries: [
+            { prop: "Pasadena Heritage Mansion", date: "2026-06-20", agent: "Elena Rostova", status: "Scheduled Viewing" }
+          ],
+          appts: [
+            { estate: "Elena Rostova's Office", time: "10:30 AM", date: "2026-07-16", loc: "UrbanHub Suite A", status: "Confirmed" }
+          ],
+          timeline: [
+            { date: "Yesterday, 2:15 PM", badge: "Offer Received", title: "Bel Air Escrow Draft", desc: "Received formal $18.2M purchase proposal on Bel Air Glass Villa from A. Pendelton." },
+            { date: "Jul 3, 2026", badge: "Property Inquiry", title: "Agreement Review", desc: "Reviewed escrow listings draft with Elena Rostova for Santa Barbara winery." }
+          ],
+          comms: [
+            { channel: "Email In", date: "Yesterday, 4:00 PM", content: "Agreed on escrow proposal with Pendelton. Please coordinate the wiring paths." },
+            { channel: "SMS Message", date: "Jul 5, 2026", content: "Will attend the brief at your office on Thursday. Ensure the winery specs are printed." }
+          ],
+          review: { stars: 5, date: "May 20, 2025", comment: '"Elena Rostova\'s service is absolutely spectacular. Her connection with international investors made selling my villa extremely frictionless."', response: '"It is an honor to curate your portfolio liquidation, Isabella." - Elena Rostova' }
+        },
+        "CST-4211": {
+          id: "CST-4211",
+          name: "David Chen",
+          type: "Tenant",
+          photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop",
+          online: "inactive",
+          regDate: "August 22, 2025",
+          advisor: "Sarah Jenkins",
+          advisorContact: { phone: "+1 (310) 555-0101", email: "sarah.jenkins@urbanhub.com", img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" },
+          prefProp: "High-rise Loft & Penthouse",
+          budget: "$25,000 - $40,000 / mo",
+          bio: "David Chen is a software unicorn co-founder and tech angel investor. He splits his time between Silicon Valley and Los Angeles, leasing premium penthouse suites and high-end modern homes while building a residential land-holding portfolio.",
+          job: "Tech Entrepreneur / Angel Investor",
+          company: "TechOracle Ventures",
+          languages: "Mandarin, English",
+          commMethod: "Slack / WhatsApp",
+          family: "1 Member",
+          intent: "Leasing Luxury Living Spaces",
+          contact: {
+            phone: "+1 (626) 555-0155",
+            email: "david.chen@techoracle.com",
+            alt: "+1 (626) 555-0150 (Tech Desk)",
+            address: "Wilshire Corridor Tower Penthouse, Los Angeles, CA",
+            office: "One Apple Park Way, Cupertino, CA 95014",
+            emergency: "Lin Chen (+1 626-555-0152)"
+          },
+          pref: {
+            city: "LA, SF, New York",
+            area: "Westwood, Downtown LA",
+            budget: "$25K - $40K / mo",
+            size: "3,500 - 6,000 sq ft",
+            beds: "2 - 4 Bedrooms",
+            baths: "3 - 5 Bathrooms",
+            amenities: "Smart Automation, Private Gym, Executive Workspace, High-Security Parking"
+          },
+          stats: { purchased: 0, rented: 2, visits: 14, deals: 2, ltv: "$640K", inquiries: 1, appts: 2, docs: 4 },
+          ledger: { total: "$640K", pending: "$28K", completed: "$640K", refunds: "$0", trend: [45, 48, 50, 42, 55, 60, 58, 62, 55, 63, 68, 70] },
+          properties: [
+            { title: "Sunset Strip Luxury Loft", price: "$28,000 / mo", status: "Active For Rent", loc: "West Hollywood, CA", img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=400&auto=format&fit=crop" }
+          ],
+          history: [
+            { prop: "Wilshire Executive Condominium", type: "Rental", val: "$24,000 / mo", date: "2025-09-01", status: "Completed" }
+          ],
+          inquiries: [
+            { prop: "Sunset Strip Luxury Loft", date: "2026-07-08", agent: "Sarah Jenkins", status: "Scheduled Tour" }
+          ],
+          appts: [
+            { estate: "Sunset Strip Loft (Site)", time: "11:00 AM", date: "2026-07-12", loc: "Site Lobby", status: "Scheduled" }
+          ],
+          timeline: [
+            { date: "Today, 8:20 AM", badge: "Inquiry Logged", title: "Lease Pipeline", desc: "Subscribed to notification pipeline for Century City Penthouse." },
+            { date: "Jul 8, 2026", badge: "Property Inquiry", title: "Loft Specifications", desc: "Sent detailed inquiry regarding Sunset Strip Luxury Loft's smart infrastructure." }
+          ],
+          comms: [
+            { channel: "WhatsApp In", date: "Today, 8:15 AM", content: "Can we double-check if the gym at Sunset Strip has been upgraded with Peloton gear?" },
+            { channel: "Call Log Out", date: "Jul 5, 2026", content: "Discussed lease term flexibility and commercial wire accounts." }
+          ],
+          review: { stars: 5, date: "Jan 10, 2026", comment: '"Sarah and the UrbanHub team are extremely sharp. They understood my tech integration needs instantly."', response: '"We are thrilled to service your high-tech housing criteria, David!" - Sarah Jenkins' }
+        }
+      };
+
+      // Chart.js instance tracking
+      let activeFinancialChart = null;
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Core layout togglers
+        const sidebarWrapper = document.getElementById('sidebar-wrapper');
+        const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        if (sidebarToggleBtn && sidebarWrapper && sidebarOverlay) {
+          const toggleSidebar = () => {
+            sidebarWrapper.classList.toggle('mobile-show');
+            sidebarOverlay.classList.toggle('active');
+          };
+          sidebarToggleBtn.addEventListener('click', toggleSidebar);
+          sidebarOverlay.addEventListener('click', toggleSidebar);
+        }
+
+        if (themeToggleBtn) {
+          themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+            const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-bs-theme', nextTheme);
+            localStorage.setItem('theme', nextTheme);
+            if (themeIcon) themeIcon.className = nextTheme === 'light' ? 'bi bi-moon-stars' : 'bi bi-sun';
+            
+            // Re-render chart with new themes colors
+            const client = getActiveClient();
+            renderLedgerChart(client.ledger.trend, nextTheme);
+          });
+        }
+
+        // Apply theme icon state on load
+        const initialTheme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+        if (themeIcon) themeIcon.className = initialTheme === 'light' ? 'bi bi-moon-stars' : 'bi bi-sun';
+
+        // Load correct customer
+        loadCustomerProfile();
+        initCardGlows();
+      });
+
+      function getActiveClient() {
+        const urlParams = new URLSearchParams(window.location.search);
+        let clientId = urlParams.get('id') || "CST-5082";
+        if (!CLIENTS_DB[clientId]) clientId = "CST-5082";
+        return CLIENTS_DB[clientId];
+      }
+
+      function loadCustomerProfile() {
+        const skeleton = document.getElementById("skeleton-loader");
+        const realData = document.getElementById("real-data");
+        
+        skeleton.classList.remove("skeleton-hidden");
+        realData.classList.add("skeleton-hidden");
+        realData.style.opacity = "0";
+
+        setTimeout(() => {
+          const client = getActiveClient();
+          
+          // Set dynamic titles
+          document.title = `${client.name} Dossier - UrbanHub CRM`;
+
+          // Top Header info
+          document.getElementById("client-photo").src = client.photo;
+          document.getElementById("client-name").textContent = client.name;
+          document.getElementById("client-id").textContent = client.id;
+          document.getElementById("client-type").textContent = client.type;
+          document.getElementById("client-reg-date").textContent = client.regDate;
+          document.getElementById("client-advisor").textContent = client.advisor;
+          document.getElementById("client-pref-prop").textContent = client.prefProp;
+          document.getElementById("client-budget").textContent = client.budget;
+
+          // Online state
+          const onlineDot = document.getElementById("client-online-dot");
+          if (client.online === "active") {
+            onlineDot.className = "online-dot active";
+          } else {
+            onlineDot.className = "online-dot inactive";
+          }
+
+          // Statistics counters Targets
+          document.getElementById("counter-purchased").setAttribute("data-target", client.stats.purchased);
+          document.getElementById("counter-rented").setAttribute("data-target", client.stats.rented);
+          document.getElementById("counter-visits").setAttribute("data-target", client.stats.visits);
+          document.getElementById("counter-deals").setAttribute("data-target", client.stats.deals);
+          document.getElementById("counter-ltv").textContent = client.stats.ltv;
+          document.getElementById("counter-inquiries").setAttribute("data-target", client.stats.inquiries);
+          document.getElementById("counter-appts").setAttribute("data-target", client.stats.appts);
+          document.getElementById("counter-docs").setAttribute("data-target", client.stats.docs);
+
+          // Biography Summary
+          document.getElementById("client-bio").textContent = client.bio;
+          document.getElementById("client-job").textContent = client.job;
+          document.getElementById("client-company").textContent = client.company;
+          document.getElementById("client-languages").textContent = client.languages;
+          document.getElementById("client-comm-method").textContent = client.commMethod;
+          document.getElementById("client-family").textContent = client.family;
+          document.getElementById("client-intent").textContent = client.intent;
+
+          // Contact details
+          document.getElementById("contact-phone").textContent = client.contact.phone;
+          document.getElementById("contact-email").textContent = client.contact.email;
+          document.getElementById("contact-alt").textContent = client.contact.alt;
+          document.getElementById("contact-address").textContent = client.contact.address;
+          document.getElementById("contact-office").textContent = client.contact.office;
+          document.getElementById("contact-emergency").textContent = client.contact.emergency;
+
+          // Preferences
+          document.getElementById("pref-city").textContent = client.pref.city;
+          document.getElementById("pref-area").textContent = client.pref.area;
+          document.getElementById("pref-budget").textContent = client.pref.budget;
+          document.getElementById("pref-size").textContent = client.pref.size;
+          document.getElementById("pref-beds").textContent = client.pref.beds;
+          document.getElementById("pref-baths").textContent = client.pref.baths;
+          document.getElementById("pref-amenities").textContent = client.pref.amenities;
+
+          // Financial Ledger
+          document.getElementById("ledger-total").textContent = client.ledger.total;
+          document.getElementById("ledger-pending").textContent = client.ledger.pending;
+          document.getElementById("ledger-completed").textContent = client.ledger.completed;
+          document.getElementById("ledger-refunds").textContent = client.ledger.refunds;
+
+          // Right Column Advisor & Testimonial
+          document.getElementById("agent-photo").src = client.advisorContact.img;
+          document.getElementById("agent-name").textContent = client.advisor;
+          document.getElementById("agent-phone").textContent = client.advisorContact.phone;
+          document.getElementById("agent-email").textContent = client.advisorContact.email;
+
+          // Modal Delete Setup
+          document.getElementById("delete-client-name").textContent = client.name;
+
+          // Testimonial feedback setup
+          document.getElementById("feedback-date").textContent = client.review.date;
+          document.getElementById("feedback-comment").textContent = client.review.comment;
+          document.getElementById("feedback-response").textContent = client.review.response;
+          const starContainer = document.getElementById("feedback-stars");
+          starContainer.innerHTML = "";
+          for (let s = 1; s <= client.review.stars; s++) {
+            starContainer.innerHTML += '<i class="bi bi-star-fill text-warning"></i> ';
+          }
+
+          // Render dynamic arrays
+          renderProperties(client.properties);
+          renderDeals(client.history);
+          renderInquiries(client.inquiries);
+          renderAppts(client.appts);
+          renderTimeline(client.timeline);
+          renderCommunicationLogs(client.comms);
+          renderLocalNotes(client.id);
+          renderRelatedClients(client.id, client.type);
+
+          // Hide skeletons & reveal data
+          skeleton.classList.add("skeleton-hidden");
+          realData.classList.remove("skeleton-hidden");
+          setTimeout(() => {
+            realData.style.opacity = "1";
+            initDossierCounters();
+            
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+            renderLedgerChart(client.ledger.trend, currentTheme);
+
+            if (typeof AOS !== 'undefined') {
+              AOS.init({ duration: 800, once: true });
+              AOS.refresh();
+            }
+          }, 50);
+
+        }, 1000);
+      }
+
+      // Counter animation helper
+      function initDossierCounters() {
+        const counters = document.querySelectorAll(".animate-counter");
+        counters.forEach(counter => {
+          const target = parseFloat(counter.getAttribute("data-target"));
+          const speed = 1000;
+          const step = Math.max(1, target / (speed / 16));
+          let curr = 0;
+          
+          const update = () => {
+            curr += step;
+            if (curr >= target) {
+              counter.textContent = target.toLocaleString();
+            } else {
+              counter.textContent = Math.floor(curr).toLocaleString();
+              requestAnimationFrame(update);
+            }
+          };
+          update();
+        });
+      }
+
+      // Sub-arrays rendering helper
+      function renderProperties(props) {
+        const grid = document.getElementById("properties-grid");
+        grid.innerHTML = "";
+        if (props.length === 0) {
+          grid.innerHTML = `<div class="col-12 py-3 text-center text-muted small"><i class="bi bi-house-slash me-2"></i>No active listings on track.</div>`;
+          return;
+        }
+        props.forEach(p => {
+          grid.innerHTML += `
+            <div class="col-12 col-md-6">
+              <div class="card h-100 border border-light-subtle bg-body overflow-hidden shadow-sm" style="border-radius: 8px;">
+                <div style="height: 120px; overflow: hidden; position: relative;">
+                  <img src="${p.img}" class="w-100 h-100 object-fit-cover" alt="Property" />
+                  <span class="badge bg-primary position-absolute top-2 start-2 small fw-bold">${p.status}</span>
+                </div>
+                <div class="p-3 text-start">
+                  <h6 class="font-title fw-bold mb-1 text-main text-truncate">${p.title}</h6>
+                  <span class="text-muted d-block small mb-2"><i class="bi bi-geo-alt me-1"></i>${p.loc}</span>
+                  <div class="d-flex align-items-center justify-content-between pt-2 border-top border-light-subtle">
+                    <span class="fw-bold text-primary" style="font-size: 0.95rem;">${p.price}</span>
+                    <a href="properties.html" class="btn btn-outline-primary btn-xs py-1 px-2" style="font-size: 0.7rem;">View Listing</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      function renderDeals(deals) {
+        const tbody = document.getElementById("deals-table-body");
+        tbody.innerHTML = "";
+        if (deals.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="py-3 text-center text-muted small">No deals signed off yet.</td></tr>`;
+          return;
+        }
+        deals.forEach(d => {
+          tbody.innerHTML += `
+            <tr class="text-start">
+              <td><span class="fw-bold text-main small">${d.prop}</span></td>
+              <td><span class="badge bg-primary-subtle text-primary py-1 px-2 small">${d.type}</span></td>
+              <td><strong class="text-primary small">${d.val}</strong></td>
+              <td><span class="text-muted small">${d.date}</span></td>
+              <td class="text-end"><span class="badge bg-success-light text-success small">${d.status}</span></td>
+            </tr>
+          `;
+        });
+      }
+
+      function renderInquiries(inqs) {
+        const tbody = document.getElementById("inquiries-table-body");
+        tbody.innerHTML = "";
+        if (inqs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="py-3 text-center text-muted small">No pipeline inquiries recorded.</td></tr>`;
+          return;
+        }
+        inqs.forEach(i => {
+          tbody.innerHTML += `
+            <tr class="text-start">
+              <td><span class="fw-bold text-main small">${i.prop}</span></td>
+              <td><span class="text-muted small">${i.date}</span></td>
+              <td><span class="text-muted small">${i.agent}</span></td>
+              <td class="text-end"><span class="badge bg-warning-light text-warning small">${i.status}</span></td>
+            </tr>
+          `;
+        });
+      }
+
+      function renderAppts(appts) {
+        const tbody = document.getElementById("appts-table-body");
+        tbody.innerHTML = "";
+        if (appts.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="py-3 text-center text-muted small">No inspections scheduled.</td></tr>`;
+          return;
+        }
+        appts.forEach(a => {
+          tbody.innerHTML += `
+            <tr class="text-start">
+              <td><span class="fw-bold text-main small">${a.estate}</span></td>
+              <td><span class="text-muted small">${a.date} &bull; ${a.time}</span></td>
+              <td><span class="text-muted small">${a.loc}</span></td>
+              <td class="text-end"><span class="badge bg-success-light text-success small">${a.status}</span></td>
+            </tr>
+          `;
+        });
+      }
+
+      function renderTimeline(timeline) {
+        const container = document.getElementById("timeline-container");
+        container.innerHTML = "";
+        if (timeline.length === 0) {
+          container.innerHTML = `<div class="py-3 text-center text-muted small">No activity logged.</div>`;
+          return;
+        }
+        timeline.forEach(t => {
+          container.innerHTML += `
+            <div class="timeline-item-uh">
+              <span class="timeline-marker-uh success"></span>
+              <div class="timeline-content-uh text-start">
+                <span class="text-muted d-block small mb-1">${t.date} &bull; <span class="badge bg-primary-subtle text-primary timeline-badge">${t.badge}</span></span>
+                <strong class="text-main d-block small">${t.title}</strong>
+                <span class="text-muted small d-block mt-1">${t.desc}</span>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      function renderCommunicationLogs(comms) {
+        const container = document.getElementById("comm-logs-container");
+        container.innerHTML = "";
+        if (comms.length === 0) {
+          container.innerHTML = `<div class="py-2 text-center text-muted small">No outbox communications logged.</div>`;
+          return;
+        }
+        comms.forEach(c => {
+          let channelIcon = "bi-chat-left-dots";
+          let channelClass = "text-primary";
+          if (c.channel.includes("WhatsApp")) { channelIcon = "bi-whatsapp"; channelClass = "text-success"; }
+          else if (c.channel.includes("Email")) { channelIcon = "bi-envelope"; channelClass = "text-info"; }
+          else if (c.channel.includes("Call")) { channelIcon = "bi-telephone"; channelClass = "text-warning"; }
+
+          container.innerHTML += `
+            <div class="p-3 bg-body rounded border text-start">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <strong class="small d-flex align-items-center gap-1 ${channelClass}">
+                  <i class="bi ${channelIcon}"></i> ${c.channel}
+                </strong>
+                <span class="text-muted" style="font-size: 0.7rem;">${c.date}</span>
+              </div>
+              <p class="text-muted mb-0 small" style="line-height: 1.5;">${c.content}</p>
+            </div>
+          `;
+        });
+      }
+
+      // Notes Ledger with Local Storage persistence
+      function renderLocalNotes(clientId) {
+        const container = document.getElementById("notes-grid");
+        container.innerHTML = "";
+
+        const defaultMemos = [
+          { title: "KYC Documents Verified", desc: "National ID and escrow proofs are updated and signed with DocuSign.", date: "July 8, 2026", pinned: true },
+          { title: "Client Preference Override", desc: "Prefers gated properties inside Beverly Hills with direct highway bypassing access.", date: "July 2, 2026", pinned: false }
+        ];
+
+        let notesKey = `urbanhub_notes_${clientId}`;
+        let notes = localStorage.getItem(notesKey);
+        if (!notes) {
+          localStorage.setItem(notesKey, JSON.stringify(defaultMemos));
+          notes = JSON.stringify(defaultMemos);
+        }
+
+        const notesArray = JSON.parse(notes);
+        if (notesArray.length === 0) {
+          container.innerHTML = `<div class="col-12 py-3 text-center text-muted small"><i class="bi bi-journal-x me-2"></i>No memos found. Add one above.</div>`;
+          return;
+        }
+
+        notesArray.forEach((note, idx) => {
+          container.innerHTML += `
+            <div class="col-12 col-md-6">
+              <div class="p-3 bg-body rounded border text-start h-100 position-relative lift-on-hover">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="fw-bold text-main text-truncate pe-3 small" style="max-width: 180px;">${note.title}</span>
+                  <div class="d-flex align-items-center gap-1">
+                    ${note.pinned ? '<span class="badge bg-warning text-dark small" style="font-size: 0.6rem;">PINNED</span>' : ''}
+                    <button class="btn btn-xs text-danger p-0" onclick="deleteLocalNote('${clientId}', ${idx})" title="Delete Memo">
+                      <i class="bi bi-trash3" style="font-size: 0.85rem;"></i>
+                    </button>
+                  </div>
+                </div>
+                <p class="text-muted mb-2 small" style="font-size: 0.8rem; line-height: 1.5;">${note.desc}</p>
+                <span class="text-muted d-block small" style="font-size: 0.65rem;">Updated: ${note.date}</span>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      function handleNewNoteSubmit(e) {
+        e.preventDefault();
+        const client = getActiveClient();
+        const title = document.getElementById("note-title").value;
+        const desc = document.getElementById("note-desc").value;
+        const dateStr = new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
+
+        const notesKey = `urbanhub_notes_${client.id}`;
+        let notesArray = JSON.parse(localStorage.getItem(notesKey) || "[]");
+        notesArray.unshift({ title, desc, date: dateStr, pinned: true });
+        localStorage.setItem(notesKey, JSON.stringify(notesArray));
+
+        // Reset & Close
+        document.getElementById("add-note-form").reset();
+        const modal = bootstrap.Modal.getInstance(document.getElementById("addNoteModal"));
+        modal.hide();
+
+        renderLocalNotes(client.id);
+        showQuickNotification("Pinned Note Added Successfully", "success");
+      }
+
+      function deleteLocalNote(clientId, idx) {
+        const notesKey = `urbanhub_notes_${clientId}`;
+        let notesArray = JSON.parse(localStorage.getItem(notesKey) || "[]");
+        notesArray.splice(idx, 1);
+        localStorage.setItem(notesKey, JSON.stringify(notesArray));
+        renderLocalNotes(clientId);
+        showQuickNotification("Memo Purged From Ledger", "info");
+      }
+
+      // Meeting scheduling
+      function handleMeetingSubmit(e) {
+        e.preventDefault();
+        const client = getActiveClient();
+        const estate = document.getElementById("meet-estate").value;
+        const date = document.getElementById("meet-date").value;
+        const time = document.getElementById("meet-time").value;
+        const loc = document.getElementById("meet-location").value;
+
+        // Push to temporary appts array
+        client.appts.unshift({ estate, time, date, loc, status: "Confirmed" });
+        renderAppts(client.appts);
+
+        // Reset & Close
+        document.getElementById("schedule-meeting-form").reset();
+        const modal = bootstrap.Modal.getInstance(document.getElementById("scheduleMeetingModal"));
+        modal.hide();
+
+        showQuickNotification("Meeting Programmed Successfully", "success");
+      }
+
+      // Profile modifier
+      function handleEditSubmit(e) {
+        e.preventDefault();
+        const client = getActiveClient();
+        client.name = document.getElementById("edit-name").value;
+        client.job = document.getElementById("edit-job").value;
+        client.company = document.getElementById("edit-company").value;
+        client.budget = document.getElementById("edit-budget").value;
+        client.bio = document.getElementById("edit-bio").value;
+
+        // Save back & load
+        const modal = bootstrap.Modal.getInstance(document.getElementById("editModal"));
+        modal.hide();
+        loadCustomerProfile();
+        showQuickNotification("Dossier Metadata Saved", "success");
+      }
+
+      // Purge action
+      function executeDossierPurge() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById("deleteConfirmModal"));
+        modal.hide();
+        showQuickNotification("Client Purged. Redirecting...", "danger");
+        setTimeout(() => {
+          window.location.href = "customers.html";
+        }, 1500);
+      }
+
+      // Chart renderer
+      function renderLedgerChart(data, theme) {
+        const isDark = theme === "dark";
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--uh-primary').trim() || "#D4AF37";
+        const textMuted = isDark ? "#94A3B8" : "#64748B";
+        const gridColor = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)";
+
+        const ctx = document.getElementById("financialChart");
+        if (!ctx) return;
+
+        if (activeFinancialChart) activeFinancialChart.destroy();
+
+        activeFinancialChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+              label: 'Capital Valuation Flow ($K)',
+              data: data,
+              borderColor: primaryColor,
+              backgroundColor: isDark ? 'rgba(212, 175, 55, 0.04)' : 'rgba(184, 134, 11, 0.04)',
+              borderWidth: 2,
+              tension: 0.4,
+              fill: true,
+              pointBackgroundColor: primaryColor,
+              pointHoverRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: textMuted, font: { family: 'Inter', size: 10 } }
+              },
+              y: {
+                grid: { color: gridColor },
+                ticks: { color: textMuted, font: { family: 'Inter', size: 10 } }
+              }
+            }
+          }
+        });
+      }
+
+      // Suggested clients list generator
+      function renderRelatedClients(activeId, type) {
+        const box = document.getElementById("related-clients-box");
+        box.innerHTML = "";
+        
+        const matches = Object.values(CLIENTS_DB).filter(c => c.id !== activeId);
+        matches.forEach(m => {
+          box.innerHTML += `
+            <a href="customer-details.html?id=${m.id}" class="text-decoration-none d-flex align-items-center justify-content-between p-2 rounded bg-body border lift-on-hover">
+              <div class="d-flex align-items-center gap-2">
+                <img src="${m.photo}" class="rounded-circle border" style="width: 36px; height: 36px; object-fit: cover;" alt="Match" />
+                <div class="text-start">
+                  <span class="fw-bold d-block text-main small" style="line-height: 1.2;">${m.name}</span>
+                  <span class="text-muted" style="font-size: 0.7rem;">${m.type} &bull; ${m.prefProp}</span>
+                </div>
+              </div>
+              <span class="badge bg-primary-subtle text-primary" style="font-size: 0.65rem;">View</span>
+            </a>
+          `;
+        });
+      }
+
+      // Quick simulations
+      function triggerChannelDispatch(channel) {
+        const client = getActiveClient();
+        const randMsgs = {
+          Call: "Simulated Direct Dial dialout connected. Logged to UrbanHub advisory voice deck.",
+          Email: "Secured PDF document dispatch sequence triggered to corporate inbox.",
+          Message: "Encrypted instant outreach packet delivered to verified address."
+        };
+        showQuickNotification(randMsgs[channel], "info");
+
+        // Log to comms timeline
+        const timeStr = "Just Now";
+        client.comms.unshift({ channel: `${channel} Dispatched`, date: timeStr, content: `Automated micro-outreach via desk dispatcher channel: ${channel}` });
+        renderCommunicationLogs(client.comms);
+      }
+
+      function handleOutreachSubmit(e) {
+        e.preventDefault();
+        const client = getActiveClient();
+        const chan = document.getElementById("sim-channel").value;
+        const content = document.getElementById("sim-content").value;
+        
+        client.comms.unshift({ channel: chan, date: "Just Now", content: content });
+        renderCommunicationLogs(client.comms);
+        document.getElementById("interaction-sim-form").reset();
+        showQuickNotification("Communication Sent & Logged", "success");
+      }
+
+      function simulateDocDownload(docName) {
+        showQuickNotification(`Downloading verified credential: ${docName}`, "info");
+      }
+
+      function triggerConfigAction(action) {
+        const actionMsgs = {
+          assign: "Reassignment pipeline activated. Selecting available senior partner...",
+          invoice: "Pro-forma capital invoice dispatched to client's finance auditor.",
+          archive: "Archived successfully."
+        };
+        showQuickNotification(actionMsgs[action], "info");
+      }
+
+      function handleQuickSearch(e) {
+        if (e.key === 'Enter') {
+          const query = e.target.value.toUpperCase().trim();
+          if (CLIENTS_DB[query]) {
+            window.location.href = `customer-details.html?id=${query}`;
+          } else {
+            showQuickNotification(`No direct client matches ID: ${query}`, "warning");
+          }
+        }
+      }
+
+      function showQuickNotification(msg, type = "primary") {
+        let toast = document.createElement("div");
+        toast.className = `position-fixed bottom-0 start-50 translate-middle-x p-3 bg-dark border border-${type} text-main rounded mb-4 shadow-lg d-flex align-items-center gap-2`;
+        toast.style.zIndex = "99999";
+        toast.style.fontSize = "0.85rem";
+        toast.innerHTML = `<i class="bi bi-info-circle-fill text-${type}"></i> <span>${msg}</span>`;
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.remove(); }, 3500);
+      }
+
+      // Card Glow update
+      function initCardGlows() {
+        document.addEventListener("mousemove", (e) => {
+          document.querySelectorAll(".glow-card").forEach(card => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty("--mouse-x", `${x}px`);
+            card.style.setProperty("--mouse-y", `${y}px`);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

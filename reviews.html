@@ -1,0 +1,1891 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reviews & Feedback Center - UrbanHub</title>
+
+    <!-- Pre-load LocalStorage theme choice to prevent visual flicker before render -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Style additions to coordinate reviews workspace */
+      .reviews-toolbar {
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        padding: 1rem;
+      }
+      .state-simulator {
+        background-color: rgba(var(--uh-primary-rgb), 0.05);
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.15);
+        border-radius: 12px;
+      }
+      .stat-card-compact {
+        background: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        padding: 1rem;
+        transition: var(--uh-transition-smooth);
+      }
+      .stat-card-compact:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--uh-shadow-sm);
+        border-color: rgba(var(--uh-primary-rgb), 0.3);
+      }
+      .rating-large-box {
+        background: rgba(var(--uh-primary-rgb), 0.04);
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.12);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      .star-rating {
+        color: #FFC107;
+        font-size: 1rem;
+      }
+      .star-rating.large {
+        font-size: 1.5rem;
+      }
+      .star-rating .bi-star-fill, .star-rating .bi-star-half, .star-rating .bi-star {
+        margin-right: 2px;
+      }
+      
+      /* Hover Lift */
+      .hover-lift {
+        transition: var(--uh-transition-smooth);
+      }
+      .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--uh-shadow-md);
+      }
+
+      /* Review Row styling */
+      .reviewer-img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--uh-border-card);
+      }
+
+      /* Bulk actions floating bar */
+      .bulk-actions-bar {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%) translateY(120%);
+        z-index: 1040;
+        background-color: var(--uh-bg-card);
+        border: 1.5px solid var(--uh-primary);
+        box-shadow: var(--uh-shadow-lg);
+        border-radius: 50px;
+        padding: 0.75rem 2rem;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .bulk-actions-bar.show {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* Loading Skeleton classes */
+      .skeleton-animation {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255,255,255,0.06) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.5s infinite;
+        border-radius: 6px;
+      }
+      @keyframes skeleton-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+
+      .focus-visible-indicator:focus-visible {
+        outline: 2.5px solid var(--uh-primary) !important;
+        outline-offset: 2px;
+      }
+
+      /* Timeline custom styles */
+      .timeline-reviews {
+        position: relative;
+        padding-left: 1.5rem;
+      }
+      .timeline-reviews::before {
+        content: '';
+        position: absolute;
+        left: 4px;
+        top: 8px;
+        bottom: 8px;
+        width: 2px;
+        background-color: var(--uh-border-card);
+      }
+      .timeline-reviews-item {
+        position: relative;
+        margin-bottom: 1.25rem;
+      }
+      .timeline-reviews-item::before {
+        content: '';
+        position: absolute;
+        left: -1.5rem;
+        top: 6px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--uh-primary);
+        border: 2px solid var(--uh-bg-card);
+        transform: translateX(-4px);
+      }
+      
+      /* Card Badge Overrides */
+      .badge-type {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+      }
+
+      /* Leaderboard items */
+      .leaderboard-img {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+      .leaderboard-agent-img {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(var(--uh-primary-rgb), 0.2);
+      }
+
+      /* Custom Toast */
+      .toast-container-custom {
+        position: fixed;
+        top: 1.5rem;
+        right: 1.5rem;
+        z-index: 2000;
+      }
+
+      /* Print Optimisation */
+      m@media print {
+        .btn-no-print, .state-simulator, .top-header, .sidebar-wrapper, .bulk-actions-bar, .modal {
+          display: none !important;
+        }
+        .main-content-wrapper {
+          margin-left: 0 !important;
+          padding: 0 !important;
+        }
+        .page-body {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Overlay Backdrop for Mobile Sidebar -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- FIXED LEFT SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <i class="bi bi-building-up"></i>
+          </div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <!-- Scrollable Navigation Menu -->
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="transactions.html" class="sidebar-menu-link">
+                <i class="bi bi-currency-exchange"></i>
+                <span>Transactions</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Intelligence</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Analytics</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="calendar.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar3"></i>
+                <span>Calendar</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="tasks.html" class="sidebar-menu-link">
+                <i class="bi bi-check2-square"></i>
+                <span>Tasks</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reviews.html" class="sidebar-menu-link active">
+                <i class="bi bi-star"></i>
+                <span>Reviews</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card text-decoration-none">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name mb-0">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn" aria-label="Toggle Navigation Sidebar">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input focus-visible-indicator" id="top-toolbar-search" placeholder="Search reviews, properties, clients..." onkeyup="handleGlobalSearch(this.value)" aria-label="Global search reviews input" />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <button id="theme-toggle" class="header-btn focus-visible-indicator" title="Switch Theme" aria-label="Toggle Dark Light Mode">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE BODY CONTAINER -->
+        <div class="page-body">
+          
+          <!-- STATE SIMULATOR BAR -->
+          <div class="state-simulator mb-4 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2 btn-no-print" data-aos="fade-down">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-gear-wide-connected text-primary animate-spin"></i>
+              <span class="small fw-bold text-main">UI Reusable States Simulator:</span>
+            </div>
+            <div class="d-flex gap-1 flex-wrap">
+              <button class="btn btn-xs btn-outline-primary active" id="sim-success" onclick="setUIState('success')"><i class="bi bi-check-circle-fill me-1"></i> Success State</button>
+              <button class="btn btn-xs btn-outline-secondary" id="sim-loading" onclick="setUIState('loading')"><i class="bi bi-hourglass-split me-1"></i> Loading Skeleton</button>
+              <button class="btn btn-xs btn-outline-warning" id="sim-empty" onclick="setUIState('empty')"><i class="bi bi-slash-circle me-1"></i> Empty State</button>
+              <button class="btn btn-xs btn-outline-danger" id="sim-error" onclick="setUIState('error')"><i class="bi bi-exclamation-triangle-fill me-1"></i> Error State</button>
+            </div>
+          </div>
+
+          <!-- BREADCRUMB & HEADER PANEL -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-up" data-aos-delay="50">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Reviews</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Reviews & Feedback Center</h1>
+            </div>
+
+            <!-- Header Quick Action buttons -->
+            <div class="d-flex align-items-center flex-wrap gap-2 btn-no-print">
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 focus-visible-indicator" onclick="filterReplyQueue()">
+                <i class="bi bi-reply-all-fill"></i> <span class="badge bg-primary text-white rounded-pill ms-1" id="badge-queue-count">0</span> <span class="ms-1">Reply Queue</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5 focus-visible-indicator" onclick="exportReviewsCSV()">
+                <i class="bi bi-file-earmark-spreadsheet"></i> <span>Export CSV</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5 focus-visible-indicator" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span>Print</span>
+              </button>
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 focus-visible-indicator" onclick="triggerRefresh()">
+                <i class="bi bi-arrow-clockwise"></i> <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SKELETON PRELOAD STATE -->
+          <div id="loading-state" class="d-none">
+            <div class="row g-3 mb-4">
+              <div class="col-6 col-md-3" v-for="i in 4">
+                <div class="uh-card p-3">
+                  <div class="skeleton-animation mb-2" style="width: 45%; height: 14px;"></div>
+                  <div class="skeleton-animation mb-1" style="width: 75%; height: 26px;"></div>
+                  <div class="skeleton-animation" style="width: 95%; height: 10px;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="row g-4">
+              <div class="col-12 col-md-4">
+                <div class="uh-card p-4">
+                  <div class="skeleton-animation mb-3" style="width: 50%; height: 24px;"></div>
+                  <div class="skeleton-animation mb-2" style="width: 100%; height: 160px;"></div>
+                </div>
+              </div>
+              <div class="col-12 col-md-8">
+                <div class="uh-card p-4">
+                  <div class="skeleton-animation mb-4" style="width: 30%; height: 28px;"></div>
+                  <div class="skeleton-animation mb-2" style="width: 100%; height: 200px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE PANEL -->
+          <div id="empty-state" class="d-none text-center py-5">
+            <div class="uh-card p-5 mx-auto" style="max-width: 550px;">
+              <div class="text-warning mb-3"><i class="bi bi-star-half" style="font-size: 3.5rem;"></i></div>
+              <h4 class="font-title fw-bold text-main mb-2">No Reviews Found</h4>
+              <p class="text-muted small mb-4">Your rating records and customer review queues are currently empty. If this is a mistake, reset the visual simulator or load sample feedback.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-primary" onclick="resetReviewsDatabase()"><i class="bi bi-bootstrap-reboot me-1"></i> Load Sample Data</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="setUIState('success')">Dismiss Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ERROR STATE PANEL -->
+          <div id="error-state" class="d-none text-center py-5">
+            <div class="uh-card p-5 mx-auto border-danger" style="max-width: 550px;">
+              <div class="text-danger mb-3"><i class="bi bi-wifi-off" style="font-size: 3.5rem;"></i></div>
+              <h4 class="font-title fw-bold text-main mb-2">CRM Synchronization Timeout</h4>
+              <p class="text-muted small mb-4">We were unable to secure a connection to the feedback collection pipeline. This usually stems from api gateway rate limitations. Please retry.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-danger" onclick="triggerRefresh()"><i class="bi bi-arrow-clockwise me-1"></i> Retry Gateway Pull</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="setUIState('success')">Go Back</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CORE WORKSPACE CONTAINER -->
+          <div id="success-state">
+            
+            <!-- STATISTICS METRIC BAR -->
+            <div class="row g-3 mb-4" data-aos="fade-up" data-aos-delay="100">
+              <!-- Total Reviews -->
+              <div class="col-6 col-md-3">
+                <div class="stat-card-compact text-center">
+                  <span class="text-muted small d-block mb-1">Total Reviews</span>
+                  <h3 class="font-title fw-bold text-main mb-0" id="stat-total-reviews">0</h3>
+                  <span class="text-muted font-mono" style="font-size: 0.65rem;" id="stat-type-breakdown">Property: 0 | Agent: 0</span>
+                </div>
+              </div>
+              <!-- Average Rating -->
+              <div class="col-6 col-md-3">
+                <div class="stat-card-compact text-center border-warning-subtle">
+                  <span class="text-muted small d-block mb-1">Average Rating</span>
+                  <div class="d-flex justify-content-center align-items-center gap-2">
+                    <h3 class="font-title fw-bold text-warning mb-0" id="stat-avg-rating">0.0</h3>
+                    <div class="star-rating" id="stat-avg-stars">
+                      <i class="bi bi-star-fill"></i>
+                    </div>
+                  </div>
+                  <span class="text-muted font-mono" style="font-size: 0.65rem;" id="stat-five-star-count">0 5-Star Reviews</span>
+                </div>
+              </div>
+              <!-- Pending Responses -->
+              <div class="col-6 col-md-3">
+                <div class="stat-card-compact text-center border-primary-subtle">
+                  <span class="text-muted small d-block mb-1">Pending Responses</span>
+                  <h3 class="font-title fw-bold text-primary mb-0" id="stat-pending-responses">0</h3>
+                  <span class="text-primary font-mono" style="font-size: 0.65rem;"><i class="bi bi-clock-history"></i> High attention queue</span>
+                </div>
+              </div>
+              <!-- Reported & Flagged -->
+              <div class="col-6 col-md-3">
+                <div class="stat-card-compact text-center border-danger-subtle">
+                  <span class="text-muted small d-block mb-1">Moderation Flags</span>
+                  <h3 class="font-title fw-bold text-danger mb-0" id="stat-moderation-flags">0</h3>
+                  <span class="text-danger font-mono" style="font-size: 0.65rem;"><i class="bi bi-shield-exclamation"></i> Reported & Flagged</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ANALYTICS OVERVIEW CHART & RATINGS BLOCK -->
+            <div class="row g-4 mb-4" data-aos="fade-up" data-aos-delay="150">
+              <!-- Rating Distribution Panel -->
+              <div class="col-12 col-xl-4">
+                <div class="uh-card h-100 p-4">
+                  <h5 class="font-title fw-bold mb-3 text-main">Rating Profile</h5>
+                  
+                  <!-- Main Large Box -->
+                  <div class="rating-large-box mb-4">
+                    <h1 class="display-4 font-title fw-extrabold text-main mb-0" id="overview-avg-score">4.8</h1>
+                    <div class="star-rating large justify-content-center d-flex my-2" id="overview-avg-stars"></div>
+                    <span class="text-muted small" id="overview-total-label">Based on 10 reviews</span>
+                  </div>
+
+                  <!-- Distribution Progress Bars -->
+                  <div class="d-flex flex-column gap-3" id="distribution-progress-bars">
+                    <!-- Progress Bar 5 Star -->
+                    <div>
+                      <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.8rem;">
+                        <span class="text-main fw-semibold">5 Stars</span>
+                        <span class="text-muted font-mono" id="label-dist-5">60%</span>
+                      </div>
+                      <div class="progress" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                        <div class="progress-bar bg-warning" role="progressbar" id="bar-dist-5" style="width: 60%"></div>
+                      </div>
+                    </div>
+
+                    <!-- Progress Bar 4 Star -->
+                    <div>
+                      <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.8rem;">
+                        <span class="text-main fw-semibold">4 Stars</span>
+                        <span class="text-muted font-mono" id="label-dist-4">20%</span>
+                      </div>
+                      <div class="progress" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                        <div class="progress-bar bg-warning" role="progressbar" id="bar-dist-4" style="width: 20%"></div>
+                      </div>
+                    </div>
+
+                    <!-- Progress Bar 3 Star -->
+                    <div>
+                      <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.8rem;">
+                        <span class="text-main fw-semibold">3 Stars</span>
+                        <span class="text-muted font-mono" id="label-dist-3">10%</span>
+                      </div>
+                      <div class="progress" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                        <div class="progress-bar bg-warning" role="progressbar" id="bar-dist-3" style="width: 10%"></div>
+                      </div>
+                    </div>
+
+                    <!-- Progress Bar 2 Star -->
+                    <div>
+                      <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.8rem;">
+                        <span class="text-main fw-semibold">2 Stars</span>
+                        <span class="text-muted font-mono" id="label-dist-2">10%</span>
+                      </div>
+                      <div class="progress" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                        <div class="progress-bar bg-warning" role="progressbar" id="bar-dist-2" style="width: 10%"></div>
+                      </div>
+                    </div>
+
+                    <!-- Progress Bar 1 Star -->
+                    <div>
+                      <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.8rem;">
+                        <span class="text-main fw-semibold">1 Star</span>
+                        <span class="text-muted font-mono" id="label-dist-1">0%</span>
+                      </div>
+                      <div class="progress" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                        <div class="progress-bar bg-warning" role="progressbar" id="bar-dist-1" style="width: 0%"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Mini satisfaction stats row -->
+                  <div class="row g-2 mt-4 pt-3 border-top border-light-subtle text-center">
+                    <div class="col-6 border-end border-light-subtle">
+                      <span class="text-muted d-block small" style="font-size: 0.72rem;">Satisfaction Rate</span>
+                      <strong class="text-success h5 font-title mb-0" id="satisfaction-rate-pct">96%</strong>
+                    </div>
+                    <div class="col-6">
+                      <span class="text-muted d-block small" style="font-size: 0.72rem;">Response Rate</span>
+                      <strong class="text-primary h5 font-title mb-0" id="response-rate-pct">92%</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Growth Chart Container -->
+              <div class="col-12 col-xl-8">
+                <div class="uh-card h-100 p-4">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="font-title fw-bold text-main mb-0">Reviews Growth & Sentiment Summary</h5>
+                    <div class="d-flex gap-2">
+                      <div class="badge bg-success-subtle text-success d-flex align-items-center gap-1">
+                        <span class="status-bullet-uh bg-success" style="width: 6px; height: 6px;"></span> Positive Sentiment: 85%
+                      </div>
+                      <div class="badge bg-warning-subtle text-warning d-flex align-items-center gap-1">
+                        <span class="status-bullet-uh bg-warning" style="width: 6px; height: 6px;"></span> Neutral: 10%
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="chart-container-uh" style="position: relative; height: 320px; width: 100%;">
+                    <canvas id="reviewsGrowthChart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PENDING RESPONSES WORKFLOW QUEUE CARDS -->
+            <div id="quick-queue-section" class="mb-5 d-none btn-no-print" data-aos="fade-up">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="font-title fw-bold text-main mb-0 d-flex align-items-center gap-2">
+                  <i class="bi bi-lightning-charge text-warning"></i> Quick CRM Response Desk
+                </h5>
+                <button class="btn btn-xs btn-outline-secondary" onclick="exitReplyQueue()">View All Reviews</button>
+              </div>
+              <div class="row g-3" id="quick-queue-row">
+                <!-- Programmatically rendered -->
+              </div>
+            </div>
+
+            <!-- FILTERS & MAIN DATA WORKSPACE -->
+            <div class="reviews-toolbar mb-4" data-aos="fade-up">
+              <div class="row g-3">
+                <div class="col-12 col-md-3">
+                  <div class="position-relative">
+                    <input type="text" class="form-control bg-body border-light-subtle text-main ps-5 focus-visible-indicator" id="filter-search-input" placeholder="Search reviews text, ID, client..." onkeyup="applyAllFilters()" aria-label="Search filter reviews text input" />
+                    <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                  </div>
+                </div>
+                <div class="col-6 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main focus-visible-indicator" id="filter-type-select" onchange="applyAllFilters()" aria-label="Filter category dropdown">
+                    <option value="All">All Types</option>
+                    <option value="Property Review">Property Review</option>
+                    <option value="Agent Review">Agent Review</option>
+                    <option value="Service Review">Service Review</option>
+                    <option value="Rental Review">Rental Review</option>
+                    <option value="Sales Review">Sales Review</option>
+                    <option value="Support Feedback">Support Feedback</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main focus-visible-indicator" id="filter-rating-select" onchange="applyAllFilters()" aria-label="Filter rating dropdown">
+                    <option value="All">All Ratings</option>
+                    <option value="5">5 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="2">2 Stars</option>
+                    <option value="1">1 Star</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main focus-visible-indicator" id="filter-status-select" onchange="applyAllFilters()" aria-label="Filter moderation status dropdown">
+                    <option value="All">All Statuses</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Flagged">Flagged</option>
+                    <option value="Reported">Reported</option>
+                    <option value="Hidden">Hidden</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-3 d-flex gap-2 justify-content-end">
+                  <select class="form-select bg-body border-light-subtle text-main focus-visible-indicator" id="filter-response-select" onchange="applyAllFilters()" aria-label="Filter response status dropdown">
+                    <option value="All">Response Status</option>
+                    <option value="Answered">Answered</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                  <button class="btn btn-outline-secondary d-flex align-items-center justify-content-center px-3 focus-visible-indicator" onclick="resetFilters()" title="Reset workspace filters">
+                    <i class="bi bi-eraser-fill"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- TABLE CONTAINER -->
+            <div class="uh-card p-0 overflow-hidden mb-5" data-aos="fade-up">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="reviews-table">
+                  <thead>
+                    <tr class="table-light">
+                      <th style="width: 40px; padding-left: 1.25rem;">
+                        <input type="checkbox" class="form-check-input focus-visible-indicator" id="master-bulk-select" onchange="toggleMasterSelect(this)" aria-label="Select all reviews for bulk action" />
+                      </th>
+                      <th>Review ID</th>
+                      <th>Reviewer</th>
+                      <th>Review Type</th>
+                      <th>Property / Agent</th>
+                      <th>Rating</th>
+                      <th>Status</th>
+                      <th>Created Date</th>
+                      <th>Response Status</th>
+                      <th class="text-end" style="padding-right: 1.25rem;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reviews-table-body">
+                    <!-- Rendered programmatically -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- NO RESULTS PANEL -->
+              <div id="no-results-panel" class="d-none text-center py-5">
+                <i class="bi bi-search-heart text-muted mb-2" style="font-size: 2.5rem;"></i>
+                <h5 class="font-title fw-bold text-main mb-1">No Matching Feedback Nodes</h5>
+                <p class="text-muted small mb-0">No client reviews in our database matched your search queries or filter choices. Reset filters to continue.</p>
+              </div>
+            </div>
+
+            <!-- FEATURED TESTIMONIALS & ACTIVITY SPLIT MATRIX -->
+            <div class="row g-4 mb-4">
+              <!-- Featured Reviews Panel -->
+              <div class="col-12 col-md-6" data-aos="fade-right">
+                <div class="uh-card p-4 h-100">
+                  <h5 class="font-title fw-bold mb-3 text-main d-flex justify-content-between align-items-center">
+                    <span>Highlighted Spotlights</span>
+                    <i class="bi bi-heart-fill text-danger small"></i>
+                  </h5>
+                  <div class="d-flex flex-column gap-3" id="featured-reviews-container">
+                    <!-- Programmatically rendered -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Activity Timelines -->
+              <div class="col-12 col-md-6" data-aos="fade-left">
+                <div class="uh-card p-4 h-100">
+                  <h5 class="font-title fw-bold mb-3 text-main d-flex justify-content-between align-items-center">
+                    <span>Recent Operations Timeline</span>
+                    <i class="bi bi-clock-history text-muted small"></i>
+                  </h5>
+                  <div class="timeline-reviews" id="recent-activity-container">
+                    <!-- Programmatically rendered -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PROPERTY & AGENT LEADERBOARD SECTION -->
+            <div class="row g-4 mb-4" data-aos="fade-up">
+              <!-- Top Properties -->
+              <div class="col-12 col-md-6">
+                <div class="uh-card p-4 h-100">
+                  <h5 class="font-title fw-bold mb-3 text-main d-flex justify-content-between align-items-center">
+                    <span>Top-Rated Property Assets</span>
+                    <span class="badge bg-secondary-subtle text-muted rounded-pill">Ranked</span>
+                  </h5>
+                  <div class="d-flex flex-column gap-3" id="top-properties-container">
+                    <!-- Rendered Programmatically -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Top Agents -->
+              <div class="col-12 col-md-6">
+                <div class="uh-card p-4 h-100">
+                  <h5 class="font-title fw-bold mb-3 text-main d-flex justify-content-between align-items-center">
+                    <span>Agent Leaderboard By Rating</span>
+                    <span class="badge bg-secondary-subtle text-muted rounded-pill">Performance</span>
+                  </h5>
+                  <div class="d-flex flex-column gap-3" id="top-agents-container">
+                    <!-- Rendered Programmatically -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- STICKY FLOATING BULK ACTIONS TOOLBAR -->
+    <div id="bulk-actions-floating-bar" class="bulk-actions-bar btn-no-print">
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <span class="small fw-bold text-main" id="bulk-selected-count">0 items selected</span>
+        <div class="d-flex gap-1.5">
+          <button class="btn btn-xs btn-outline-success" onclick="bulkApprove()"><i class="bi bi-check-circle me-1"></i> Approve</button>
+          <button class="btn btn-xs btn-outline-warning" onclick="bulkFlag()"><i class="bi bi-flag-fill me-1"></i> Flag</button>
+          <button class="btn btn-xs btn-outline-secondary" onclick="bulkExportSelected()"><i class="bi bi-download me-1"></i> Export CSV</button>
+          <button class="btn btn-xs btn-outline-danger" onclick="bulkDelete()"><i class="bi bi-trash me-1"></i> Delete Selected</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPLY DIALOG MODAL -->
+    <div class="modal fade" id="replyModal" tabindex="-1" aria-labelledby="replyModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-body border border-light-subtle">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h5 class="modal-title font-title fw-bold text-main" id="replyModalLabel">Compose CRM Feedback Response</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3 p-3 bg-body-tertiary rounded border border-light-subtle">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold text-main" id="reply-reviewer-name">Reviewer</span>
+                <span class="badge bg-secondary-subtle text-muted" id="reply-review-id">ID</span>
+              </div>
+              <p class="text-muted small mb-0 italic" id="reply-review-text">Review Content</p>
+            </div>
+            <div class="mb-3">
+              <label for="reply-content-input" class="form-label text-muted small fw-semibold">Your Response</label>
+              <textarea class="form-control bg-body border-light-subtle text-main" id="reply-content-input" rows="4" placeholder="Enter professional, high-standard customer advisory team response..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitReviewResponse()">Submit Response</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODERATION DIALOG MODAL -->
+    <div class="modal fade" id="moderationModal" tabindex="-1" aria-labelledby="moderationModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-body border border-light-subtle">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h6 class="modal-title font-title fw-bold text-main" id="moderationModalLabel">Moderate Review Node</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="mod-status-select" class="form-label text-muted small fw-semibold">Moderation Action</label>
+              <select class="form-select bg-body border-light-subtle text-main" id="mod-status-select">
+                <option value="Approved">Approve</option>
+                <option value="Flagged">Flag</option>
+                <option value="Reported">Report</option>
+                <option value="Hidden">Hide</option>
+              </select>
+            </div>
+            <p class="text-muted" style="font-size: 0.72rem;">Changing status immediately updates metrics counters, table visual representation, and client portal access credentials.</p>
+          </div>
+          <div class="modal-footer border-top border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitModerationAction()">Apply Status</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-body border border-light-subtle">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h6 class="modal-title font-title fw-bold text-danger" id="deleteConfirmModalLabel"><i class="bi bi-exclamation-triangle-fill me-1"></i> Confirm Delete</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-main mb-0 small">Are you absolutely sure you want to permanently delete this feedback node? This action is irreversible.</p>
+          </div>
+          <div class="modal-footer border-top border-light-subtle">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="submitReviewDelete()">Delete Permanent</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST ALERTS -->
+    <div class="toast-container-custom" id="toast-container"></div>
+
+    <!-- Chart.js CDN (Modern 4.x version for high-performance and fully-customisable responsive charts) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- AOS Animation Library JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Main JS Script -->
+    <script src="/assets/js/main.js"></script>
+
+    <!-- INLINE CRM MODULE ENGINE -->
+    <script>
+      // Initial realistic real-estate review data schema
+      const DEFAULT_REVIEWS = [
+        {
+          id: "REV-2001",
+          reviewer: "Sophia Martinez",
+          email: "s.martinez@eliteproperties.com",
+          avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop",
+          type: "Property Review",
+          item: "Miami Beach Penthouse 404",
+          rating: 5,
+          status: "Approved",
+          comment: "The ocean view from the penthouse is absolutely breathtaking! The smart home integrations worked flawlessly, and the infinity pool area is pure luxury. Best vacation property ever.",
+          response: "Thank you Sophia! We are thrilled to hear you loved the panoramic views and home automation. Hope to host you again soon!",
+          responseStatus: "Answered",
+          date: "2026-07-08"
+        },
+        {
+          id: "REV-2002",
+          reviewer: "Liam Henderson",
+          email: "liam.h@hendersonventures.co",
+          avatar: "https://images.unsplash.com/photo-1500048993953-d23a436266cf?q=80&w=100&auto=format&fit=crop",
+          type: "Agent Review",
+          item: "Marcus Vance",
+          rating: 5,
+          status: "Approved",
+          comment: "Marcus Vance is an incredible agent. He helped us close on our Beverly Hills estate in record time. Extremely professional, highly responsive, and negotiable. Highly recommend him!",
+          response: "",
+          responseStatus: "Pending",
+          date: "2026-07-06"
+        },
+        {
+          id: "REV-2003",
+          reviewer: "Olivia Chen",
+          email: "olivia.chen@technexus.io",
+          avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=100&auto=format&fit=crop",
+          type: "Rental Review",
+          item: "Austin Downtown Loft",
+          rating: 4,
+          status: "Approved",
+          comment: "Superb loft in a very lively area of Austin. High ceilings and beautiful brickwork. There was some street noise over the weekend, but overall an exceptional living experience.",
+          response: "Glad you enjoyed the aesthetic and prime location of our loft, Olivia! We are installing dual-pane soundproof windows next week to eliminate street noise completely.",
+          responseStatus: "Answered",
+          date: "2026-07-05"
+        },
+        {
+          id: "REV-2004",
+          reviewer: "Jackson Davies",
+          email: "jackson.davies@timbercorp.com",
+          avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=100&auto=format&fit=crop",
+          type: "Sales Review",
+          item: "Seattle Waterfront Cabin",
+          rating: 5,
+          status: "Approved",
+          comment: "Emma Watson guided us through the buying process with immense skill. The cabin's timber craftsmanship is legendary and the private pier is a dream. Perfect experience.",
+          response: "",
+          responseStatus: "Pending",
+          date: "2026-07-03"
+        },
+        {
+          id: "REV-2005",
+          reviewer: "Isabella Ross",
+          email: "i.ross@designstudio.it",
+          avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&auto=format&fit=crop",
+          type: "Service Review",
+          item: "San Francisco Townhouse",
+          rating: 2,
+          status: "Flagged",
+          comment: "The property itself is lovely, but the initial check-in process was delayed by two hours due to keycard synchronization issues with the smart lock system. Maintenance eventually solved it, but it was frustrating.",
+          response: "",
+          responseStatus: "Pending",
+          date: "2026-06-28"
+        },
+        {
+          id: "REV-2006",
+          reviewer: "Ethan Wright",
+          email: "ethan@wrightconsulting.com",
+          avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=100&auto=format&fit=crop",
+          type: "Property Review",
+          item: "Malibu Luxury Villa",
+          rating: 5,
+          status: "Approved",
+          comment: "Unmatched sunset vistas and absolute privacy. The villa was immaculate, featuring chef-grade kitchen appliances and a pristine private beach entrance. Five stars is an understatement.",
+          response: "We greatly appreciate your generous feedback, Ethan! We hope to see you back at the Malibu shores very soon.",
+          responseStatus: "Answered",
+          date: "2026-06-25"
+        },
+        {
+          id: "REV-2007",
+          reviewer: "Ava Taylor",
+          email: "ava.taylor@globaladvisors.net",
+          avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=100&auto=format&fit=crop",
+          type: "Support Feedback",
+          item: "Sarah Jenkins",
+          rating: 3,
+          status: "Approved",
+          comment: "Sarah Jenkins was very helpful with the paper contracts. However, the online client portal was slow to upload our bank statements, causing some anxiety before deadline.",
+          response: "Apologies for the portal issues, Ava! We recently migrated to a high-speed CDN which has boosted upload speeds by 200%. Thank you for your patience.",
+          responseStatus: "Answered",
+          date: "2026-06-20"
+        },
+        {
+          id: "REV-2008",
+          reviewer: "Mason Miller",
+          email: "mason.miller@highrisechi.com",
+          avatar: "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?q=80&w=100&auto=format&fit=crop",
+          type: "Rental Review",
+          item: "Chicago High-Rise Condo",
+          rating: 5,
+          status: "Approved",
+          comment: "Robert Downey did a fantastic job managing our rental contract. Clean apartment, stellar gym facilities in the building, and easy payment gateway integration.",
+          response: "Wonderful to hear, Mason! We pride ourselves on streamlined digital operations.",
+          responseStatus: "Answered",
+          date: "2026-06-15"
+        },
+        {
+          id: "REV-2009",
+          reviewer: "Mia Jenkins",
+          email: "mia@jenkinsdesign.com",
+          avatar: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=100&auto=format&fit=crop",
+          type: "Property Review",
+          item: "Denver Ski Chalet",
+          rating: 1,
+          status: "Reported",
+          comment: "WARNING: Highly inappropriate bot text trying to sell cryptocurrency and third-party advertising links. Do not trust.",
+          response: "",
+          responseStatus: "Pending",
+          date: "2026-06-10"
+        },
+        {
+          id: "REV-2010",
+          reviewer: "Lucas Brooks",
+          email: "l.brooks@brookshaven.com",
+          avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop",
+          type: "Service Review",
+          item: "Emma Watson",
+          rating: 4,
+          status: "Approved",
+          comment: "Very thorough service checklist. Emma Watson made sure all minor plumbing issues in the condo were fully resolved prior to hand-off. Professional and caring.",
+          response: "",
+          responseStatus: "Pending",
+          date: "2026-06-08"
+        }
+      ];
+
+      // Initial active variables
+      let reviews = [];
+      let selectedReviewIds = new Set();
+      let activeState = 'success'; // 'success' | 'loading' | 'empty' | 'error'
+      let activeReplyTargetId = null;
+      let activeModerateTargetId = null;
+      let activeDeleteTargetId = null;
+      let reviewGrowthChart = null;
+
+      // DOM Elements
+      const tableBody = document.getElementById('reviews-table-body');
+      const noResultsPanel = document.getElementById('no-results-panel');
+      const toastContainer = document.getElementById('toast-container');
+      const bulkFloatingBar = document.getElementById('bulk-actions-floating-bar');
+      const bulkCountLabel = document.getElementById('bulk-selected-count');
+
+      // On Init
+      document.addEventListener('DOMContentLoaded', () => {
+        initDatabase();
+        renderAll();
+        registerThemeListener();
+      });
+
+      // Initialize database from LocalStorage
+      function initDatabase() {
+        const stored = localStorage.getItem('urbanhub_reviews_db');
+        if (stored) {
+          reviews = JSON.parse(stored);
+        } else {
+          reviews = [...DEFAULT_REVIEWS];
+          saveDatabase();
+        }
+      }
+
+      function saveDatabase() {
+        localStorage.setItem('urbanhub_reviews_db', JSON.stringify(reviews));
+      }
+
+      function resetReviewsDatabase() {
+        reviews = [...DEFAULT_REVIEWS];
+        saveDatabase();
+        showToast('Sample reviews database re-seeded successfully.', 'success');
+        renderAll();
+      }
+
+      // Reusable Toast Builder
+      function showToast(message, type = 'success') {
+        const id = 'toast_' + Date.now();
+        const icon = type === 'success' ? 'bi-check-circle-fill text-success' :
+                     type === 'danger' ? 'bi-exclamation-triangle-fill text-danger' : 'bi-info-circle-fill text-primary';
+        
+        const toastHTML = `
+          <div id="${id}" class="toast align-items-center bg-body border border-light-subtle shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+              <div class="toast-body d-flex align-items-center gap-2">
+                <i class="bi ${icon}"></i>
+                <span class="small fw-semibold text-main">${message}</span>
+              </div>
+              <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+          </div>
+        `;
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+        const toastEl = document.getElementById(id);
+        const bsToast = new bootstrap.Toast(toastEl, { delay: 4000 });
+        bsToast.show();
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+      }
+
+      // Global UI state switcher (State simulator)
+      function setUIState(state) {
+        activeState = state;
+        
+        // Remove active class from buttons
+        document.querySelectorAll('.state-simulator button').forEach(b => b.classList.remove('active'));
+        
+        // Add active class
+        if (state === 'success') document.getElementById('sim-success').classList.add('active');
+        if (state === 'loading') document.getElementById('sim-loading').classList.add('active');
+        if (state === 'empty') document.getElementById('sim-empty').classList.add('active');
+        if (state === 'error') document.getElementById('sim-error').classList.add('active');
+
+        // Toggle page layout boxes
+        const loadingBox = document.getElementById('loading-state');
+        const emptyBox = document.getElementById('empty-state');
+        const errorBox = document.getElementById('error-state');
+        const successBox = document.getElementById('success-state');
+
+        loadingBox.classList.add('d-none');
+        emptyBox.classList.add('d-none');
+        errorBox.classList.add('d-none');
+        successBox.classList.add('d-none');
+
+        if (state === 'success') {
+          successBox.classList.remove('d-none');
+          renderAll();
+        } else if (state === 'loading') {
+          loadingBox.classList.remove('d-none');
+        } else if (state === 'empty') {
+          emptyBox.classList.remove('d-none');
+        } else if (state === 'error') {
+          errorBox.classList.remove('d-none');
+        }
+      }
+
+      // Quick Refresh Simulation
+      function triggerRefresh() {
+        setUIState('loading');
+        setTimeout(() => {
+          setUIState('success');
+          showToast('Advisory CRM system successfully synced with gateway node.', 'success');
+        }, 1200);
+      }
+
+      // Main Render Coordinator
+      function renderAll() {
+        if (activeState !== 'success') return;
+        
+        selectedReviewIds.clear();
+        updateBulkBarState();
+        
+        // Filter reviews based on active form controls
+        const filtered = getFilteredReviews();
+        
+        // Check if there are results
+        if (filtered.length === 0) {
+          tableBody.classList.add('d-none');
+          noResultsPanel.classList.remove('d-none');
+        } else {
+          tableBody.classList.remove('d-none');
+          noResultsPanel.classList.add('d-none');
+        }
+
+        renderTable(filtered);
+        renderMetrics(filtered);
+        renderFeatured();
+        renderQueuePanel();
+        renderTimeline();
+        renderLeaderboards();
+        renderGrowthChart();
+      }
+
+      // Filters engine
+      function getFilteredReviews() {
+        const searchText = document.getElementById('filter-search-input').value.toLowerCase();
+        const selectedType = document.getElementById('filter-type-select').value;
+        const selectedRating = document.getElementById('filter-rating-select').value;
+        const selectedStatus = document.getElementById('filter-status-select').value;
+        const selectedResponse = document.getElementById('filter-response-select').value;
+
+        return reviews.filter(rev => {
+          const matchSearch = rev.reviewer.toLowerCase().includes(searchText) || 
+                              rev.id.toLowerCase().includes(searchText) || 
+                              rev.item.toLowerCase().includes(searchText) || 
+                              rev.comment.toLowerCase().includes(searchText);
+          
+          const matchType = selectedType === 'All' || rev.type === selectedType;
+          const matchRating = selectedRating === 'All' || rev.rating === parseInt(selectedRating);
+          const matchStatus = selectedStatus === 'All' || rev.status === selectedStatus;
+          const matchResponse = selectedResponse === 'All' || rev.responseStatus === selectedResponse;
+
+          return matchSearch && matchType && matchRating && matchStatus && matchResponse;
+        });
+      }
+
+      function applyAllFilters() {
+        renderAll();
+      }
+
+      function resetFilters() {
+        document.getElementById('filter-search-input').value = '';
+        document.getElementById('filter-type-select').value = 'All';
+        document.getElementById('filter-rating-select').value = 'All';
+        document.getElementById('filter-status-select').value = 'All';
+        document.getElementById('filter-response-select').value = 'All';
+        document.getElementById('top-toolbar-search').value = '';
+        renderAll();
+        showToast('CRM workspace search query and filters reset.', 'info');
+      }
+
+      function handleGlobalSearch(val) {
+        document.getElementById('filter-search-input').value = val;
+        applyAllFilters();
+      }
+
+      // Filter reply queue immediately
+      function filterReplyQueue() {
+        document.getElementById('filter-response-select').value = 'Pending';
+        document.getElementById('filter-status-select').value = 'Approved';
+        document.getElementById('quick-queue-section').classList.remove('d-none');
+        renderAll();
+        showToast('Interactive response desk loaded successfully.', 'info');
+      }
+
+      function exitReplyQueue() {
+        document.getElementById('filter-response-select').value = 'All';
+        document.getElementById('quick-queue-section').classList.add('d-none');
+        renderAll();
+      }
+
+      // Renders the Bootstrap Table
+      function renderTable(data) {
+        tableBody.innerHTML = '';
+        
+        data.forEach(rev => {
+          const statusBadge = getStatusBadge(rev.status);
+          const typeBadge = getTypeBadge(rev.type);
+          const ratingStars = getStarsHTML(rev.rating);
+          const responseBadge = rev.responseStatus === 'Answered' ? 
+            `<span class="badge bg-success-subtle text-success d-inline-flex align-items-center gap-1"><i class="bi bi-chat-left-check"></i> Answered</span>` : 
+            `<span class="badge bg-warning-subtle text-warning d-inline-flex align-items-center gap-1"><i class="bi bi-chat-left-dots"></i> Pending</span>`;
+          
+          const isChecked = selectedReviewIds.has(rev.id) ? 'checked' : '';
+          
+          const tr = document.createElement('tr');
+          tr.setAttribute('data-id', rev.id);
+          tr.innerHTML = `
+            <td style="padding-left: 1.25rem;">
+              <input type="checkbox" class="form-check-input row-select-checkbox focus-visible-indicator" onchange="toggleRowSelect('${rev.id}', this)" ${isChecked} aria-label="Select review ${rev.id}" />
+            </td>
+            <td><strong class="font-mono text-muted" style="font-size: 0.8rem;">${rev.id}</strong></td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <img src="${rev.avatar}" class="reviewer-img" alt="${rev.reviewer}" referrerpolicy="no-referrer" />
+                <div>
+                  <span class="d-block fw-semibold text-main font-title" style="font-size: 0.85rem;">${rev.reviewer}</span>
+                  <span class="text-muted d-block font-mono" style="font-size: 0.72rem;">${rev.email}</span>
+                </div>
+              </div>
+            </td>
+            <td>${typeBadge}</td>
+            <td><span class="fw-medium text-main" style="font-size: 0.82rem;">${rev.item}</span></td>
+            <td>${ratingStars}</td>
+            <td>${statusBadge}</td>
+            <td><span class="text-muted small">${rev.date}</span></td>
+            <td>${responseBadge}</td>
+            <td class="text-end" style="padding-right: 1.25rem;">
+              <div class="d-flex justify-content-end gap-1.5">
+                <button class="btn btn-xs btn-outline-primary focus-visible-indicator" title="Reply to reviewer" onclick="openReplyModal('${rev.id}')">
+                  <i class="bi bi-reply"></i>
+                </button>
+                <button class="btn btn-xs btn-outline-secondary focus-visible-indicator" title="Change Status / Moderate" onclick="openModerationModal('${rev.id}')">
+                  <i class="bi bi-shield-check"></i>
+                </button>
+                <button class="btn btn-xs btn-outline-danger focus-visible-indicator" title="Delete Review" onclick="openDeleteModal('${rev.id}')">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+
+        // Sync header master checkbox
+        const visibleCheckboxes = tableBody.querySelectorAll('.row-select-checkbox');
+        const masterSelect = document.getElementById('master-bulk-select');
+        if (visibleCheckboxes.length > 0) {
+          const allChecked = Array.from(visibleCheckboxes).every(cb => cb.checked);
+          masterSelect.checked = allChecked;
+        } else {
+          masterSelect.checked = false;
+        }
+      }
+
+      // Status badges builder
+      function getStatusBadge(status) {
+        if (status === 'Approved') return `<span class="badge bg-success-subtle text-success d-inline-flex align-items-center gap-1"><span class="status-bullet-uh bg-success" style="width: 6px; height: 6px;"></span> Approved</span>`;
+        if (status === 'Flagged') return `<span class="badge bg-warning-subtle text-warning d-inline-flex align-items-center gap-1"><span class="status-bullet-uh bg-warning" style="width: 6px; height: 6px;"></span> Flagged</span>`;
+        if (status === 'Reported') return `<span class="badge bg-danger-subtle text-danger d-inline-flex align-items-center gap-1"><span class="status-bullet-uh bg-danger" style="width: 6px; height: 6px;"></span> Reported</span>`;
+        return `<span class="badge bg-secondary-subtle text-muted d-inline-flex align-items-center gap-1"><span class="status-bullet-uh bg-secondary" style="width: 6px; height: 6px;"></span> Hidden</span>`;
+      }
+
+      // Review Type badge builder
+      function getTypeBadge(type) {
+        if (type === 'Property Review') return `<span class="badge-type bg-primary-subtle text-primary">${type}</span>`;
+        if (type === 'Agent Review') return `<span class="badge-type bg-info-subtle text-info">${type}</span>`;
+        if (type === 'Service Review') return `<span class="badge-type bg-teal text-white" style="background-color: #0D9488 !important;">${type}</span>`;
+        if (type === 'Rental Review') return `<span class="badge-type bg-warning-subtle text-warning">${type}</span>`;
+        if (type === 'Sales Review') return `<span class="badge-type bg-success-subtle text-success">${type}</span>`;
+        return `<span class="badge-type bg-danger-subtle text-danger" style="background-color: rgba(236,72,153,0.1) !important; color: #EC4899 !important;">${type}</span>`;
+      }
+
+      // Star rating builder
+      function getStarsHTML(rating) {
+        let stars = `<div class="star-rating">`;
+        for (let i = 1; i <= 5; i++) {
+          if (i <= rating) {
+            stars += `<i class="bi bi-star-fill"></i>`;
+          } else {
+            stars += `<i class="bi bi-star"></i>`;
+          }
+        }
+        stars += `</div>`;
+        return stars;
+      }
+
+      // Renders CRM Metrics Cards and rating distributions
+      function renderMetrics(data) {
+        // Simple counts
+        const total = data.length;
+        document.getElementById('stat-total-reviews').textContent = total;
+        
+        // Types breakdown
+        const propertyCount = data.filter(r => r.type === 'Property Review').length;
+        const agentCount = data.filter(r => r.type === 'Agent Review').length;
+        document.getElementById('stat-type-breakdown').textContent = `Prop: ${propertyCount} | Agent: ${agentCount}`;
+
+        // Compute average rating
+        const validRatings = data.filter(r => r.status !== 'Reported');
+        const avg = validRatings.length > 0 ? (validRatings.reduce((acc, curr) => acc + curr.rating, 0) / validRatings.length).toFixed(1) : '0.0';
+        document.getElementById('stat-avg-rating').textContent = avg;
+        document.getElementById('overview-avg-score').textContent = avg;
+
+        // Render average star UI
+        const avgNum = parseFloat(avg);
+        let avgStarsHTML = '';
+        for (let i = 1; i <= 5; i++) {
+          if (i <= Math.floor(avgNum)) {
+            avgStarsHTML += `<i class="bi bi-star-fill"></i>`;
+          } else if (i - 0.5 <= avgNum) {
+            avgStarsHTML += `<i class="bi bi-star-half"></i>`;
+          } else {
+            avgStarsHTML += `<i class="bi bi-star"></i>`;
+          }
+        }
+        document.getElementById('stat-avg-stars').innerHTML = avgStarsHTML;
+        document.getElementById('overview-avg-stars').innerHTML = avgStarsHTML;
+
+        // Five star reviews count
+        const fiveStars = data.filter(r => r.rating === 5).length;
+        document.getElementById('stat-five-star-count').textContent = `${fiveStars} Five-Star Reviews`;
+
+        // Response pending counts
+        const pending = data.filter(r => r.responseStatus === 'Pending' && r.status === 'Approved').length;
+        document.getElementById('stat-pending-responses').textContent = pending;
+        document.getElementById('badge-queue-count').textContent = pending;
+
+        // Flagged & Reported counts
+        const flaggedCount = data.filter(r => r.status === 'Flagged' || r.status === 'Reported').length;
+        document.getElementById('stat-moderation-flags').textContent = flaggedCount;
+
+        // Total label
+        document.getElementById('overview-total-label').textContent = `Based on ${total} reviews`;
+
+        // Calculate distribution percentages
+        const dists = [0, 0, 0, 0, 0]; // 1, 2, 3, 4, 5 Stars
+        if (total > 0) {
+          data.forEach(r => {
+            if (r.rating >= 1 && r.rating <= 5) {
+              dists[r.rating - 1]++;
+            }
+          });
+        }
+
+        // Apply percentages
+        for (let stars = 5; stars >= 1; stars--) {
+          const count = dists[stars - 1];
+          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+          document.getElementById(`label-dist-${stars}`).textContent = `${pct}%`;
+          document.getElementById(`bar-dist-${stars}`).style.width = `${pct}%`;
+        }
+
+        // Satisfaction Rate
+        const goodRating = data.filter(r => r.rating >= 4).length;
+        const satPct = total > 0 ? Math.round((goodRating / total) * 100) : 100;
+        document.getElementById('satisfaction-rate-pct').textContent = `${satPct}%`;
+
+        // Response Rate
+        const answeredCount = data.filter(r => r.responseStatus === 'Answered').length;
+        const respPct = total > 0 ? Math.round((answeredCount / total) * 100) : 100;
+        document.getElementById('response-rate-pct').textContent = `${respPct}%`;
+      }
+
+      // Featured spot light cards
+      function renderFeatured() {
+        const featuredContainer = document.getElementById('featured-reviews-container');
+        featuredContainer.innerHTML = '';
+        
+        // Get 3 high rating reviews (5 star)
+        const topReviews = reviews.filter(r => r.rating === 5 && r.status === 'Approved').slice(0, 3);
+        if (topReviews.length === 0) {
+          featuredContainer.innerHTML = `<p class="text-muted small text-center my-4">No reviews marked as featured spotlights.</p>`;
+          return;
+        }
+
+        topReviews.forEach(rev => {
+          const starsHTML = getStarsHTML(rev.rating);
+          const card = document.createElement('div');
+          card.className = 'p-3 bg-body border border-light-subtle rounded-3 hover-lift';
+          card.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <img src="${rev.avatar}" class="reviewer-img" alt="${rev.reviewer}" style="width: 32px; height: 32px;" referrerpolicy="no-referrer" />
+                <div>
+                  <span class="d-block fw-bold text-main small font-title">${rev.reviewer}</span>
+                  <span class="text-muted" style="font-size: 0.68rem;"><i class="bi bi-house text-primary me-1"></i>${rev.item}</span>
+                </div>
+              </div>
+              ${starsHTML}
+            </div>
+            <p class="text-muted mb-0 small italic" style="line-height: 1.35; font-size: 0.78rem;">"${rev.comment}"</p>
+          `;
+          featuredContainer.appendChild(card);
+        });
+      }
+
+      // Render Pending Responses Queue Section
+      function renderQueuePanel() {
+        const queueRow = document.getElementById('quick-queue-row');
+        queueRow.innerHTML = '';
+
+        const pendingReviews = reviews.filter(r => r.responseStatus === 'Pending' && r.status === 'Approved');
+        if (pendingReviews.length === 0) {
+          queueRow.innerHTML = `
+            <div class="col-12">
+              <div class="p-4 bg-body border border-light-subtle rounded-3 text-center">
+                <i class="bi bi-chat-square-heart text-success mb-2" style="font-size: 2rem;"></i>
+                <p class="text-muted mb-0 small">Great job! The response queue is completely empty.</p>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // Render top 3 pending queue items
+        pendingReviews.slice(0, 3).forEach(rev => {
+          const starsHTML = getStarsHTML(rev.rating);
+          const col = document.createElement('div');
+          col.className = 'col-12 col-md-4';
+          col.innerHTML = `
+            <div class="uh-card h-100 p-3 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="badge bg-primary-subtle text-primary" style="font-size: 0.65rem;">${rev.type}</span>
+                  <span class="text-muted font-mono" style="font-size: 0.65rem;">${rev.id}</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <img src="${rev.avatar}" class="reviewer-img" alt="${rev.reviewer}" style="width: 30px; height: 30px;" referrerpolicy="no-referrer" />
+                  <div>
+                    <span class="fw-bold text-main d-block font-title" style="font-size: 0.78rem;">${rev.reviewer}</span>
+                    <span class="text-muted" style="font-size: 0.68rem;">Ref: ${rev.item}</span>
+                  </div>
+                </div>
+                ${starsHTML}
+                <p class="text-muted small mt-2 italic mb-3" style="line-height: 1.3;">"${rev.comment}"</p>
+              </div>
+              <div class="pt-2 border-top border-light-subtle">
+                <textarea class="form-control form-control-sm bg-body text-main border-light-subtle mb-2" id="quick-reply-${rev.id}" rows="2" style="font-size: 0.75rem;" placeholder="Type professional response..."></textarea>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-calendar"></i> ${rev.date}</span>
+                  <button class="btn btn-xs btn-primary d-flex align-items-center gap-1" onclick="submitQuickReply('${rev.id}')">
+                    <i class="bi bi-send-fill"></i> Submit Reply
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+          queueRow.appendChild(col);
+        });
+      }
+
+      // Submit quick replies
+      function submitQuickReply(id) {
+        const textarea = document.getElementById(`quick-reply-${id}`);
+        const replyText = textarea.value.trim();
+        if (!replyText) {
+          showToast('Please type a response comment first.', 'danger');
+          return;
+        }
+
+        const revIndex = reviews.findIndex(r => r.id === id);
+        if (revIndex !== -1) {
+          reviews[revIndex].response = replyText;
+          reviews[revIndex].responseStatus = 'Answered';
+          saveDatabase();
+          showToast(`Response submitted for review ${id} successfully!`, 'success');
+          addTimelineLog('Response Added', `Sarah Jenkins replied to ${reviews[revIndex].reviewer}'s review.`);
+          renderAll();
+        }
+      }
+
+      // Timeline Logs Render
+      const timelineLogs = [
+        { title: "New Review Received", desc: "Sophia Martinez posted a 5-star review for Penthouse 404.", time: "2 hours ago" },
+        { title: "Response Appended", desc: "Sarah Jenkins replied to Olivia Chen's rental loft feedback.", time: "5 hours ago" },
+        { title: "Review Node Approved", desc: "Robert Downey approved Jackson Davies's cabin sales feedback.", time: "1 day ago" },
+        { title: "System Flag Triggered", desc: "Automated filters flagged Isabella Ross's lock sync issue review.", time: "2 days ago" }
+      ];
+
+      function renderTimeline() {
+        const timelineContainer = document.getElementById('recent-activity-container');
+        timelineContainer.innerHTML = '';
+        timelineLogs.slice(0, 4).forEach(log => {
+          const item = document.createElement('div');
+          item.className = 'timeline-reviews-item';
+          item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+              <span class="fw-bold text-main font-title" style="font-size: 0.8rem;">${log.title}</span>
+              <span class="text-muted font-mono" style="font-size: 0.65rem;">${log.time}</span>
+            </div>
+            <p class="text-muted mb-0 mt-0.5" style="font-size: 0.74rem;">${log.desc}</p>
+          `;
+          timelineContainer.appendChild(item);
+        });
+      }
+
+      function addTimelineLog(title, desc) {
+        timelineLogs.unshift({
+          title: title,
+          desc: desc,
+          time: "Just now"
+        });
+      }
+
+      // Properties & Agent Leaderboard cards render
+      function renderLeaderboards() {
+        // Properties
+        const propContainer = document.getElementById('top-properties-container');
+        propContainer.innerHTML = '';
+        const mockProperties = [
+          { name: "Miami Beach Penthouse 404", rating: "5.0", reviews: 2, img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=300&auto=format&fit=crop" },
+          { name: "Beverly Hills Estate Mansion", rating: "4.9", reviews: 3, img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=300&auto=format&fit=crop" },
+          { name: "Malibu Luxury Sunset Villa", rating: "5.0", reviews: 1, img: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=300&auto=format&fit=crop" }
+        ];
+
+        mockProperties.forEach(prop => {
+          const item = document.createElement('div');
+          item.className = 'd-flex align-items-center gap-3 p-2 bg-body border border-light-subtle rounded-3 hover-lift';
+          item.innerHTML = `
+            <img src="${prop.img}" class="leaderboard-img" alt="${prop.name}" referrerpolicy="no-referrer" />
+            <div class="flex-grow-1">
+              <span class="fw-bold text-main d-block font-title" style="font-size: 0.8rem;">${prop.name}</span>
+              <div class="d-flex align-items-center gap-2 mt-0.5">
+                <span class="text-warning font-mono fw-bold" style="font-size: 0.72rem;"><i class="bi bi-star-fill me-1"></i>${prop.rating}</span>
+                <span class="text-muted" style="font-size: 0.72rem;">• ${prop.reviews} reviews</span>
+              </div>
+            </div>
+          `;
+          propContainer.appendChild(item);
+        });
+
+        // Agents
+        const agentContainer = document.getElementById('top-agents-container');
+        agentContainer.innerHTML = '';
+        const mockAgents = [
+          { name: "Marcus Vance", rating: "5.0", deals: 42, img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop" },
+          { name: "Sarah Jenkins", rating: "4.8", deals: 56, img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" },
+          { name: "Emma Watson", rating: "4.7", deals: 31, img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" }
+        ];
+
+        mockAgents.forEach(agent => {
+          const item = document.createElement('div');
+          item.className = 'd-flex align-items-center gap-3 p-2 bg-body border border-light-subtle rounded-3 hover-lift';
+          item.innerHTML = `
+            <img src="${agent.img}" class="leaderboard-agent-img" alt="${agent.name}" referrerpolicy="no-referrer" />
+            <div class="flex-grow-1">
+              <span class="fw-bold text-main d-block font-title" style="font-size: 0.8rem;">${agent.name}</span>
+              <div class="d-flex align-items-center gap-2 mt-0.5">
+                <span class="text-warning font-mono fw-bold" style="font-size: 0.72rem;"><i class="bi bi-star-fill me-1"></i>${agent.rating}</span>
+                <span class="text-muted" style="font-size: 0.72rem;">• ${agent.deals} closed sales</span>
+              </div>
+            </div>
+          `;
+          agentContainer.appendChild(item);
+        });
+      }
+
+      // Render growth line chart
+      function renderGrowthChart() {
+        const ctx = document.getElementById('reviewsGrowthChart');
+        if (!ctx) return;
+
+        // Fetch dark state
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const textColor = isDark ? '#94A3B8' : '#64748B';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        const primaryColor = isDark ? '#D4AF37' : '#B8860B'; // Gold Color
+
+        if (reviewGrowthChart) {
+          reviewGrowthChart.destroy();
+        }
+
+        reviewGrowthChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+            datasets: [
+              {
+                label: 'Monthly Review Volume',
+                data: [4, 6, 9, 12, 15, 18, 22],
+                borderColor: primaryColor,
+                backgroundColor: isDark ? 'rgba(212, 175, 55, 0.05)' : 'rgba(184, 134, 11, 0.05)',
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.4
+              },
+              {
+                label: 'Average Score Trend (x10)',
+                data: [42, 44, 45, 46, 47, 47, 48],
+                borderColor: '#10B981',
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                borderDash: [5, 5],
+                tension: 0.1
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  color: textColor,
+                  font: {
+                    family: 'Inter',
+                    size: 11
+                  }
+                }
+              },
+              tooltip: {
+                padding: 10,
+                backgroundColor: isDark ? '#111114' : '#FFFFFF',
+                titleColor: isDark ? '#E2E8F0' : '#0F172A',
+                bodyColor: isDark ? '#94A3B8' : '#64748B',
+                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                borderWidth: 1
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: gridColor },
+                ticks: { color: textColor }
+              },
+              y: {
+                grid: { color: gridColor },
+                ticks: { color: textColor }
+              }
+            }
+          }
+        });
+      }
+
+      // Handle Theme Updates on Charts
+      function registerThemeListener() {
+        window.addEventListener('themeChanged', (e) => {
+          renderGrowthChart();
+        });
+      }
+
+      // ROW SELECTION ENGINE
+      function toggleRowSelect(id, checkbox) {
+        if (checkbox.checked) {
+          selectedReviewIds.add(id);
+        } else {
+          selectedReviewIds.delete(id);
+        }
+        updateBulkBarState();
+      }
+
+      function toggleMasterSelect(masterCheckbox) {
+        const visibleCheckboxes = tableBody.querySelectorAll('.row-select-checkbox');
+        visibleCheckboxes.forEach(cb => {
+          const row = cb.closest('tr');
+          const id = row.getAttribute('data-id');
+          cb.checked = masterCheckbox.checked;
+          if (masterCheckbox.checked) {
+            selectedReviewIds.add(id);
+          } else {
+            selectedReviewIds.delete(id);
+          }
+        });
+        updateBulkBarState();
+      }
+
+      function updateBulkBarState() {
+        const count = selectedReviewIds.size;
+        if (count > 0) {
+          bulkCountLabel.textContent = `${count} review${count > 1 ? 's' : ''} selected`;
+          bulkFloatingBar.classList.add('show');
+        } else {
+          bulkFloatingBar.classList.remove('show');
+        }
+      }
+
+      // CRM CRUD OPERATIONS
+      
+      // Reply Modal
+      function openReplyModal(id) {
+        activeReplyTargetId = id;
+        const rev = reviews.find(r => r.id === id);
+        if (rev) {
+          document.getElementById('reply-reviewer-name').textContent = rev.reviewer;
+          document.getElementById('reply-review-id').textContent = rev.id;
+          document.getElementById('reply-review-text').textContent = `"${rev.comment}"`;
+          document.getElementById('reply-content-input').value = rev.response || '';
+          
+          const modal = new bootstrap.Modal(document.getElementById('replyModal'));
+          modal.show();
+        }
+      }
+
+      function submitReviewResponse() {
+        const replyText = document.getElementById('reply-content-input').value.trim();
+        if (!replyText) {
+          showToast('Please type a response before submitting.', 'danger');
+          return;
+        }
+
+        const revIndex = reviews.findIndex(r => r.id === activeReplyTargetId);
+        if (revIndex !== -1) {
+          reviews[revIndex].response = replyText;
+          reviews[revIndex].responseStatus = 'Answered';
+          saveDatabase();
+          
+          // Close modal
+          const modalEl = document.getElementById('replyModal');
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          modalInstance.hide();
+          
+          showToast(`Response successfully appended to ${reviews[revIndex].id}.`, 'success');
+          addTimelineLog('Response Appended', `Sarah Jenkins answered ${reviews[revIndex].reviewer}'s post.`);
+          renderAll();
+        }
+      }
+
+      // Moderation / Change Status Modal
+      function openModerationModal(id) {
+        activeModerateTargetId = id;
+        const rev = reviews.find(r => r.id === id);
+        if (rev) {
+          document.getElementById('mod-status-select').value = rev.status;
+          const modal = new bootstrap.Modal(document.getElementById('moderationModal'));
+          modal.show();
+        }
+      }
+
+      function submitModerationAction() {
+        const newStatus = document.getElementById('mod-status-select').value;
+        const revIndex = reviews.findIndex(r => r.id === activeModerateTargetId);
+        if (revIndex !== -1) {
+          const oldStatus = reviews[revIndex].status;
+          reviews[revIndex].status = newStatus;
+          saveDatabase();
+
+          const modalEl = document.getElementById('moderationModal');
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          modalInstance.hide();
+
+          showToast(`Review status updated to ${newStatus}.`, 'success');
+          addTimelineLog('Status Modified', `${reviews[revIndex].id} moderated from ${oldStatus} to ${newStatus}.`);
+          renderAll();
+        }
+      }
+
+      // Delete Modal
+      function openDeleteModal(id) {
+        activeDeleteTargetId = id;
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        modal.show();
+      }
+
+      function submitReviewDelete() {
+        const id = activeDeleteTargetId;
+        const revIndex = reviews.findIndex(r => r.id === id);
+        if (revIndex !== -1) {
+          const reviewer = reviews[revIndex].reviewer;
+          reviews.splice(revIndex, 1);
+          saveDatabase();
+
+          const modalEl = document.getElementById('deleteConfirmModal');
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          modalInstance.hide();
+
+          showToast(`Feedback node ${id} deleted successfully.`, 'success');
+          addTimelineLog('Review Deleted', `Removed feedback node by ${reviewer}.`);
+          renderAll();
+        }
+      }
+
+      // BULK ACTIONS
+      function bulkApprove() {
+        selectedReviewIds.forEach(id => {
+          const revIndex = reviews.findIndex(r => r.id === id);
+          if (revIndex !== -1) {
+            reviews[revIndex].status = 'Approved';
+          }
+        });
+        saveDatabase();
+        showToast(`Selected reviews approved successfully.`, 'success');
+        addTimelineLog('Bulk Approved', `Approved ${selectedReviewIds.size} feedback nodes.`);
+        renderAll();
+      }
+
+      function bulkFlag() {
+        selectedReviewIds.forEach(id => {
+          const revIndex = reviews.findIndex(r => r.id === id);
+          if (revIndex !== -1) {
+            reviews[revIndex].status = 'Flagged';
+          }
+        });
+        saveDatabase();
+        showToast(`Selected reviews flagged successfully.`, 'success');
+        addTimelineLog('Bulk Flagged', `Flagged ${selectedReviewIds.size} feedback nodes.`);
+        renderAll();
+      }
+
+      function bulkDelete() {
+        selectedReviewIds.forEach(id => {
+          const revIndex = reviews.findIndex(r => r.id === id);
+          if (revIndex !== -1) {
+            reviews.splice(revIndex, 1);
+          }
+        });
+        saveDatabase();
+        showToast(`Selected reviews permanently removed.`, 'success');
+        addTimelineLog('Bulk Deleted', `Permanently deleted ${selectedReviewIds.size} feedback nodes.`);
+        renderAll();
+      }
+
+      // EXPORT ENGINES
+      function exportReviewsCSV() {
+        exportCSVFromData(reviews);
+      }
+
+      function bulkExportSelected() {
+        const selectedData = reviews.filter(r => selectedReviewIds.has(r.id));
+        exportCSVFromData(selectedData);
+      }
+
+      function exportCSVFromData(dataList) {
+        if (dataList.length === 0) {
+          showToast('No reviews to export.', 'danger');
+          return;
+        }
+
+        let csv = 'Review ID,Reviewer,Email,Type,Target Asset,Rating,Status,Created Date,Response Status,Response Comment\n';
+        dataList.forEach(r => {
+          const escapedComment = (r.comment || '').replace(/"/g, '""');
+          const escapedResponse = (r.response || '').replace(/"/g, '""');
+          csv += `"${r.id}","${r.reviewer}","${r.email}","${r.type}","${r.item}",${r.rating},"${r.status}","${r.date}","${r.responseStatus}","${escapedResponse}"\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `UrbanHub_Reviews_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Reviews exported successfully as CSV report.', 'success');
+      }
+    </script>
+  </body>
+</html>

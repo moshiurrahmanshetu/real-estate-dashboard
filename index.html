@@ -1,0 +1,1372 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UrbanHub - Premium Real Estate Dashboard</title>
+
+    <!-- Pre-load LocalStorage theme choice to prevent visual flicker before render -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+  </head>
+  <body>
+
+    <!-- Overlay Backdrop for Mobile Sidebar -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- FIXED LEFT SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <!-- Logo Header -->
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <i class="bi bi-building-up"></i>
+          </div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <!-- Scrollable Navigation Menu -->
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link active">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="transactions.html" class="sidebar-menu-link">
+                <i class="bi bi-currency-exchange"></i>
+                <span>Transactions</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Intelligence</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Analytics</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="calendar.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar3"></i>
+                <span>Calendar</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="tasks.html" class="sidebar-menu-link">
+                <i class="bi bi-check2-square"></i>
+                <span>Tasks</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reviews.html" class="sidebar-menu-link">
+                <i class="bi bi-star"></i>
+                <span>Reviews</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="login.html" class="sidebar-menu-link text-danger">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sidebar Footer with user account summary -->
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="User Profile Image" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- PAGE CONTENT AREA & TOP HEADER -->
+      <main class="main-content-wrapper">
+        <!-- TOP HEADER -->
+        <header class="top-header">
+          <!-- Left side controls -->
+          <div class="d-flex align-items-center">
+            <!-- Mobile Toggle Button -->
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn">
+              <i class="bi bi-list"></i>
+            </button>
+            
+            <!-- Elegant Search Box -->
+            <form class="header-search-form d-none d-md-block" onsubmit="event.preventDefault();">
+              <input type="text" class="header-search-input" placeholder="Search properties, leads, transactions..." />
+              <i class="bi bi-search header-search-icon"></i>
+            </form>
+          </div>
+
+          <!-- Right side controls (Dropdowns) -->
+          <div class="header-controls">
+            <!-- Dynamic Theme Toggle -->
+            <button id="theme-toggle" class="header-btn" title="Switch Theme">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+
+            <!-- Language Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Languages">
+                <i class="bi bi-globe"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium lang-dropdown-menu">
+                <li><span class="dropdown-header">Select Language</span></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇬🇧</span> English</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇪🇸</span> Español</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇫🇷</span> Français</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇩🇪</span> Deutsch</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0);"><span class="flag-icon">🇦🇪</span> العربية</a></li>
+              </ul>
+            </div>
+
+            <!-- Messages Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Messages">
+                <i class="bi bi-chat-dots"></i>
+                <span class="header-btn-badge"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="width: 320px;">
+                <li><span class="dropdown-header">Recent Messages</span></li>
+                <li>
+                  <a class="dropdown-item d-flex align-items-start gap-3 py-2 border-bottom border-light-subtle" href="messages.html">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="Sender Avatar" referrerpolicy="no-referrer" />
+                    <div class="w-100">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold font-title" style="font-size: 0.85rem;">Clara Vance</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">2 min ago</span>
+                      </div>
+                      <p class="text-muted mb-0 text-truncate" style="font-size: 0.775rem;">Is the listing price for the Penthouse negotiable?</p>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item d-flex align-items-start gap-3 py-2 border-bottom border-light-subtle" href="messages.html">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="Sender Avatar" referrerpolicy="no-referrer" />
+                    <div class="w-100">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold font-title" style="font-size: 0.85rem;">David Kim</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">1 hour ago</span>
+                      </div>
+                      <p class="text-muted mb-0 text-truncate" style="font-size: 0.775rem;">Sent over the lease agreement for Signature Tower...</p>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item text-center fw-semibold text-primary py-2" href="messages.html" style="font-size: 0.8rem;">
+                    View All Messages
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Notifications Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+                <i class="bi bi-bell"></i>
+                <span class="header-btn-badge"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="width: 320px;">
+                <li><span class="dropdown-header">System Notifications</span></li>
+                <li>
+                  <a class="dropdown-item d-flex align-items-start gap-3 py-2 border-bottom border-light-subtle" href="javascript:void(0);">
+                    <div class="stat-icon-wrapper text-success bg-success-subtle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1rem;">
+                      <i class="bi bi-file-earmark-check"></i>
+                    </div>
+                    <div>
+                      <span class="fw-medium d-block" style="font-size: 0.825rem;">Agreement Signed</span>
+                      <p class="text-muted mb-0" style="font-size: 0.75rem;">Unit 402 lease finalised by legal team.</p>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item d-flex align-items-start gap-3 py-2 border-bottom border-light-subtle" href="javascript:void(0);">
+                    <div class="stat-icon-wrapper text-warning bg-warning-subtle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1rem;">
+                      <i class="bi bi-clock-history"></i>
+                    </div>
+                    <div>
+                      <span class="fw-medium d-block" style="font-size: 0.825rem;">Appointment Scheduled</span>
+                      <p class="text-muted mb-0" style="font-size: 0.75rem;">John Doe showing set for tomorrow 2:00 PM.</p>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item text-center fw-semibold text-primary py-2" href="javascript:void(0);" style="font-size: 0.8rem;">
+                    Clear All Notifications
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <!-- User Profile Dropdown -->
+            <div class="dropdown">
+              <button class="header-btn p-0 rounded-circle border-2 border-primary" style="width: 40px; height: 40px; overflow: hidden;" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Profile">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" style="width: 100%; height: 100%; object-fit: cover;" alt="User Profile Image" referrerpolicy="no-referrer" />
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="min-width: 220px;">
+                <li>
+                  <div class="px-3 py-2 border-bottom border-light-subtle mb-2">
+                    <span class="fw-bold d-block font-title" style="font-size: 0.9rem;">Sarah Jenkins</span>
+                    <span class="text-muted" style="font-size: 0.75rem;">sarah@urbanhub.com</span>
+                  </div>
+                </li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="profile.html"><i class="bi bi-person"></i> My Profile</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="settings.html"><i class="bi bi-gear"></i> Settings</a></li>
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="settings.html"><i class="bi bi-shield-lock"></i> Security</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger d-flex align-items-center gap-2" href="login.html"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </header>
+
+        <!-- DASHBOARD CONTAINER BODY -->
+        <div class="page-body">
+
+          <!-- 1. WELCOME BANNER SECTION -->
+          <div class="uh-card mb-4" data-aos="fade-down" style="background: linear-gradient(135deg, rgba(var(--uh-primary-rgb), 0.08) 0%, rgba(0, 0, 0, 0.1) 100%); border-left: 4px solid var(--uh-primary);">
+            <div class="row align-items-center g-3">
+              <div class="col-12 col-md-8">
+                <span class="badge badge-uh badge-uh-success mb-2" id="dynamic-date">Friday, July 10, 2026</span>
+                <h2 class="mb-1 font-title fw-bold text-main" id="dynamic-greeting">Good morning, Sarah Jenkins</h2>
+                <p class="text-muted mb-0">Your Real Estate operations are humming. You have <span class="text-primary fw-semibold">12 new leads</span> awaiting review and <span class="text-success fw-semibold">3 appointments</span> scheduled for today.</p>
+              </div>
+              <div class="col-12 col-md-4 text-md-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                  <a href="add-property.html" class="btn btn-primary d-inline-flex align-items-center gap-2 text-white fw-semibold px-3 py-2 rounded-3" style="background-color: var(--uh-primary); border-color: var(--uh-primary); font-size: 0.85rem;">
+                    <i class="bi bi-plus-circle"></i> Add Listing
+                  </a>
+                  <a href="appointments.html" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 px-3 py-2 rounded-3 text-muted" style="border: 1px solid var(--uh-border-color); font-size: 0.85rem;">
+                    <i class="bi bi-calendar-check"></i> Today's Agenda
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. KPI CARDS SECTION (8 Cards) -->
+          <div class="row g-3 mb-4">
+            <!-- 1. Total Properties -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3" data-aos="fade-up" data-aos-delay="50">
+              <div class="uh-card uh-card-hover">
+                <div class="stat-card-container">
+                  <div>
+                    <span class="text-muted fw-medium d-block" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Total Properties</span>
+                    <h3 class="stat-value font-title animate-counter-uh" data-target="142">0</h3>
+                    <div class="stat-trend trend-up">
+                      <i class="bi bi-arrow-up-right"></i>
+                      <span>+8 new <span class="text-muted fw-normal">this wk</span></span>
+                    </div>
+                  </div>
+                  <div class="stat-icon-wrapper">
+                    <i class="bi bi-houses"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Available Properties -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3" data-aos="fade-up" data-aos-delay="100">
+              <div class="uh-card uh-card-hover">
+                <div class="stat-card-container">
+                  <div>
+                    <span class="text-muted fw-medium d-block" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Available Properties</span>
+                    <h3 class="stat-value font-title animate-counter-uh" data-target="58">0</h3>
+                    <div class="stat-trend trend-up text-primary">
+                      <i class="bi bi-house-check"></i>
+                      <span>40.8% <span class="text-muted fw-normal">active pool</span></span>
+                    </div>
+                  </div>
+                  <div class="stat-icon-wrapper">
+                    <i class="bi bi-house-door"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Sold Properties -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3" data-aos="fade-up" data-aos-delay="150">
+              <div class="uh-card uh-card-hover">
+                <div class="stat-card-container">
+                  <div>
+                    <span class="text-muted fw-medium d-block" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Sold Properties</span>
+                    <h3 class="stat-value font-title animate-counter-uh" data-target="54">0</h3>
+                    <div class="stat-trend trend-up">
+                      <i class="bi bi-arrow-up-right"></i>
+                      <span>+14.2% <span class="text-muted fw-normal">MoM growth</span></span>
+                    </div>
+                  </div>
+                  <div class="stat-icon-wrapper">
+                    <i class="bi bi-building-check"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Rented Properties -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3" data-aos="fade-up" data-aos-delay="200">
+              <div class="uh-card uh-card-hover">
+                <div class="stat-card-container">
+                  <div>
+                    <span class="text-muted fw-medium d-block" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Rented Properties</span>
+                    <h3 class="stat-value font-title animate-counter-uh" data-target="30">0</h3>
+                    <div class="stat-trend trend-up text-success">
+                      <i class="bi bi-arrow-up-right"></i>
+                      <span>+5 new <span class="text-muted fw-normal">leases signed</span></span>
+                    </div>
+                  </div>
+                  <div class="stat-icon-wrapper">
+                    <i class="bi bi-file-earmark-text"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. New Leads -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3" data-aos="fade-up" data-aos-delay="250">
+              <div class="uh-card uh-card-hover">
+                <div class="stat-card-container">
+                  <div>
+                    <span class="text-muted fw-medium d-block" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">New Leads</span>
+                    <h3 class="stat-value font-title animate-counter-uh" data-target="643">0</h3>
+                    <div class="stat-trend trend-up">
+                      <i class="bi bi-arrow-up-right"></i>
+                      <span>+24.8% <span class="text-muted fw-normal">vs last month</span></span>
+                    </div>
+                  </div>
+                  <div class="stat-icon-wrapper">
+                    <i class="bi bi-funnel"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. Total Agents -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3" data-aos="fade-up" data-aos-delay="300">
+              <div class="uh-card uh-card-hover">
+                <div class="stat-card-container">
+                  <div>
+                    <span class="text-muted fw-medium d-block" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Total Agents</span>
+                    <h3 class="stat-value font-title animate-counter-uh" data-target="18">0</h3>
+                    <div class="stat-trend text-primary">
+                      <i class="bi bi-people-fill"></i>
+                      <span>4 new active <span class="text-muted fw-normal">agents</span></span>
+                    </div>
+                  </div>
+                  <div class="stat-icon-wrapper">
+                    <i class="bi bi-person-workspace"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. Monthly Revenue -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3" data-aos="fade-up" data-aos-delay="355">
+              <div class="uh-card uh-card-hover">
+                <div class="stat-card-container">
+                  <div>
+                    <span class="text-muted fw-medium d-block" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Monthly Revenue</span>
+                    <h3 class="stat-value font-title animate-counter-uh" data-target="165400" data-currency="true">0</h3>
+                    <div class="stat-trend trend-up text-success">
+                      <i class="bi bi-arrow-up-right"></i>
+                      <span>+12.3% <span class="text-muted fw-normal">vs projection</span></span>
+                    </div>
+                  </div>
+                  <div class="stat-icon-wrapper">
+                    <i class="bi bi-cash-coin"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 8. Occupancy Rate -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl-3" data-aos="fade-up" data-aos-delay="400">
+              <div class="uh-card uh-card-hover">
+                <div class="stat-card-container">
+                  <div>
+                    <span class="text-muted fw-medium d-block" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Occupancy Rate</span>
+                    <h3 class="stat-value font-title animate-counter-uh" data-target="94" data-percent="true">0</h3>
+                    <div class="stat-trend trend-up">
+                      <i class="bi bi-arrow-up-right"></i>
+                      <span>+1.5% <span class="text-muted fw-normal">MoM growth</span></span>
+                    </div>
+                  </div>
+                  <div class="stat-icon-wrapper">
+                    <i class="bi bi-shield-check"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3 & 4. CHARTS & STATISTICS SECTION -->
+          <div class="row g-4 mb-4">
+            <!-- 3. Revenue Analytics (Large Area Chart) -->
+            <div class="col-12 col-xl-8" data-aos="fade-right">
+              <div class="uh-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <div>
+                    <h5 class="mb-1 font-title fw-bold">Revenue Analytics</h5>
+                    <p class="text-muted mb-0" style="font-size: 0.8rem;">Consolidated gross income, operational expenses, and net revenue.</p>
+                  </div>
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary px-3 rounded-2 text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="border: 1px solid var(--uh-border-color); font-size: 0.775rem;">
+                      <i class="bi bi-funnel me-1"></i> Data Filters
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium">
+                      <li><a class="dropdown-item" href="javascript:void(0);">Monthly Revenue</a></li>
+                      <li><a class="dropdown-item" href="javascript:void(0);">Yearly Revenue</a></li>
+                      <li><a class="dropdown-item" href="javascript:void(0);">Income vs Expense</a></li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="chart-container" style="position: relative; height: 320px; width: 100%;">
+                  <canvas id="analyticsChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Property Statistics (Property Type Distribution Pie/Doughnut) -->
+            <div class="col-12 col-xl-4" data-aos="fade-left">
+              <div class="uh-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <div>
+                    <h5 class="mb-1 font-title fw-bold">Property Statistics</h5>
+                    <p class="text-muted mb-0" style="font-size: 0.8rem;">Distribution across primary classes.</p>
+                  </div>
+                  <i class="bi bi-pie-chart text-primary" style="font-size: 1.2rem;"></i>
+                </div>
+                <div class="chart-container d-flex flex-column justify-content-center align-items-center" style="position: relative; height: 320px; width: 100%;">
+                  <canvas id="distributionChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5 & 10. PROPERTY STATUS & OCCUPANCY RATE WIDGETS -->
+          <div class="row g-4 mb-4">
+            <!-- 5. Property Status (Horizontal Progress Cards) -->
+            <div class="col-12 col-lg-6" data-aos="fade-up">
+              <div class="uh-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div>
+                    <h5 class="mb-1 font-title fw-bold">Portfolio Status Registry</h5>
+                    <p class="text-muted mb-0" style="font-size: 0.8rem;">Real-time allocation breakdown of assets pool.</p>
+                  </div>
+                  <span class="badge bg-primary-subtle text-primary font-title py-1 px-2 fw-semibold" style="font-size: 0.75rem;">142 Units Total</span>
+                </div>
+
+                <div class="d-flex flex-column gap-3 mt-3">
+                  <!-- Progress Item 1: Available -->
+                  <div class="status-progress-card-uh">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-semibold text-main" style="font-size: 0.85rem;"><i class="bi bi-circle-fill text-warning me-2"></i> Available</span>
+                      <span class="text-muted fw-bold" style="font-size: 0.8rem;">58 Units (40.8%)</span>
+                    </div>
+                    <div class="progress" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                      <div class="progress-bar bg-warning" role="progressbar" style="width: 40.8%" aria-valuenow="40.8" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+
+                  <!-- Progress Item 2: Booked -->
+                  <div class="status-progress-card-uh">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-semibold text-main" style="font-size: 0.85rem;"><i class="bi bi-circle-fill text-info me-2"></i> Booked (Escrow)</span>
+                      <span class="text-muted fw-bold" style="font-size: 0.8rem;">16 Units (11.2%)</span>
+                    </div>
+                    <div class="progress" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                      <div class="progress-bar bg-info" role="progressbar" style="width: 11.2%" aria-valuenow="11.2" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+
+                  <!-- Progress Item 3: Sold -->
+                  <div class="status-progress-card-uh">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-semibold text-main" style="font-size: 0.85rem;"><i class="bi bi-circle-fill text-danger me-2"></i> Sold</span>
+                      <span class="text-muted fw-bold" style="font-size: 0.8rem;">32 Units (22.5%)</span>
+                    </div>
+                    <div class="progress" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                      <div class="progress-bar bg-danger" role="progressbar" style="width: 22.5%" aria-valuenow="22.5" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+
+                  <!-- Progress Item 4: Rented -->
+                  <div class="status-progress-card-uh">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-semibold text-main" style="font-size: 0.85rem;"><i class="bi bi-circle-fill text-success me-2"></i> Rented</span>
+                      <span class="text-muted fw-bold" style="font-size: 0.8rem;">30 Units (21.1%)</span>
+                    </div>
+                    <div class="progress" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                      <div class="progress-bar bg-success" role="progressbar" style="width: 21.1%" aria-valuenow="21.1" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+
+                  <!-- Progress Item 5: Maintenance -->
+                  <div class="status-progress-card-uh">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-semibold text-main" style="font-size: 0.85rem;"><i class="bi bi-circle-fill text-secondary me-2"></i> Maintenance</span>
+                      <span class="text-muted fw-bold" style="font-size: 0.8rem;">6 Units (4.2%)</span>
+                    </div>
+                    <div class="progress" style="height: 6px; background-color: rgba(255, 255, 255, 0.05);">
+                      <div class="progress-bar bg-secondary" role="progressbar" style="width: 4.2%" aria-valuenow="4.2" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 10. Occupancy Overview (Circular Progress Counters) -->
+            <div class="col-12 col-lg-6" data-aos="fade-up">
+              <div class="uh-card h-100">
+                <h5 class="mb-2 font-title fw-bold">Occupancy Overview</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Visualizing leasing efficiency and space utilization rate.</p>
+
+                <div class="row align-items-center justify-content-center h-75 py-3">
+                  <!-- Monthly Occupancy Circle -->
+                  <div class="col-12 col-sm-6 text-center border-end border-light-subtle">
+                    <div class="d-flex justify-content-center mb-3">
+                      <div class="circular-progress-uh" data-percent-val="94.2">
+                        <div class="circular-progress-inner">
+                          <span class="fw-bold font-title d-block text-main" style="font-size: 1.15rem;">94.2%</span>
+                          <span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase;">Active</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span class="fw-bold d-block text-main font-title" style="font-size: 0.9rem;">Monthly Occupancy</span>
+                    <span class="text-success" style="font-size: 0.75rem;"><i class="bi bi-arrow-up-right"></i> +1.8% vs last month</span>
+                  </div>
+
+                  <!-- Yearly Occupancy Circle -->
+                  <div class="col-12 col-sm-6 text-center mt-4 mt-sm-0">
+                    <div class="d-flex justify-content-center mb-3">
+                      <div class="circular-progress-uh" data-percent-val="88.5" style="background: conic-gradient(var(--uh-success) 318deg, rgba(var(--uh-primary-rgb), 0.1) 0deg);">
+                        <div class="circular-progress-inner">
+                          <span class="fw-bold font-title d-block text-main" style="font-size: 1.15rem;">88.5%</span>
+                          <span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase;">Average</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span class="fw-bold d-block text-main font-title" style="font-size: 0.9rem;">Yearly Occupancy</span>
+                    <span class="text-success" style="font-size: 0.75rem;"><i class="bi bi-arrow-up-right"></i> +3.2% year-over-year</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. RECENT PROPERTIES TABLE (Complete features, search, pagination) -->
+          <div class="uh-card mb-4" data-aos="fade-up">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+              <div>
+                <h5 class="mb-1 font-title fw-bold">Featured Property Registry</h5>
+                <p class="text-muted mb-0" style="font-size: 0.8rem;">Perform live search on active real estate holdings.</p>
+              </div>
+              
+              <!-- Search and filter -->
+              <div class="d-flex gap-2 w-100 w-md-auto">
+                <div class="position-relative flex-grow-1 flex-md-grow-0">
+                  <input type="text" id="property-table-search" class="form-control bg-body border-light-subtle rounded-3 py-2 ps-4 text-muted" placeholder="Search listing name, city, type..." style="font-size: 0.8rem; border: 1px solid var(--uh-border-color);" />
+                  <i class="bi bi-search position-absolute start-0 top-50 translate-middle-y ms-2 text-muted" style="font-size: 0.75rem;"></i>
+                </div>
+                <a href="properties.html" class="btn btn-outline-secondary px-3 py-2 rounded-3 text-muted" style="border: 1px solid var(--uh-border-color); font-size: 0.8rem; white-space: nowrap;">
+                  <i class="bi bi-sliders me-1"></i> Advanced
+                </a>
+              </div>
+            </div>
+
+            <!-- Table content -->
+            <div class="premium-table-container">
+              <table class="premium-table">
+                <thead>
+                  <tr>
+                    <th>Property Details</th>
+                    <th>Location</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Assigned Agent</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="property-table-body">
+                  <!-- Row 1 -->
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=120&auto=format&fit=crop" class="table-property-img" alt="Property Preview Image" referrerpolicy="no-referrer" />
+                        <div>
+                          <span class="fw-semibold d-block text-main font-title" style="font-size: 0.875rem;">Verdant Heights Villa</span>
+                          <span class="text-muted" style="font-size: 0.75rem;">Residential Compound</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td><i class="bi bi-geo-alt text-muted me-1"></i> Beverly Hills, CA</td>
+                    <td>Villa</td>
+                    <td class="fw-semibold text-main font-title">$4,850,000</td>
+                    <td><span class="badge badge-uh badge-uh-success">Leased</span></td>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="Agent" referrerpolicy="no-referrer" />
+                        <span style="font-size: 0.8rem;">Clara Vance</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="d-flex gap-2">
+                        <a href="properties.html" class="btn btn-sm btn-outline-secondary p-1 rounded-2" style="border: 1px solid var(--uh-border-color);" title="View Details"><i class="bi bi-eye"></i></a>
+                        <a href="add-property.html" class="btn btn-sm btn-outline-secondary p-1 rounded-2" style="border: 1px solid var(--uh-border-color);" title="Edit"><i class="bi bi-pencil-square"></i></a>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Row 2 -->
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=120&auto=format&fit=crop" class="table-property-img" alt="Property Preview Image" referrerpolicy="no-referrer" />
+                        <div>
+                          <span class="fw-semibold d-block text-main font-title" style="font-size: 0.875rem;">Aetheris Penthouse 50B</span>
+                          <span class="text-muted" style="font-size: 0.75rem;">Ultra-Luxury Skyscraper</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td><i class="bi bi-geo-alt text-muted me-1"></i> Midtown Manhattan, NY</td>
+                    <td>Apartment</td>
+                    <td class="fw-semibold text-main font-title">$7,200,000</td>
+                    <td><span class="badge badge-uh badge-uh-warning">Available</span></td>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="Agent" referrerpolicy="no-referrer" />
+                        <span style="font-size: 0.8rem;">David Kim</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="d-flex gap-2">
+                        <a href="properties.html" class="btn btn-sm btn-outline-secondary p-1 rounded-2" style="border: 1px solid var(--uh-border-color);" title="View Details"><i class="bi bi-eye"></i></a>
+                        <a href="add-property.html" class="btn btn-sm btn-outline-secondary p-1 rounded-2" style="border: 1px solid var(--uh-border-color);" title="Edit"><i class="bi bi-pencil-square"></i></a>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Row 3 -->
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=120&auto=format&fit=crop" class="table-property-img" alt="Property Preview Image" referrerpolicy="no-referrer" />
+                        <div>
+                          <span class="fw-semibold d-block text-main font-title" style="font-size: 0.875rem;">Horizon Corporate Towers</span>
+                          <span class="text-muted" style="font-size: 0.75rem;">Class-A Office Space</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td><i class="bi bi-geo-alt text-muted me-1"></i> Miami Beach, FL</td>
+                    <td>Commercial</td>
+                    <td class="fw-semibold text-main font-title">$18,400,000</td>
+                    <td><span class="badge badge-uh badge-uh-info">Booked</span></td>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=100&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="Agent" referrerpolicy="no-referrer" />
+                        <span style="font-size: 0.8rem;">Sarah Jenkins</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="d-flex gap-2">
+                        <a href="properties.html" class="btn btn-sm btn-outline-secondary p-1 rounded-2" style="border: 1px solid var(--uh-border-color);" title="View Details"><i class="bi bi-eye"></i></a>
+                        <a href="add-property.html" class="btn btn-sm btn-outline-secondary p-1 rounded-2" style="border: 1px solid var(--uh-border-color);" title="Edit"><i class="bi bi-pencil-square"></i></a>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Row 4 -->
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center gap-3">
+                        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=120&auto=format&fit=crop" class="table-property-img" alt="Property Preview Image" referrerpolicy="no-referrer" />
+                        <div>
+                          <span class="fw-semibold d-block text-main font-title" style="font-size: 0.875rem;">Solaris Luxury Estate</span>
+                          <span class="text-muted" style="font-size: 0.75rem;">Contemporary Masterpiece</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td><i class="bi bi-geo-alt text-muted me-1"></i> Aspen, CO</td>
+                    <td>Villa</td>
+                    <td class="fw-semibold text-main font-title">$8,950,000</td>
+                    <td><span class="badge badge-uh badge-uh-success">Rented</span></td>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="Agent" referrerpolicy="no-referrer" />
+                        <span style="font-size: 0.8rem;">Marcus Vance</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="d-flex gap-2">
+                        <a href="properties.html" class="btn btn-sm btn-outline-secondary p-1 rounded-2" style="border: 1px solid var(--uh-border-color);" title="View Details"><i class="bi bi-eye"></i></a>
+                        <a href="add-property.html" class="btn btn-sm btn-outline-secondary p-1 rounded-2" style="border: 1px solid var(--uh-border-color);" title="Edit"><i class="bi bi-pencil-square"></i></a>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination UI -->
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-light-subtle">
+              <span class="text-muted" style="font-size: 0.775rem;">Showing 1 to 4 of 142 properties</span>
+              <nav aria-label="Table Page Navigation">
+                <ul class="pagination pagination-sm mb-0 gap-1">
+                  <li class="page-item"><a class="page-link page-link-premium rounded-2 active" href="javascript:void(0);">1</a></li>
+                  <li class="page-item"><a class="page-link page-link-premium rounded-2" href="javascript:void(0);">2</a></li>
+                  <li class="page-item"><a class="page-link page-link-premium rounded-2" href="javascript:void(0);">3</a></li>
+                  <li class="page-item"><a class="page-link page-link-premium rounded-2" href="javascript:void(0);">Next</a></li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+
+          <!-- 7 & 8 & 9. LEADS, AGENTS, AND TRANSACTIONS PANELS -->
+          <div class="row g-4 mb-4">
+            <!-- 7. Latest Leads -->
+            <div class="col-12 col-xl-4" data-aos="fade-up">
+              <div class="uh-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0 font-title fw-bold">Latest Leads</h5>
+                  <a href="leads.html" class="text-primary text-decoration-none" style="font-size: 0.75rem; font-weight: 600;">View Pipeline</a>
+                </div>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Recent high-tier investor matching pipeline.</p>
+
+                <div class="d-flex flex-column gap-3">
+                  <!-- Lead Item 1 -->
+                  <div class="p-3 rounded-3" style="background-color: rgba(var(--uh-primary-rgb), 0.02); border: 1px solid var(--uh-border-card);">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&auto=format&fit=crop" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" alt="Lead" referrerpolicy="no-referrer" />
+                        <div>
+                          <span class="fw-semibold font-title d-block" style="font-size: 0.85rem;">Clara Vance</span>
+                          <span class="text-muted d-block" style="font-size: 0.725rem;">Direct Investor</span>
+                        </div>
+                      </div>
+                      <span class="badge badge-uh badge-uh-warning">Hot Lead</span>
+                    </div>
+                    <p class="text-muted mb-2" style="font-size: 0.775rem;">Interested: <strong>Aetheris Penthouse</strong></p>
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light-subtle">
+                      <span class="fw-bold" style="color: var(--uh-primary); font-size: 0.8rem;">$7.2M Budget</span>
+                      <a href="messages.html" class="btn btn-sm btn-primary text-white py-1 px-2 rounded-2" style="font-size: 0.7rem; background-color: var(--uh-primary); border-color: var(--uh-primary);"><i class="bi bi-chat-text"></i> Contact</a>
+                    </div>
+                  </div>
+
+                  <!-- Lead Item 2 -->
+                  <div class="p-3 rounded-3" style="background-color: rgba(var(--uh-primary-rgb), 0.02); border: 1px solid var(--uh-border-card);">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=100&auto=format&fit=crop" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" alt="Lead" referrerpolicy="no-referrer" />
+                        <div>
+                          <span class="fw-semibold font-title d-block" style="font-size: 0.85rem;">Jonathan Sterling</span>
+                          <span class="text-muted d-block" style="font-size: 0.725rem;">Corporate Relocation</span>
+                        </div>
+                      </div>
+                      <span class="badge badge-uh badge-uh-info">Qualified</span>
+                    </div>
+                    <p class="text-muted mb-2" style="font-size: 0.775rem;">Interested: <strong>Horizon Towers</strong></p>
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light-subtle">
+                      <span class="fw-bold" style="color: var(--uh-primary); font-size: 0.8rem;">$15.0M Budget</span>
+                      <a href="messages.html" class="btn btn-sm btn-primary text-white py-1 px-2 rounded-2" style="font-size: 0.7rem; background-color: var(--uh-primary); border-color: var(--uh-primary);"><i class="bi bi-chat-text"></i> Contact</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 8. Top Performing Agents -->
+            <div class="col-12 col-xl-4" data-aos="fade-up" data-aos-delay="100">
+              <div class="uh-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0 font-title fw-bold">Top Performing Agents</h5>
+                  <a href="agents.html" class="text-primary text-decoration-none" style="font-size: 0.75rem; font-weight: 600;">Full Roster</a>
+                </div>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Operational performance logs based on completed escrow.</p>
+
+                <div class="d-flex flex-column gap-3">
+                  <!-- Agent Item 1 -->
+                  <div class="p-3 rounded-3" style="background-color: rgba(var(--uh-primary-rgb), 0.02); border: 1px solid var(--uh-border-card);">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                      <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="rounded-circle" style="width: 42px; height: 42px; object-fit: cover;" alt="Agent" referrerpolicy="no-referrer" />
+                      <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center">
+                          <span class="fw-bold text-main font-title" style="font-size: 0.85rem;">Sarah Jenkins</span>
+                          <span class="text-primary font-title" style="font-size: 0.8rem; font-weight: 700;">$18.4M Vol</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-1" style="font-size: 0.725rem;">
+                          <span class="text-muted">14 Properties Sold</span>
+                          <span class="text-warning"><i class="bi bi-star-fill me-1"></i>4.9 Rating</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="progress" style="height: 4px; background-color: rgba(255, 255, 255, 0.05);">
+                      <div class="progress-bar bg-primary" role="progressbar" style="width: 95%" aria-valuenow="95" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+
+                  <!-- Agent Item 2 -->
+                  <div class="p-3 rounded-3" style="background-color: rgba(var(--uh-primary-rgb), 0.02); border: 1px solid var(--uh-border-card);">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                      <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop" class="rounded-circle" style="width: 42px; height: 42px; object-fit: cover;" alt="Agent" referrerpolicy="no-referrer" />
+                      <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center">
+                          <span class="fw-bold text-main font-title" style="font-size: 0.85rem;">David Kim</span>
+                          <span class="text-primary font-title" style="font-size: 0.8rem; font-weight: 700;">$14.2M Vol</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-1" style="font-size: 0.725rem;">
+                          <span class="text-muted">11 Properties Sold</span>
+                          <span class="text-warning"><i class="bi bi-star-fill me-1"></i>4.8 Rating</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="progress" style="height: 4px; background-color: rgba(255, 255, 255, 0.05);">
+                      <div class="progress-bar bg-primary" role="progressbar" style="width: 80%" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 9. Recent Transactions -->
+            <div class="col-12 col-xl-4" data-aos="fade-up" data-aos-delay="150">
+              <div class="uh-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0 font-title fw-bold">Recent Transactions</h5>
+                  <a href="transactions.html" class="text-primary text-decoration-none" style="font-size: 0.75rem; font-weight: 600;">Ledger</a>
+                </div>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Recent escrow bank deposits and invoice settlements.</p>
+
+                <div class="table-responsive">
+                  <table class="table table-sm table-borderless align-middle mb-0" style="font-size: 0.8rem;">
+                    <thead>
+                      <tr class="text-muted border-bottom border-light-subtle" style="font-size: 0.7rem; text-transform: uppercase;">
+                        <th>Invoice</th>
+                        <th>Buyer</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="border-bottom border-light-subtle">
+                        <td class="py-2"><span class="fw-semibold text-main">#INV-9824</span><br/><span class="text-muted" style="font-size: 0.65rem;">Jul 09, 2026</span></td>
+                        <td>Clara Vance</td>
+                        <td class="fw-bold text-main font-title">$48,500</td>
+                        <td><span class="badge bg-success-subtle text-success py-1">Cleared</span></td>
+                      </tr>
+                      <tr class="border-bottom border-light-subtle">
+                        <td class="py-2"><span class="fw-semibold text-main">#INV-9823</span><br/><span class="text-muted" style="font-size: 0.65rem;">Jul 08, 2026</span></td>
+                        <td>Kenji Sato</td>
+                        <td class="fw-bold text-main font-title">$12,000</td>
+                        <td><span class="badge bg-success-subtle text-success py-1">Cleared</span></td>
+                      </tr>
+                      <tr>
+                        <td class="py-2"><span class="fw-semibold text-main">#INV-9822</span><br/><span class="text-muted" style="font-size: 0.65rem;">Jul 07, 2026</span></td>
+                        <td>Emily Blunt</td>
+                        <td class="fw-bold text-main font-title">$72,400</td>
+                        <td><span class="badge bg-warning-subtle text-warning py-1">Pending</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 11 & 12 & 13. CALENDAR, APPOINTMENTS, TIMELINE -->
+          <div class="row g-4 mb-4">
+            <!-- 11. Mini Calendar Widget -->
+            <div class="col-12 col-md-4" data-aos="fade-up">
+              <div class="uh-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="mb-0 font-title fw-bold">Operational Calendar</h5>
+                  <span class="fw-bold text-primary font-title" style="font-size: 0.8rem; text-transform: uppercase;">July 2026</span>
+                </div>
+                
+                <div class="mini-calendar-uh">
+                  <div class="calendar-grid-uh mb-2">
+                    <div class="calendar-day-header-uh">Su</div>
+                    <div class="calendar-day-header-uh">Mo</div>
+                    <div class="calendar-day-header-uh">Tu</div>
+                    <div class="calendar-day-header-uh">We</div>
+                    <div class="calendar-day-header-uh">Th</div>
+                    <div class="calendar-day-header-uh">Fr</div>
+                    <div class="calendar-day-header-uh">Sa</div>
+                  </div>
+                  <div class="calendar-grid-uh">
+                    <!-- Week 1 empty offset -->
+                    <div class="calendar-cell-uh empty"></div>
+                    <div class="calendar-cell-uh empty"></div>
+                    <div class="calendar-cell-uh empty"></div>
+                    <div class="calendar-cell-uh">1</div>
+                    <div class="calendar-cell-uh">2</div>
+                    <div class="calendar-cell-uh">3</div>
+                    <div class="calendar-cell-uh">4</div>
+                    <!-- Week 2 -->
+                    <div class="calendar-cell-uh">5</div>
+                    <div class="calendar-cell-uh">6</div>
+                    <div class="calendar-cell-uh">7</div>
+                    <div class="calendar-cell-uh">8</div>
+                    <div class="calendar-cell-uh">9</div>
+                    <div class="calendar-cell-uh today-uh">10</div>
+                    <div class="calendar-cell-uh">11</div>
+                    <!-- Week 3 -->
+                    <div class="calendar-cell-uh">12</div>
+                    <div class="calendar-cell-uh">13</div>
+                    <div class="calendar-cell-uh">14</div>
+                    <div class="calendar-cell-uh">15</div>
+                    <div class="calendar-cell-uh">16</div>
+                    <div class="calendar-cell-uh">17</div>
+                    <div class="calendar-cell-uh">18</div>
+                    <!-- Week 4 -->
+                    <div class="calendar-cell-uh">19</div>
+                    <div class="calendar-cell-uh">20</div>
+                    <div class="calendar-cell-uh">21</div>
+                    <div class="calendar-cell-uh">22</div>
+                    <div class="calendar-cell-uh">23</div>
+                    <div class="calendar-cell-uh">24</div>
+                    <div class="calendar-cell-uh">25</div>
+                  </div>
+                </div>
+                
+                <div class="p-2 rounded-3 bg-body mt-3 border border-light-subtle">
+                  <span class="text-primary fw-bold font-title d-block" style="font-size: 0.75rem;"><i class="bi bi-pin-angle-fill me-1"></i> Today's Highlight</span>
+                  <p class="text-muted mb-0" style="font-size: 0.725rem;">Aetheris Penthouse legal lease dispatch at 4:30 PM.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 12. Upcoming Appointments -->
+            <div class="col-12 col-md-4" data-aos="fade-up" data-aos-delay="100">
+              <div class="uh-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0 font-title fw-bold">Upcoming Appointments</h5>
+                  <a href="appointments.html" class="text-primary text-decoration-none" style="font-size: 0.75rem; font-weight: 600;">Calendar</a>
+                </div>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Confirmed physical tours and legal screenings set for today.</p>
+
+                <div class="d-flex flex-column gap-3">
+                  <!-- Appointment 1 -->
+                  <div class="d-flex align-items-start gap-3">
+                    <div class="p-2 rounded-3 bg-primary-subtle text-primary text-center" style="width: 48px; min-width: 48px;">
+                      <span class="fw-bold d-block font-title" style="font-size: 0.85rem; line-height: 1.1;">10:00</span>
+                      <span class="text-muted d-block" style="font-size: 0.6rem; text-transform: uppercase;">AM</span>
+                    </div>
+                    <div class="flex-grow-1">
+                      <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Marilyn Monroe</span>
+                      <p class="text-muted mb-0 text-truncate" style="font-size: 0.75rem;"><i class="bi bi-houses me-1"></i> Verdant Heights Compound</p>
+                      <span class="badge bg-success-subtle text-success py-1 mt-1" style="font-size: 0.65rem;">Confirmed Visit</span>
+                    </div>
+                  </div>
+
+                  <!-- Appointment 2 -->
+                  <div class="d-flex align-items-start gap-3">
+                    <div class="p-2 rounded-3 bg-primary-subtle text-primary text-center" style="width: 48px; min-width: 48px;">
+                      <span class="fw-bold d-block font-title" style="font-size: 0.85rem; line-height: 1.1;">02:30</span>
+                      <span class="text-muted d-block" style="font-size: 0.6rem; text-transform: uppercase;">PM</span>
+                    </div>
+                    <div class="flex-grow-1">
+                      <span class="fw-semibold text-main d-block" style="font-size: 0.85rem;">Kenji Sato</span>
+                      <p class="text-muted mb-0 text-truncate" style="font-size: 0.75rem;"><i class="bi bi-houses me-1"></i> Horizon Towers (Office 402)</p>
+                      <span class="badge bg-warning-subtle text-warning py-1 mt-1" style="font-size: 0.65rem;">Pending Check</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 13. Recent Activities Timeline -->
+            <div class="col-12 col-md-4" data-aos="fade-up" data-aos-delay="200">
+              <div class="uh-card h-100">
+                <h5 class="mb-3 font-title fw-bold">Recent Activities Logs</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Live system event registry and administrative actions logs.</p>
+
+                <div class="timeline-uh">
+                  <!-- Timeline Item 1 -->
+                  <div class="timeline-item-uh">
+                    <div class="timeline-marker-uh success"></div>
+                    <div class="ps-2">
+                      <span class="fw-bold text-main d-block" style="font-size: 0.8rem;">Solaris Luxury Estate Added</span>
+                      <span class="text-muted d-block" style="font-size: 0.7rem;">Added by Marcus Vance • 10 mins ago</span>
+                    </div>
+                  </div>
+
+                  <!-- Timeline Item 2 -->
+                  <div class="timeline-item-uh">
+                    <div class="timeline-marker-uh info"></div>
+                    <div class="ps-2">
+                      <span class="fw-bold text-main d-block" style="font-size: 0.8rem;">Verdant Heights Sold</span>
+                      <span class="text-muted d-block" style="font-size: 0.7rem;">Agreement signed by Clara Vance • 2 hrs ago</span>
+                    </div>
+                  </div>
+
+                  <!-- Timeline Item 3 -->
+                  <div class="timeline-item-uh">
+                    <div class="timeline-marker-uh warning"></div>
+                    <div class="ps-2">
+                      <span class="fw-bold text-main d-block" style="font-size: 0.8rem;">New Agent Joined</span>
+                      <span class="text-muted d-block" style="font-size: 0.7rem;">Marcus Vance assigned to Aspen listings • Yesterday</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 14 & 15 & 16. QUICK ACTIONS, REVIEWS, NOTIFICATIONS -->
+          <div class="row g-4 mb-4">
+            <!-- 14. Quick Actions Hub -->
+            <div class="col-12 col-md-4" data-aos="fade-up">
+              <div class="uh-card h-100">
+                <h5 class="mb-3 font-title fw-bold">Quick Actions Hub</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Administrative system shortcuts for prompt operations.</p>
+
+                <div class="row g-2">
+                  <div class="col-6">
+                    <div class="quick-action-card-uh">
+                      <i class="bi bi-house-add quick-action-icon-uh"></i>
+                      <span class="fw-semibold d-block text-main font-title" style="font-size: 0.75rem;">Add Property</span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="quick-action-card-uh">
+                      <i class="bi bi-person-plus quick-action-icon-uh"></i>
+                      <span class="fw-semibold d-block text-main font-title" style="font-size: 0.75rem;">Add Agent</span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="quick-action-card-uh">
+                      <i class="bi bi-file-earmark-spreadsheet quick-action-icon-uh"></i>
+                      <span class="fw-semibold d-block text-main font-title" style="font-size: 0.75rem;">Create Invoice</span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="quick-action-card-uh">
+                      <i class="bi bi-calendar-plus quick-action-icon-uh"></i>
+                      <span class="fw-semibold d-block text-main font-title" style="font-size: 0.75rem;">Schedule Visit</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="mt-3">
+                  <button class="btn btn-sm btn-outline-primary w-100 py-2 rounded-3 text-primary font-title" style="border: 1px solid var(--uh-primary); font-size: 0.75rem;">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> Generate System Report
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 15. Recent Reviews Carousel -->
+            <div class="col-12 col-md-4" data-aos="fade-up" data-aos-delay="100">
+              <div class="uh-card h-100">
+                <h5 class="mb-3 font-title fw-bold">Recent Customer Reviews</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Recent client logs and transaction evaluation feedback.</p>
+
+                <div class="p-3 rounded-3 bg-body border border-light-subtle">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&auto=format&fit=crop" class="rounded-circle" style="width: 36px; height: 36px; object-fit: cover;" alt="Reviewer" referrerpolicy="no-referrer" />
+                    <div>
+                      <span class="fw-semibold text-main font-title d-block" style="font-size: 0.825rem;">Clara Vance</span>
+                      <span class="text-warning" style="font-size: 0.7rem;">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                      </span>
+                    </div>
+                  </div>
+                  <p class="text-muted mb-2" style="font-size: 0.75rem; font-style: italic;">"David Kim provided exceptional support throughout our Manhattan escrow pipeline. Highly recommend!"</p>
+                  <span class="text-primary font-title fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Aetheris Penthouse 50B</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 16. Notifications Widget -->
+            <div class="col-12 col-md-4" data-aos="fade-up" data-aos-delay="200">
+              <div class="uh-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0 font-title fw-bold">Active System Alerts</h5>
+                  <span class="badge bg-primary-subtle text-primary font-title fw-bold px-2 py-1" id="unread-notif-count" style="font-size: 0.75rem;">2 Unread</span>
+                </div>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Critical alerts from core registry engine.</p>
+
+                <div class="d-flex flex-column gap-2 mb-3">
+                  <!-- Notif 1 -->
+                  <div class="notification-item-premium unread-item-highlight p-2 rounded-3 d-flex gap-2 border border-light-subtle">
+                    <span class="unread-indicator-dot" style="width: 6px; height: 6px; border-radius: 50%; background-color: var(--uh-primary); margin-top: 6px; display: inline-block;"></span>
+                    <div>
+                      <span class="fw-bold text-main d-block" style="font-size: 0.775rem;">Agreement Signed (Unit 402)</span>
+                      <p class="text-muted mb-0" style="font-size: 0.7rem;">Signature Tower escrow cleared.</p>
+                    </div>
+                  </div>
+
+                  <!-- Notif 2 -->
+                  <div class="notification-item-premium unread-item-highlight p-2 rounded-3 d-flex gap-2 border border-light-subtle">
+                    <span class="unread-indicator-dot" style="width: 6px; height: 6px; border-radius: 50%; background-color: var(--uh-primary); margin-top: 6px; display: inline-block;"></span>
+                    <div>
+                      <span class="fw-bold text-main d-block" style="font-size: 0.775rem;">Appointment Rescheduled</span>
+                      <p class="text-muted mb-0" style="font-size: 0.7rem;">Kenji Sato postponed to 2:30 PM.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <button id="mark-all-read-btn" class="btn btn-sm btn-outline-secondary w-100 py-2 rounded-3 text-muted" style="border: 1px solid var(--uh-border-color); font-size: 0.75rem;">
+                  <i class="bi bi-check-all me-1"></i> Mark All Read
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 17 & 18 & 19. MARKET OVERVIEW, TOP CITIES, SYSTEM STATUS -->
+          <div class="row g-4">
+            <!-- 17. Mini Market Overview (Sparkline Area line charts) -->
+            <div class="col-12 col-xl-4" data-aos="fade-up">
+              <div class="uh-card h-100">
+                <h5 class="mb-2 font-title fw-bold">Mini Market Overview</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Trend vectors representing general real estate metrics.</p>
+
+                <div class="d-flex flex-column gap-3">
+                  <!-- Sparkline Item 1 -->
+                  <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-body border border-light-subtle">
+                    <div>
+                      <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Property Demand</span>
+                      <span class="fw-bold text-main font-title" style="font-size: 0.85rem;">High (+14%)</span>
+                    </div>
+                    <div style="width: 100px; height: 35px;">
+                      <canvas id="demandSparkline"></canvas>
+                    </div>
+                  </div>
+
+                  <!-- Sparkline Item 2 -->
+                  <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-body border border-light-subtle">
+                    <div>
+                      <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Rental Yield Trend</span>
+                      <span class="fw-bold text-main font-title" style="font-size: 0.85rem;">Steady (6.4%)</span>
+                    </div>
+                    <div style="width: 100px; height: 35px;">
+                      <canvas id="rentalSparkline"></canvas>
+                    </div>
+                  </div>
+
+                  <!-- Sparkline Item 3 -->
+                  <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-body border border-light-subtle">
+                    <div>
+                      <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Capital Growth Trend</span>
+                      <span class="fw-bold text-main font-title" style="font-size: 0.85rem;">Bullish (+8%)</span>
+                    </div>
+                    <div style="width: 100px; height: 35px;">
+                      <canvas id="salesSparkline"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 18. Top Cities (Most Active Locations) -->
+            <div class="col-12 col-xl-4" data-aos="fade-up" data-aos-delay="100">
+              <div class="uh-card h-100">
+                <h5 class="mb-2 font-title fw-bold">Active Locations</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Listing volume density in major cities.</p>
+
+                <div class="d-flex flex-column gap-3">
+                  <!-- Location Item 1 -->
+                  <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.8rem;">
+                      <span class="fw-semibold text-main font-title"><i class="bi bi-geo-alt-fill text-primary me-1"></i> Manhattan, NY</span>
+                      <span class="text-muted fw-bold">58 Listings (41%)</span>
+                    </div>
+                    <div class="progress" style="height: 4px; background-color: rgba(255, 255, 255, 0.05);">
+                      <div class="progress-bar bg-primary" role="progressbar" style="width: 41%" aria-valuenow="41" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+
+                  <!-- Location Item 2 -->
+                  <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.8rem;">
+                      <span class="fw-semibold text-main font-title"><i class="bi bi-geo-alt-fill text-primary me-1"></i> Beverly Hills, CA</span>
+                      <span class="text-muted fw-bold">42 Listings (30%)</span>
+                    </div>
+                    <div class="progress" style="height: 4px; background-color: rgba(255, 255, 255, 0.05);">
+                      <div class="progress-bar bg-primary" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+
+                  <!-- Location Item 3 -->
+                  <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.8rem;">
+                      <span class="fw-semibold text-main font-title"><i class="bi bi-geo-alt-fill text-primary me-1"></i> Miami Beach, FL</span>
+                      <span class="text-muted fw-bold">28 Listings (20%)</span>
+                    </div>
+                    <div class="progress" style="height: 4px; background-color: rgba(255, 255, 255, 0.05);">
+                      <div class="progress-bar bg-primary" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 19. System Status Widget -->
+            <div class="col-12 col-xl-4" data-aos="fade-up" data-aos-delay="200">
+              <div class="uh-card h-100">
+                <h5 class="mb-2 font-title fw-bold">Engine Integrity Log</h5>
+                <p class="text-muted mb-4" style="font-size: 0.8rem;">Real-time health check status indicators of database.</p>
+
+                <div class="d-flex flex-column gap-3">
+                  <!-- System Status Item 1: Database -->
+                  <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-body border border-light-subtle">
+                    <span class="text-muted" style="font-size: 0.8rem;"><i class="bi bi-database me-2"></i> Relational Database</span>
+                    <div class="status-indicator-uh">
+                      <span class="status-bullet-uh pulsing bg-success"></span>
+                      <span class="fw-bold font-title text-success" style="font-size: 0.75rem; text-transform: uppercase;">Online</span>
+                    </div>
+                  </div>
+
+                  <!-- System Status Item 2: Cloud Storage -->
+                  <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-body border border-light-subtle">
+                    <span class="text-muted" style="font-size: 0.8rem;"><i class="bi bi-cloud-check me-2"></i> File Storage CDN</span>
+                    <div class="status-indicator-uh">
+                      <span class="status-bullet-uh pulsing bg-success"></span>
+                      <span class="fw-bold font-title text-success" style="font-size: 0.75rem; text-transform: uppercase;">Active</span>
+                    </div>
+                  </div>
+
+                  <!-- System Status Item 3: Server Node -->
+                  <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-body border border-light-subtle">
+                    <span class="text-muted" style="font-size: 0.8rem;"><i class="bi bi-cpu me-2"></i> Server Node Ingress</span>
+                    <div class="status-indicator-uh">
+                      <span class="status-bullet-uh pulsing bg-success"></span>
+                      <span class="fw-bold font-title text-success" style="font-size: 0.75rem; text-transform: uppercase;">Healthy</span>
+                    </div>
+                  </div>
+
+                  <!-- System Status Item 4: Backup Systems -->
+                  <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-body border border-light-subtle">
+                    <span class="text-muted" style="font-size: 0.8rem;"><i class="bi bi-arrow-repeat me-2"></i> Cold Storage Backups</span>
+                    <div class="status-indicator-uh">
+                      <span class="status-bullet-uh bg-success"></span>
+                      <span class="fw-bold font-title text-success" style="font-size: 0.75rem; text-transform: uppercase;">Secure</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- Chart.js CDN (Modern 4.x version for high-performance and fully-customisable responsive charts) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- AOS Animation Library JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Main JS Script -->
+    <script src="/assets/js/main.js"></script>
+  </body>
+</html>

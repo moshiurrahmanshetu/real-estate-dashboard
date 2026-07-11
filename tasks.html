@@ -1,0 +1,2106 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Management Center - UrbanHub</title>
+
+    <!-- Pre-load LocalStorage theme choice -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Style additions to coordinate tasks workspace */
+      .tasks-toolbar {
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        padding: 1rem;
+      }
+      .state-simulator {
+        background-color: rgba(var(--uh-primary-rgb), 0.05);
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.15);
+        border-radius: 12px;
+      }
+      .stat-card-compact {
+        background: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        transition: var(--uh-transition-smooth);
+      }
+      .stat-card-compact:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--uh-shadow-sm);
+        border-color: rgba(var(--uh-primary-rgb), 0.3);
+      }
+      /* View Switch Styles */
+      .view-container {
+        display: none;
+      }
+      .view-container.active {
+        display: block;
+      }
+      /* Kanban Board Styles */
+      .kanban-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(240px, 1fr));
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+      }
+      .kanban-column {
+        background-color: rgba(0, 0, 0, 0.15);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 12px;
+        padding: 0.75rem;
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+      }
+      [data-bs-theme="light"] .kanban-column {
+        background-color: rgba(0, 0, 0, 0.03);
+      }
+      .kanban-column-header {
+        font-weight: 700;
+        font-family: var(--uh-font-title);
+        font-size: 0.85rem;
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
+        border-bottom: 2px solid rgba(var(--uh-primary-rgb), 0.2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .kanban-card-list {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .task-card {
+        background-color: var(--uh-bg-card);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 10px;
+        padding: 0.75rem;
+        cursor: pointer;
+        transition: var(--uh-transition-smooth);
+        position: relative;
+      }
+      .task-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--uh-shadow-md);
+        border-color: rgba(var(--uh-primary-rgb), 0.3);
+      }
+      .overdue-highlight {
+        border-left: 3px solid #ef4444 !important;
+      }
+      .progress-tiny {
+        height: 4px;
+        border-radius: 2px;
+      }
+      /* Bulk actions floating bar */
+      .bulk-actions-bar {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%) translateY(120%);
+        z-index: 1040;
+        background-color: var(--uh-bg-card);
+        border: 1.5px solid var(--uh-primary);
+        box-shadow: var(--uh-shadow-lg);
+        border-radius: 50px;
+        padding: 0.75rem 2rem;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .bulk-actions-bar.show {
+        transform: translateX(-50%) translateY(0);
+      }
+      /* Loading Skeleton classes */
+      .skeleton-animation {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255,255,255,0.06) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.5s infinite;
+        border-radius: 6px;
+      }
+      @keyframes skeleton-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      /* Detail progress radial */
+      .progress-radial-container {
+        position: relative;
+        width: 60px;
+        height: 60px;
+      }
+      .radial-svg {
+        transform: rotate(-90deg);
+      }
+      .radial-bg {
+        fill: none;
+        stroke: rgba(var(--uh-primary-rgb), 0.1);
+        stroke-width: 4;
+      }
+      .radial-bar {
+        fill: none;
+        stroke: var(--uh-primary);
+        stroke-width: 4;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.35s;
+        transform-origin: 50% 50%;
+      }
+      .focus-visible-indicator:focus-visible {
+        outline: 2.5px solid var(--uh-primary) !important;
+        outline-offset: 2px;
+      }
+      /* Toast alerts */
+      .toast-container-custom {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1060;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Overlay Backdrop for Mobile Sidebar -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- FIXED LEFT SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <i class="bi bi-building-up"></i>
+          </div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <!-- Navigation Menu -->
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="transactions.html" class="sidebar-menu-link">
+                <i class="bi bi-currency-exchange"></i>
+                <span>Transactions</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-receipt"></i>
+                <span>Invoices</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Intelligence</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="coming-soon.html" class="sidebar-menu-link">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Analytics</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="calendar.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar3"></i>
+                <span>Calendar</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="tasks.html" class="sidebar-menu-link active">
+                <i class="bi bi-check2-square"></i>
+                <span>Tasks</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reviews.html" class="sidebar-menu-link">
+                <i class="bi bi-star"></i>
+                <span>Reviews</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="reports.html" class="sidebar-menu-link">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Reports</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card text-decoration-none">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name mb-0">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn" aria-label="Toggle Navigation Sidebar">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input focus-visible-indicator" id="top-toolbar-search" placeholder="Search tasks, listings, customers..." onkeyup="performSearch(this.value)" aria-label="Global search task input" />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <button id="theme-toggle" class="header-btn focus-visible-indicator" title="Switch Theme" aria-label="Toggle Dark Light Mode">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE BODY CONTAINER -->
+        <div class="page-body">
+          
+          <!-- STATE SIMULATOR BAR -->
+          <div class="state-simulator mb-4 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2 btn-no-print" data-aos="fade-down">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-gear-wide-connected text-primary animate-spin"></i>
+              <span class="small fw-bold text-main">UI Reusable States Simulator:</span>
+            </div>
+            <div class="d-flex gap-1 flex-wrap">
+              <button class="btn btn-xs btn-outline-primary active" id="sim-success" onclick="toggleSimState('success')"><i class="bi bi-check-circle-fill me-1"></i> Success State</button>
+              <button class="btn btn-xs btn-outline-secondary" id="sim-loading" onclick="toggleSimState('loading')"><i class="bi bi-hourglass-split me-1"></i> Loading Skeleton</button>
+              <button class="btn btn-xs btn-outline-warning" id="sim-empty" onclick="toggleSimState('empty')"><i class="bi bi-slash-circle me-1"></i> Empty State</button>
+              <button class="btn btn-xs btn-outline-danger" id="sim-error" onclick="toggleSimState('error')"><i class="bi bi-exclamation-triangle-fill me-1"></i> Error State</button>
+            </div>
+          </div>
+
+          <!-- BREADCRUMB & HEADER PANEL -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-up" data-aos-delay="50">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Tasks</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Work Management Center</h1>
+            </div>
+
+            <!-- Header Quick Action buttons -->
+            <div class="d-flex align-items-center flex-wrap gap-2 btn-no-print">
+              <button class="btn btn-sm btn-primary d-flex align-items-center gap-1.5 focus-visible-indicator" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                <i class="bi bi-plus-circle"></i> <span>Create Task</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5 focus-visible-indicator" onclick="exportCSV()">
+                <i class="bi bi-file-earmark-spreadsheet"></i> <span>Export CSV</span>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5 focus-visible-indicator" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span>Print</span>
+              </button>
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 focus-visible-indicator" onclick="refreshTasksData()">
+                <i class="bi bi-arrow-clockwise"></i> <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SKELETON PRELOAD STATE -->
+          <div id="loading-state" class="d-none">
+            <div class="row g-3 mb-4">
+              <div class="col-6 col-md-3" v-for="i in 4">
+                <div class="uh-card p-3">
+                  <div class="skeleton-animation mb-2" style="width: 40%; height: 14px;"></div>
+                  <div class="skeleton-animation mb-1" style="width: 70%; height: 24px;"></div>
+                  <div class="skeleton-animation" style="width: 90%; height: 10px;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="row g-4">
+              <div class="col-12 col-md-3">
+                <div class="uh-card p-3">
+                  <div class="skeleton-animation mb-3" style="width: 60%; height: 16px;"></div>
+                  <div class="skeleton-animation mb-2" style="width: 100%; height: 40px;" v-for="i in 5"></div>
+                </div>
+              </div>
+              <div class="col-12 col-md-9">
+                <div class="uh-card p-4">
+                  <div class="d-flex justify-content-between mb-4">
+                    <div class="skeleton-animation" style="width: 20%; height: 24px;"></div>
+                    <div class="skeleton-animation" style="width: 30%; height: 24px;"></div>
+                  </div>
+                  <div class="skeleton-animation mb-3" style="width: 100%; height: 250px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE PANEL -->
+          <div id="empty-state" class="d-none text-center py-5">
+            <div class="uh-card p-5 mx-auto" style="max-width: 550px;">
+              <div class="text-warning mb-3"><i class="bi bi-check2-square" style="font-size: 3.5rem;"></i></div>
+              <h4 class="font-title fw-bold text-main mb-2">No Scheduled Tasks Available</h4>
+              <p class="text-muted small mb-4">You have clear workboards. Every property visit, photography session, and client documentation checklist is empty for the requested query parameters.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal"><i class="bi bi-plus-circle me-1"></i> Add Real Estate Task</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleSimState('success')">Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ERROR STATE PANEL -->
+          <div id="error-state" class="d-none text-center py-5">
+            <div class="uh-card p-5 mx-auto border-danger" style="max-width: 550px;">
+              <div class="text-danger mb-3"><i class="bi bi-shield-exclamation" style="font-size: 3.5rem;"></i></div>
+              <h4 class="font-title fw-bold text-main mb-2">Operation Gateway Synchronization Error</h4>
+              <p class="text-muted small mb-4">We encountered an issue syncing task lists from the UrbanHub core server pipeline. Verify connectivity variables and operational keys, then retry.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-danger" onclick="refreshTasksData()"><i class="bi bi-arrow-clockwise me-1"></i> Retry Pipeline Connection</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleSimState('success')">Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CORE WORKSPACE CONTAINER -->
+          <div id="success-state">
+            
+            <!-- STATISTICS METRIC BAR -->
+            <div class="row g-3 mb-4" data-aos="fade-up" data-aos-delay="100">
+              <!-- Total Tasks -->
+              <div class="col-6 col-md-3 col-lg-1-5">
+                <div class="stat-card-compact text-center">
+                  <span class="text-muted small d-block mb-1">Total Tasks</span>
+                  <h3 class="font-title fw-bold text-main mb-0" id="stat-total">0</h3>
+                  <span class="text-muted font-mono" style="font-size: 0.65rem;">Active Pipeline</span>
+                </div>
+              </div>
+              <!-- Completed -->
+              <div class="col-6 col-md-3 col-lg-1-5">
+                <div class="stat-card-compact text-center">
+                  <span class="text-muted small d-block mb-1">Completed</span>
+                  <h3 class="font-title fw-bold text-success mb-0" id="stat-completed">0</h3>
+                  <span class="text-success font-mono" style="font-size: 0.65rem;"><i class="bi bi-graph-up"></i> High rate</span>
+                </div>
+              </div>
+              <!-- In Progress -->
+              <div class="col-6 col-md-3 col-lg-1-5">
+                <div class="stat-card-compact text-center">
+                  <span class="text-muted small d-block mb-1">In Progress</span>
+                  <h3 class="font-title fw-bold text-info mb-0" id="stat-progress">0</h3>
+                  <span class="text-info font-mono" style="font-size: 0.65rem;"><i class="bi bi-arrow-repeat"></i> Active now</span>
+                </div>
+              </div>
+              <!-- Overdue -->
+              <div class="col-6 col-md-3 col-lg-1-5">
+                <div class="stat-card-compact text-center border-danger-subtle">
+                  <span class="text-muted small d-block mb-1">Overdue</span>
+                  <h3 class="font-title fw-bold text-danger mb-0" id="stat-overdue">0</h3>
+                  <span class="text-danger font-mono" style="font-size: 0.65rem;"><i class="bi bi-clock-history"></i> Priority attention</span>
+                </div>
+              </div>
+              <!-- High Priority -->
+              <div class="col-6 col-md-3 col-lg-1-5">
+                <div class="stat-card-compact text-center">
+                  <span class="text-muted small d-block mb-1">High & Critical</span>
+                  <h3 class="font-title fw-bold text-warning mb-0" id="stat-high">0</h3>
+                  <span class="text-warning font-mono" style="font-size: 0.65rem;"><i class="bi bi-shield-fill-exclamation"></i> Immediate action</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ADVANCED SEARCH, FILTER & WORKSPACE VIEW NAVIGATION -->
+            <div class="tasks-toolbar mb-4" data-aos="fade-up" data-aos-delay="150">
+              <div class="row g-3">
+                <div class="col-12 col-md-4">
+                  <div class="position-relative">
+                    <input type="text" class="form-control bg-body border-light-subtle text-main ps-5 focus-visible-indicator" id="filter-search" placeholder="Search tasks name, ID, customer..." onkeyup="applyAllFilters()" aria-label="Search filter input" />
+                    <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                  </div>
+                </div>
+                <div class="col-6 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main focus-visible-indicator" id="filter-category" onchange="applyAllFilters()" aria-label="Filter category dropdown">
+                    <option value="All">All Categories</option>
+                    <option value="Property Inspection">Property Inspection</option>
+                    <option value="Site Visit">Site Visit</option>
+                    <option value="Customer Follow-up">Customer Follow-up</option>
+                    <option value="Documentation">Documentation</option>
+                    <option value="Contract Review">Contract Review</option>
+                    <option value="Property Listing">Property Listing</option>
+                    <option value="Photography">Photography</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Payment Collection">Payment Collection</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main focus-visible-indicator" id="filter-priority" onchange="applyAllFilters()" aria-label="Filter priority dropdown">
+                    <option value="All">All Priorities</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-2">
+                  <select class="form-select bg-body border-light-subtle text-main focus-visible-indicator" id="filter-agent" onchange="applyAllFilters()" aria-label="Filter agent dropdown">
+                    <option value="All">All Agents</option>
+                    <option value="Sarah Jenkins">Sarah Jenkins</option>
+                    <option value="Marcus Vance">Marcus Vance</option>
+                    <option value="Robert Downey">Robert Downey</option>
+                    <option value="Emma Watson">Emma Watson</option>
+                    <option value="David Foster">David Foster</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-2 d-flex justify-content-end gap-1">
+                  <button class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-1 focus-visible-indicator" onclick="resetFilters()" title="Reset workspace filters">
+                    <i class="bi bi-eraser-fill"></i> <span class="d-none d-lg-inline">Reset</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- VIEW SWITCH & CONTEXT SELECTION -->
+              <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-light-subtle flex-wrap gap-2 btn-no-print">
+                <!-- Tab Controls: My Tasks vs Team Tasks -->
+                <div class="btn-group btn-group-sm" role="group" aria-label="Tasks scope toggle">
+                  <button type="button" class="btn btn-outline-primary active focus-visible-indicator" id="btn-team-tasks" onclick="setTasksScope('team')">Team Board</button>
+                  <button type="button" class="btn btn-outline-primary focus-visible-indicator" id="btn-my-tasks" onclick="setTasksScope('my')">My Tasks (Sarah)</button>
+                </div>
+
+                <!-- Active view format tabs -->
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-muted small">Layout Format:</span>
+                  <div class="btn-group btn-group-sm" role="group" aria-label="View switch toggle">
+                    <button type="button" class="btn btn-outline-secondary active focus-visible-indicator" id="btn-view-kanban" onclick="switchView('kanban')" title="Kanban swimlane board view"><i class="bi bi-kanban"></i> <span class="d-none d-lg-inline">Kanban</span></button>
+                    <button type="button" class="btn btn-outline-secondary focus-visible-indicator" id="btn-view-list" onclick="switchView('list')" title="Bootstrap table tabular list view"><i class="bi bi-list-ul"></i> <span class="d-none d-lg-inline">List Table</span></button>
+                    <button type="button" class="btn btn-outline-secondary focus-visible-indicator" id="btn-view-board" onclick="switchView('board')" title="Bento card catalog grid view"><i class="bi bi-grid-3x3-gap"></i> <span class="d-none d-lg-inline">Bento Grid</span></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- NO RESULTS MATCH PANEL -->
+            <div id="no-results-panel" class="d-none text-center py-5">
+              <div class="uh-card p-4 mx-auto" style="max-width: 480px;">
+                <i class="bi bi-search-heart text-muted mb-2" style="font-size: 2.5rem;"></i>
+                <h5 class="font-title fw-bold text-main mb-1">No Matching Work Items</h5>
+                <p class="text-muted small mb-0">No active real-estate tasks match your search input parameters or selected filter attributes. Broaden the attributes grid to reset focus.</p>
+              </div>
+            </div>
+
+            <!-- KANBAN VIEW CONTAINER -->
+            <div id="view-kanban" class="view-container active" data-aos="fade-up" data-aos-delay="200">
+              <div class="kanban-grid">
+                <!-- Column: Backlog -->
+                <div class="kanban-column">
+                  <div class="kanban-column-header">
+                    <span>BACKLOG</span>
+                    <span class="badge bg-secondary-subtle text-muted rounded-pill" id="badge-count-backlog">0</span>
+                  </div>
+                  <div class="kanban-card-list" id="kanban-lane-backlog"></div>
+                </div>
+                <!-- Column: To Do -->
+                <div class="kanban-column">
+                  <div class="kanban-column-header">
+                    <span>TO DO</span>
+                    <span class="badge bg-info-subtle text-info rounded-pill" id="badge-count-todo">0</span>
+                  </div>
+                  <div class="kanban-card-list" id="kanban-lane-todo"></div>
+                </div>
+                <!-- Column: In Progress -->
+                <div class="kanban-column">
+                  <div class="kanban-column-header">
+                    <span>IN PROGRESS</span>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill" id="badge-count-inprogress">0</span>
+                  </div>
+                  <div class="kanban-card-list" id="kanban-lane-inprogress"></div>
+                </div>
+                <!-- Column: Review -->
+                <div class="kanban-column">
+                  <div class="kanban-column-header">
+                    <span>REVIEW</span>
+                    <span class="badge bg-warning-subtle text-warning rounded-pill" id="badge-count-review">0</span>
+                  </div>
+                  <div class="kanban-card-list" id="kanban-lane-review"></div>
+                </div>
+                <!-- Column: Completed -->
+                <div class="kanban-column">
+                  <div class="kanban-column-header">
+                    <span>COMPLETED</span>
+                    <span class="badge bg-success-subtle text-success rounded-pill" id="badge-count-completed">0</span>
+                  </div>
+                  <div class="kanban-card-list" id="kanban-lane-completed"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TABULAR LIST VIEW CONTAINER -->
+            <div id="view-list" class="view-container" data-aos="fade-up" data-aos-delay="200">
+              <div class="uh-card p-0 overflow-hidden">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0" id="tasks-table">
+                    <thead>
+                      <tr class="table-light">
+                        <th style="width: 40px; padding-left: 1.25rem;">
+                          <input type="checkbox" class="form-check-input focus-visible-indicator" id="master-bulk-select" onchange="toggleMasterSelect(this)" aria-label="Select all tasks for bulk action" />
+                        </th>
+                        <th>Task Name & ID</th>
+                        <th>Property Asset</th>
+                        <th>Customer / Lead</th>
+                        <th>Assigned Host</th>
+                        <th>Priority</th>
+                        <th>Due Date</th>
+                        <th>Progress</th>
+                        <th>Status</th>
+                        <th class="text-end" style="padding-right: 1.25rem;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="list-table-body">
+                      <!-- Rendered programmatically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- BENTO CARD BOARD VIEW CONTAINER -->
+            <div id="view-board" class="view-container" data-aos="fade-up" data-aos-delay="200">
+              <div class="row g-3" id="bento-grid-list">
+                <!-- Rendered programmatically -->
+              </div>
+            </div>
+
+            <!-- DEADLINES AND OVERDUE SPLIT MATRIX -->
+            <div class="row g-4 mt-2">
+              <div class="col-12 col-md-6" data-aos="fade-right">
+                <div class="uh-card p-3">
+                  <h6 class="font-title fw-bold mb-3 text-main d-flex justify-content-between align-items-center">
+                    <span>Critical & Overdue Focus</span>
+                    <span class="badge bg-danger" id="critical-alert-badge">Alert</span>
+                  </h6>
+                  <div class="d-flex flex-column gap-2" id="overdue-items-container">
+                    <!-- Rendered programmatically -->
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6" data-aos="fade-left">
+                <div class="uh-card p-3">
+                  <h6 class="font-title fw-bold mb-3 text-main d-flex justify-content-between align-items-center">
+                    <span>Upcoming Deadlines Itinerary</span>
+                    <span class="text-muted small"><i class="bi bi-clock"></i> Next 7 Days</span>
+                  </h6>
+                  <div class="d-flex flex-column gap-2.5" id="upcoming-deadlines-container">
+                    <!-- Rendered programmatically -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- STICKY FLOATING BULK ACTIONS TOOLBAR -->
+    <div id="bulk-actions-floating-bar" class="bulk-actions-bar btn-no-print">
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <span class="small fw-bold text-main" id="bulk-selected-count">0 items selected</span>
+        <div class="d-flex gap-1.5">
+          <button class="btn btn-xs btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignModal" onclick="prepareBulkAssign()"><i class="bi bi-person-check me-1"></i> Assign Host</button>
+          <button class="btn btn-xs btn-outline-success" onclick="bulkMarkComplete()"><i class="bi bi-check-circle me-1"></i> Mark Done</button>
+          <button class="btn btn-xs btn-outline-secondary" onclick="bulkExportCSV()"><i class="bi bi-download me-1"></i> Export</button>
+          <button class="btn btn-xs btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" onclick="prepareBulkDelete()"><i class="bi bi-trash me-1"></i> Delete Selected</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTERACTIVE TASK DETAILS OFF-CANVAS SLIDE DRAWER -->
+    <div class="offcanvas offcanvas-end bg-body border-start border-light-subtle" tabindex="-1" id="taskDetailsOffcanvas" aria-labelledby="taskDetailsOffcanvasLabel" style="width: 500px; max-width: 100%;">
+      <div class="offcanvas-header border-bottom border-light-subtle pb-3">
+        <div class="d-flex flex-column gap-1">
+          <span class="badge-custom bg-secondary text-white w-fit" id="drawer-category-badge" style="font-size: 0.65rem; width: fit-content;">Category</span>
+          <h5 class="offcanvas-title font-title fw-bold text-main mt-1" id="taskDetailsOffcanvasLabel">Task details name</h5>
+          <span class="font-mono text-muted small" id="drawer-task-id" style="font-size: 0.72rem;">TASK-1001</span>
+        </div>
+        <button type="button" class="btn-close focus-visible-indicator" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div class="d-flex flex-column gap-4">
+          <!-- Main status, Priority and Due date strip -->
+          <div class="row g-2 text-center">
+            <div class="col-4">
+              <div class="p-2 bg-body border border-light-subtle rounded">
+                <span class="text-muted d-block" style="font-size: 0.6rem;">PRIORITY</span>
+                <span class="small fw-bold" id="drawer-priority-badge">High</span>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-2 bg-body border border-light-subtle rounded">
+                <span class="text-muted d-block" style="font-size: 0.6rem;">DUE DATE</span>
+                <span class="small fw-bold text-main" id="drawer-due-date">July 12, 2026</span>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-2 bg-body border border-light-subtle rounded">
+                <span class="text-muted d-block" style="font-size: 0.6rem;">CURRENT STATUS</span>
+                <span class="small fw-bold text-primary" id="drawer-status-badge">In Progress</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Description notes -->
+          <div>
+            <h6 class="font-title fw-bold mb-1.5 text-main small" style="letter-spacing: 0.5px;">TASK DESCRIPTION</h6>
+            <div class="p-2.5 rounded bg-body-tertiary border border-light-subtle">
+              <p class="text-main mb-0 small" id="drawer-description-content" style="line-height: 1.4; font-size: 0.78rem;">Description details for real estate action node.</p>
+            </div>
+          </div>
+
+          <!-- Checklist block with interactive circular percentage progress -->
+          <div class="p-3 bg-body border border-light-subtle rounded">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="font-title fw-bold mb-0 text-main small">Action Checklist Items</h6>
+                <span class="text-muted" style="font-size: 0.65rem;" id="drawer-checklist-progress-text">0 of 4 tasks finished</span>
+              </div>
+              <div class="progress-radial-container">
+                <svg class="radial-svg" width="48" height="48" viewBox="0 0 36 36">
+                  <path class="radial-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path class="radial-bar" id="drawer-radial-bar" stroke-dasharray="100, 100" stroke-dashoffset="100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <div class="position-absolute top-50 start-50 translate-middle font-title fw-bold" style="font-size: 0.65rem; color: var(--uh-text-main);" id="drawer-radial-text">0%</div>
+              </div>
+            </div>
+            <!-- Live interactive checklist entries -->
+            <div class="d-flex flex-column gap-2" id="drawer-checklist-items-container"></div>
+          </div>
+
+          <!-- Property & Customer cards -->
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="p-2.5 rounded bg-body-tertiary border border-light-subtle">
+                <span class="text-muted d-block mb-1" style="font-size: 0.65rem;"><i class="bi bi-houses text-primary"></i> CONNECTED ASSET</span>
+                <span class="small fw-semibold text-main d-block" id="drawer-property-text" style="font-size: 0.72rem; line-height: 1.2;">Miami Penthouse 404</span>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-2.5 rounded bg-body-tertiary border border-light-subtle">
+                <span class="text-muted d-block mb-1" style="font-size: 0.65rem;"><i class="bi bi-person-bounding-box text-primary"></i> CLIENT REFERENCE</span>
+                <span class="small fw-semibold text-main d-block" id="drawer-customer-text" style="font-size: 0.72rem; line-height: 1.2;">Richard Branson</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Assigned team -->
+          <div class="p-2.5 rounded bg-body-tertiary border border-light-subtle d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <div class="p-1.5 bg-primary-subtle text-primary rounded-circle" style="font-size: 0.85rem;"><i class="bi bi-person-fill"></i></div>
+              <div>
+                <span class="text-muted d-block" style="font-size: 0.65rem;">ASSIGNED AGENT HOST</span>
+                <strong class="text-main small" id="drawer-agent-text">Sarah Jenkins</strong>
+              </div>
+            </div>
+            <button class="btn btn-xs btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#assignModal" onclick="prepareSingleAssign()"><i class="bi bi-arrow-repeat"></i> Reassign</button>
+          </div>
+
+          <!-- Attachments panel -->
+          <div>
+            <h6 class="font-title fw-bold mb-2 text-main small">Attachments Grid</h6>
+            <div class="row g-2" id="drawer-attachments-container"></div>
+          </div>
+
+          <!-- Comments dialog conversational style UI -->
+          <div>
+            <h6 class="font-title fw-bold mb-2 text-main small">CRM Work Activity Comments</h6>
+            <!-- Conversation Box -->
+            <div class="d-flex flex-column gap-2 mb-3 max-height-comments" id="drawer-comments-box" style="max-height: 180px; overflow-y: auto; padding-right: 4px;"></div>
+            <!-- Input to add comments -->
+            <div class="input-group">
+              <input type="text" class="form-control bg-body border-light-subtle text-main focus-visible-indicator" id="comment-input-field" placeholder="Add workspace update logs..." style="font-size: 0.75rem;" aria-label="Enter task comment text" />
+              <button class="btn btn-primary" type="button" onclick="addCommentToActiveTask()"><i class="bi bi-send-fill"></i></button>
+            </div>
+          </div>
+
+          <!-- Activity log timeline -->
+          <div>
+            <h6 class="font-title fw-bold mb-2 text-main small">Lifecycle Pipeline Logs</h6>
+            <div class="d-flex flex-column gap-2 border-start border-light-subtle ps-3 position-relative" id="drawer-timeline-container"></div>
+          </div>
+
+          <!-- Quick Actions & View Full Details -->
+          <div class="d-flex flex-column gap-2 border-top border-light-subtle pt-3 btn-no-print">
+            <div class="row g-2">
+              <div class="col-6">
+                <button class="btn btn-sm btn-outline-success w-100 focus-visible-indicator" onclick="markActiveComplete()"><i class="bi bi-check-circle me-1"></i> Complete Task</button>
+              </div>
+              <div class="col-6">
+                <button class="btn btn-sm btn-outline-warning w-100 focus-visible-indicator" onclick="duplicateActiveTask()"><i class="bi bi-copy me-1"></i> Duplicate</button>
+              </div>
+              <div class="col-6">
+                <button class="btn btn-sm btn-outline-secondary w-100 focus-visible-indicator" onclick="archiveActiveTask()"><i class="bi bi-archive me-1"></i> Archive</button>
+              </div>
+              <div class="col-6">
+                <button class="btn btn-sm btn-outline-danger w-100 focus-visible-indicator" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" onclick="prepareSingleDelete()"><i class="bi bi-trash3 me-1"></i> Delete</button>
+              </div>
+            </div>
+            <a href="coming-soon.html" class="btn btn-primary btn-sm w-100 focus-visible-indicator mt-1" id="drawer-view-full-details-link">View Full Details <i class="bi bi-chevron-right ms-1"></i></a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- CREATE TASK MODAL (UI) -->
+    <div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-body border border-light-subtle">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h5 class="modal-title font-title fw-bold text-main" id="createTaskModalLabel">Create Real Estate Action Task</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="create-task-form" onsubmit="handleCreateTask(event)">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="task-title-input" class="form-label text-muted small fw-semibold">Task Objective Title</label>
+                <input type="text" class="form-control bg-body border-light-subtle text-main" id="task-title-input" placeholder="e.g. Schedule Home Automation Inspection" required />
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label for="task-category-input" class="form-label text-muted small fw-semibold">Work Category</label>
+                  <select class="form-select bg-body border-light-subtle text-main" id="task-category-input" required>
+                    <option value="Property Inspection">Property Inspection</option>
+                    <option value="Site Visit">Site Visit</option>
+                    <option value="Customer Follow-up">Customer Follow-up</option>
+                    <option value="Documentation">Documentation</option>
+                    <option value="Contract Review">Contract Review</option>
+                    <option value="Property Listing">Property Listing</option>
+                    <option value="Photography">Photography</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Payment Collection">Payment Collection</option>
+                  </select>
+                </div>
+                <div class="col-6">
+                  <label for="task-priority-input" class="form-label text-muted small fw-semibold">Priority Level</label>
+                  <select class="form-select bg-body border-light-subtle text-main" id="task-priority-input" required>
+                    <option value="Low">Low</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label for="task-agent-input" class="form-label text-muted small fw-semibold">Assigned Agent</label>
+                  <select class="form-select bg-body border-light-subtle text-main" id="task-agent-input" required>
+                    <option value="Sarah Jenkins">Sarah Jenkins</option>
+                    <option value="Marcus Vance">Marcus Vance</option>
+                    <option value="Robert Downey">Robert Downey</option>
+                    <option value="Emma Watson">Emma Watson</option>
+                    <option value="David Foster">David Foster</option>
+                  </select>
+                </div>
+                <div class="col-6">
+                  <label for="task-date-input" class="form-label text-muted small fw-semibold">Due Date</label>
+                  <input type="date" class="form-control bg-body border-light-subtle text-main" id="task-date-input" required />
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="task-property-input" class="form-label text-muted small fw-semibold">Related Property Asset</label>
+                <input type="text" class="form-control bg-body border-light-subtle text-main" id="task-property-input" placeholder="e.g. Edgewater Flats Marina Suite 304" required />
+              </div>
+              <div class="mb-3">
+                <label for="task-customer-input" class="form-label text-muted small fw-semibold">Client Reference Name</label>
+                <input type="text" class="form-control bg-body border-light-subtle text-main" id="task-customer-input" placeholder="e.g. Michael Jordan Jr." required />
+              </div>
+              <div class="mb-3">
+                <label for="task-desc-input" class="form-label text-muted small fw-semibold">Action Description</label>
+                <textarea class="form-control bg-body border-light-subtle text-main" id="task-desc-input" rows="3" placeholder="Provide detailed operational steps for the assigned host agent..."></textarea>
+              </div>
+            </div>
+            <div class="modal-footer border-top border-light-subtle">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-sm btn-primary">Schedule Task</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- REASSIGN AGENT MODAL (UI) -->
+    <div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-body border border-light-subtle">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h6 class="modal-title font-title fw-bold text-main" id="assignModalLabel">Assign Task Host</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="reassign-agent-select" class="form-label text-muted small fw-semibold">Choose Agent</label>
+              <select class="form-select bg-body border-light-subtle text-main" id="reassign-agent-select">
+                <option value="Sarah Jenkins">Sarah Jenkins</option>
+                <option value="Marcus Vance">Marcus Vance</option>
+                <option value="Robert Downey">Robert Downey</option>
+                <option value="Emma Watson">Emma Watson</option>
+                <option value="David Foster">David Foster</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-light-subtle p-2">
+            <button type="button" class="btn btn-xs btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-xs btn-primary" onclick="executeAssign()">Confirm Assignment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-body border border-danger">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h6 class="modal-title font-title fw-bold text-danger d-flex align-items-center gap-1.5" id="deleteConfirmModalLabel">
+              <i class="bi bi-exclamation-triangle"></i> Confirm Erasure
+            </h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center py-4">
+            <p class="text-main fw-bold small mb-2">Are you absolutely sure?</p>
+            <p class="text-muted mb-0" style="font-size: 0.72rem;">This irreversible action removes the selected real-estate task from the active pipeline registries database permanently.</p>
+          </div>
+          <div class="modal-footer border-top border-light-subtle p-2">
+            <button type="button" class="btn btn-xs btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-xs btn-danger" onclick="executeDelete()">Erase Permanently</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container-custom" id="toast-container"></div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AOS Animation library -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Frame Custom Base main.js -->
+    <script src="/assets/js/main.js"></script>
+
+    <!-- CORE LOGIC & INTERACTION ENGINE -->
+    <script>
+      // Global Variable Store
+      let currentView = 'kanban';
+      let activeScope = 'team'; // 'team' or 'my'
+      let activeTaskIndex = null; // tracking index in our global array
+      let singleTargetTaskId = null; // for modals
+      let bulkSelectionIds = []; // tracking selected Task IDs
+
+      // Agent Image Helper Map
+      const agentAvatars = {
+        "Sarah Jenkins": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=60",
+        "Marcus Vance": "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=60",
+        "Robert Downey": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=60",
+        "Emma Watson": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=60",
+        "David Foster": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=60"
+      };
+
+      // Mock Tasks Data List (Highly Detailed Real Estate Focus)
+      let initialTasksData = [
+        {
+          id: "TASK-1001",
+          title: "Pre-Listing Drone & Photography Session",
+          category: "Photography",
+          property: "The Grand Penthouse, 450 Ocean Drive",
+          customer: "Richard Branson",
+          agent: "Emma Watson",
+          priority: "High",
+          dueDate: "2026-07-12",
+          status: "In Progress",
+          progress: 60,
+          description: "Arrange professional sunset drone footage and high-definition interior photography for the penthouse listing layout. Coordinate staging with Sarah.",
+          checklist: [
+            { text: "Confirm sunset window with camera team", done: true },
+            { text: "Ensure balconies are polished and set", done: true },
+            { text: "Verify local drone airspace fly authorization", done: false },
+            { text: "Select final 25 high-gloss photo proofs", done: false }
+          ],
+          attachments: [
+            { name: "Photography_Briefing.pdf", type: "pdf", size: "2.4 MB" },
+            { name: "Staging_Plan.png", type: "image", size: "4.1 MB" }
+          ],
+          comments: [
+            { author: "Emma Watson", time: "2h ago", text: "Staging crew finished. Terraces look pristine. Starting drone flight at 7 PM." },
+            { author: "Sarah Jenkins", time: "1h ago", text: "Stellar. Ensure you capture the sunset reflecting on the infinity pool." }
+          ],
+          timeline: [
+            { action: "Task Created", user: "Sarah Jenkins", time: "2026-07-08 09:00" },
+            { action: "Assigned to Emma Watson", user: "Sarah Jenkins", time: "2026-07-08 10:15" },
+            { action: "Staging Comment Logged", user: "Emma Watson", time: "2026-07-10 12:45" }
+          ]
+        },
+        {
+          id: "TASK-1002",
+          title: "Mandatory Fire Safety Inspections",
+          category: "Property Inspection",
+          property: "Brickell Heights Commercial Suite 1400",
+          customer: "Goldman Sachs RE Group",
+          agent: "David Foster",
+          priority: "Critical",
+          dueDate: "2026-07-10", // Today
+          status: "To Do",
+          progress: 33,
+          description: "Supervise fire marshal inspection visit. Align commercial building tenant managers on testing routines for the main floor bells.",
+          checklist: [
+            { text: "Retrieve high-security master keys", done: true },
+            { text: "Draft alert emails to suite 1400 tenants", done: false },
+            { text: "Inspect all visible safety tags dates", done: false }
+          ],
+          attachments: [
+            { name: "City_Inspection_Checklists.pdf", type: "pdf", size: "1.2 MB" }
+          ],
+          comments: [
+            { author: "David Foster", time: "Yesterday", text: "Coordinated access windows with facility director. Alarm testing set for 10:30 AM." }
+          ],
+          timeline: [
+            { action: "Task Created", user: "Sarah Jenkins", time: "2026-07-05 14:00" },
+            { action: "Assigned to David Foster", user: "Sarah Jenkins", time: "2026-07-05 14:30" }
+          ]
+        },
+        {
+          id: "TASK-1003",
+          title: "Escrow Deposit Verification Receipt",
+          category: "Payment Collection",
+          property: "Miami Beach Marina Slip #42",
+          customer: "Alexander Soros",
+          agent: "Robert Downey",
+          priority: "High",
+          dueDate: "2026-07-08", // Overdue
+          status: "Review",
+          progress: 66,
+          description: "Verify that the 10% escrow earnest deposit cleared. Obtain physical bank copy statement from Chase commercial gateway.",
+          checklist: [
+            { text: "Acquire escrow confirmation voucher", done: true },
+            { text: "Correlate wire reference with account statement", done: true },
+            { text: "Issue official ledger receipt to client representatives", done: false }
+          ],
+          attachments: [
+            { name: "Escrow_Receipt_Draft_v2.pdf", type: "pdf", size: "850 KB" }
+          ],
+          comments: [
+            { author: "Robert Downey", time: "3h ago", text: "Voucher obtained from title corp. Awaiting finalized bank ledger reconciliation today." }
+          ],
+          timeline: [
+            { action: "Task Created", user: "Sarah Jenkins", time: "2026-07-06" },
+            { action: "Draft upload of voucher receipt", user: "Robert Downey", time: "2026-07-08" }
+          ]
+        },
+        {
+          id: "TASK-1004",
+          title: "Exclusive Private Yacht Waterfront Tour",
+          category: "Site Visit",
+          property: "Villa Serenis Estate, Key Biscayne",
+          customer: "Sofía Vergara",
+          agent: "Marcus Vance",
+          priority: "Medium",
+          dueDate: "2026-07-15",
+          status: "In Progress",
+          progress: 50,
+          description: "Personal tour of deep-water dock features, waterfront gardens, and auxiliary villa suites for prospective buyer's representatives.",
+          checklist: [
+            { text: "Confirm dock mooring cleared of debris", done: true },
+            { text: "Draft VIP private yacht route charts", done: false },
+            { text: "Set high-gloss portfolio brochures", done: true }
+          ],
+          attachments: [
+            { name: "Villa_Serenis_Brochure_High_Res.pdf", type: "pdf", size: "8.9 MB" },
+            { name: "Dock_Coordinates_Grid.xlsx", type: "spreadsheet", size: "320 KB" }
+          ],
+          comments: [],
+          timeline: [
+            { action: "Task Created", user: "Sarah Jenkins", time: "2026-07-09" }
+          ]
+        },
+        {
+          id: "TASK-1005",
+          title: "Review Penthouse Contract Draft",
+          category: "Contract Review",
+          property: "The Grand Penthouse, 450 Ocean Drive",
+          customer: "Richard Branson",
+          agent: "Sarah Jenkins",
+          priority: "Critical",
+          dueDate: "2026-07-11", // Tomorrow
+          status: "Review",
+          progress: 100,
+          description: "Inspect specific indemnity clauses regarding waterfront smart integration warranty and ocean wall engineering reserves.",
+          checklist: [
+            { text: "Review smart automation indemnity logs", done: true },
+            { text: "Confirm reserve margins schedule", done: true }
+          ],
+          attachments: [
+            { name: "Grand_Penthouse_Contract_Rider_v5.docx", type: "document", size: "1.5 MB" }
+          ],
+          comments: [
+            { author: "Sarah Jenkins", time: "5h ago", text: "Indemnity clauses have been reconciled. Sending final rider draft out for legal signoff." }
+          ],
+          timeline: [
+            { action: "Task Created", user: "Sarah Jenkins", time: "2026-07-06" },
+            { action: "Terms reconciliation finished", user: "Sarah Jenkins", time: "2026-07-10" }
+          ]
+        },
+        {
+          id: "TASK-1006",
+          title: "Ocean Grove Sewer Diagnostics",
+          category: "Maintenance",
+          property: "Coconut Grove Strip Shops",
+          customer: "Grove Commercial Holdings",
+          agent: "David Foster",
+          priority: "High",
+          dueDate: "2026-07-06", // Overdue
+          status: "Backlog",
+          progress: 0,
+          description: "Investigate localized blockages near Suite 105 lateral piping connection. Coordinate sewer snake scope technician schedule.",
+          checklist: [
+            { text: "Review plumbing contractor service estimates", done: false },
+            { text: "Obtain access clearance from Commercial tenant", done: false }
+          ],
+          attachments: [
+            { name: "Sewer_Line_Diagnostic_Quote.pdf", type: "pdf", size: "540 KB" }
+          ],
+          comments: [
+            { author: "David Foster", time: "2 days ago", text: "Tenant requesting repair window post-business hours to preserve client traffic." }
+          ],
+          timeline: [
+            { action: "Task Created", user: "David Foster", time: "2026-07-04" }
+          ]
+        },
+        {
+          id: "TASK-1007",
+          title: "Publish MLS Updates & Remodeling Log",
+          category: "Property Listing",
+          property: "Bal Harbour Residences Suite 12B",
+          customer: "Elena Rostova",
+          agent: "Emma Watson",
+          priority: "Medium",
+          dueDate: "2026-07-09",
+          status: "Completed",
+          progress: 100,
+          description: "Sync updated luxury MLS records. Log kitchen remodeled attributes across active portals (Zillow, MansionGlobal).",
+          checklist: [
+            { text: "Update price points on regional server", done: true },
+            { text: "Upload high-gloss kitchen photos", done: true }
+          ],
+          attachments: [
+            { name: "MLS_Listing_Update_Vouchers.pdf", type: "pdf", size: "450 KB" }
+          ],
+          comments: [],
+          timeline: [
+            { action: "Task Created", user: "Emma Watson", time: "2026-07-08" },
+            { action: "Task completed", user: "Emma Watson", time: "2026-07-09" }
+          ]
+        }
+      ];
+
+      // Work tasks array
+      let tasks = [...initialTasksData];
+
+      // Initialize workspace
+      document.addEventListener('DOMContentLoaded', () => {
+        // Parse date values
+        updateCountersAndViews();
+        // Load AOS
+        if (typeof AOS !== 'undefined') {
+          AOS.init({ duration: 600, once: true });
+        }
+      });
+
+      // Update calculations, redrawing views
+      function updateCountersAndViews() {
+        calculateStats();
+        renderActiveView();
+        renderDeadlinesAndAlerts();
+        updateBulkBarState();
+      }
+
+      // Dynamic metrics computation
+      function calculateStats() {
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.status === 'Completed').length;
+        const progress = tasks.filter(t => t.status === 'In Progress').length;
+        
+        // Calculate Overdue (due date is in past and status is not Completed)
+        const todayStr = new Date().toISOString().split('T')[0];
+        const overdue = tasks.filter(t => t.status !== 'Completed' && t.dueDate < todayStr).length;
+        
+        // High & Critical Priorities
+        const high = tasks.filter(t => t.priority === 'High' || t.priority === 'Critical').length;
+
+        // Apply values to UI
+        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-completed').textContent = completed;
+        document.getElementById('stat-progress').textContent = progress;
+        document.getElementById('stat-overdue').textContent = overdue;
+        document.getElementById('stat-high').textContent = high;
+      }
+
+      // Main Filter implementation
+      function getFilteredTasks() {
+        let list = [...tasks];
+
+        // Filter by scope (Team vs My Tasks)
+        if (activeScope === 'my') {
+          list = list.filter(t => t.agent === "Sarah Jenkins");
+        }
+
+        // Filter by search string
+        const searchVal = document.getElementById('filter-search').value.toLowerCase().trim();
+        if (searchVal) {
+          list = list.filter(t => 
+            t.title.toLowerCase().includes(searchVal) || 
+            t.id.toLowerCase().includes(searchVal) || 
+            t.property.toLowerCase().includes(searchVal) || 
+            t.customer.toLowerCase().includes(searchVal)
+          );
+        }
+
+        // Category filter
+        const catVal = document.getElementById('filter-category').value;
+        if (catVal !== 'All') {
+          list = list.filter(t => t.category === catVal);
+        }
+
+        // Priority filter
+        const priVal = document.getElementById('filter-priority').value;
+        if (priVal !== 'All') {
+          list = list.filter(t => t.priority === priVal);
+        }
+
+        // Agent filter
+        const ageVal = document.getElementById('filter-agent').value;
+        if (ageVal !== 'All') {
+          list = list.filter(t => t.agent === ageVal);
+        }
+
+        return list;
+      }
+
+      // Render Active Tab Views (Kanban, List, Bento Grid)
+      function renderActiveView() {
+        const filtered = getFilteredTasks();
+        const resultsPanel = document.getElementById('no-results-panel');
+        
+        if (filtered.length === 0 && tasks.length > 0) {
+          resultsPanel.classList.remove('d-none');
+        } else {
+          resultsPanel.classList.add('d-none');
+        }
+
+        if (currentView === 'kanban') {
+          renderKanban(filtered);
+        } else if (currentView === 'list') {
+          renderList(filtered);
+        } else if (currentView === 'board') {
+          renderBento(filtered);
+        }
+      }
+
+      // Priority color badges builder
+      function getPriorityBadge(priority) {
+        if (priority === 'Critical') return '<span class="badge bg-danger-subtle text-danger" style="font-size: 0.65rem;">Critical</span>';
+        if (priority === 'High') return '<span class="badge bg-warning-subtle text-warning" style="font-size: 0.65rem;">High</span>';
+        if (priority === 'Medium') return '<span class="badge bg-primary-subtle text-primary" style="font-size: 0.65rem;">Medium</span>';
+        return '<span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">Low</span>';
+      }
+
+      // Status Badge helper
+      function getStatusBadge(status) {
+        if (status === 'Completed') return '<span class="badge bg-success-subtle text-success" style="font-size: 0.65rem;">Completed</span>';
+        if (status === 'In Progress') return '<span class="badge bg-primary-subtle text-primary" style="font-size: 0.65rem;">In Progress</span>';
+        if (status === 'Review') return '<span class="badge bg-warning-subtle text-warning" style="font-size: 0.65rem;">Review</span>';
+        if (status === 'To Do') return '<span class="badge bg-info-subtle text-info" style="font-size: 0.65rem;">To Do</span>';
+        return '<span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">Backlog</span>';
+      }
+
+      // Render Kanban Swimlanes
+      function renderKanban(list) {
+        const lanes = {
+          'Backlog': document.getElementById('kanban-lane-backlog'),
+          'To Do': document.getElementById('kanban-lane-todo'),
+          'In Progress': document.getElementById('kanban-lane-inprogress'),
+          'Review': document.getElementById('kanban-lane-review'),
+          'Completed': document.getElementById('kanban-lane-completed')
+        };
+
+        // Reset lanes html
+        Object.keys(lanes).forEach(k => { lanes[k].innerHTML = ''; });
+
+        const counts = { 'Backlog': 0, 'To Do': 0, 'In Progress': 0, 'Review': 0, 'Completed': 0 };
+
+        list.forEach(t => {
+          counts[t.status]++;
+          const index = tasks.findIndex(orig => orig.id === t.id);
+          const todayStr = new Date().toISOString().split('T')[0];
+          const isOverdue = t.status !== 'Completed' && t.dueDate < todayStr;
+          
+          const cardHtml = `
+            <div class="task-card ${isOverdue ? 'overdue-highlight' : ''}" onclick="openDetailsDrawer(${index})">
+              <div class="d-flex justify-content-between align-items-center mb-1.5">
+                <span class="font-mono text-muted" style="font-size: 0.65rem;">${t.id}</span>
+                ${getPriorityBadge(t.priority)}
+              </div>
+              <h6 class="font-title fw-bold text-main mb-1" style="font-size: 0.8rem; line-height: 1.3;">${t.title}</h6>
+              <div class="small text-muted mb-2 text-truncate" style="font-size: 0.68rem;">
+                <i class="bi bi-houses me-1"></i>${t.property}
+              </div>
+              
+              <!-- Mini Checklist Count -->
+              <div class="d-flex justify-content-between align-items-center mb-1.5" style="font-size: 0.65rem;">
+                <span class="text-muted"><i class="bi bi-check2-square me-1"></i>Checklist</span>
+                <span class="fw-bold">${t.checklist.filter(c => c.done).length}/${t.checklist.length}</span>
+              </div>
+              <div class="progress progress-tiny mb-2.5">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: ${t.progress}%" aria-valuenow="${t.progress}" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+
+              <!-- Footer with avatar and attributes -->
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-1.5">
+                  <img src="${agentAvatars[t.agent]}" class="rounded-circle" style="width: 20px; height: 20px; object-fit: cover;" title="${t.agent}" alt="${t.agent}" />
+                  <span class="text-muted" style="font-size: 0.65rem;">${t.dueDate}</span>
+                </div>
+                <div class="d-flex gap-2 text-muted" style="font-size: 0.65rem;">
+                  <span><i class="bi bi-paperclip"></i> ${t.attachments.length}</span>
+                  <span><i class="bi bi-chat"></i> ${t.comments.length}</span>
+                </div>
+              </div>
+            </div>
+          `;
+          if (lanes[t.status]) {
+            lanes[t.status].innerHTML += cardHtml;
+          }
+        });
+
+        // Set counts badges
+        Object.keys(counts).forEach(k => {
+          const badgeId = 'badge-count-' + k.toLowerCase().replace(' ', '');
+          const badgeEl = document.getElementById(badgeId);
+          if (badgeEl) badgeEl.textContent = counts[k];
+        });
+      }
+
+      // Render Bootstrap Tabular List View
+      function renderList(list) {
+        const body = document.getElementById('list-table-body');
+        body.innerHTML = '';
+
+        list.forEach(t => {
+          const index = tasks.findIndex(orig => orig.id === t.id);
+          const isChecked = bulkSelectionIds.includes(t.id) ? 'checked' : '';
+          const todayStr = new Date().toISOString().split('T')[0];
+          const isOverdue = t.status !== 'Completed' && t.dueDate < todayStr;
+
+          const rowHtml = `
+            <tr class="${isOverdue ? 'table-danger-subtle' : ''}">
+              <td style="padding-left: 1.25rem;">
+                <input type="checkbox" class="form-check-input row-select focus-visible-indicator" data-id="${t.id}" onchange="toggleRowSelect(this)" ${isChecked} aria-label="Select row checklist option" />
+              </td>
+              <td>
+                <div class="cursor-pointer" onclick="openDetailsDrawer(${index})">
+                  <strong class="text-main small d-block">${t.title}</strong>
+                  <span class="font-mono text-muted" style="font-size: 0.65rem;">${t.id} | ${t.category}</span>
+                </div>
+              </td>
+              <td class="small text-muted" style="font-size: 0.72rem;">${t.property}</td>
+              <td class="small text-main" style="font-size: 0.72rem;">${t.customer}</td>
+              <td>
+                <div class="d-flex align-items-center gap-1.5">
+                  <img src="${agentAvatars[t.agent]}" class="rounded-circle" style="width: 22px; height: 22px; object-fit: cover;" alt="${t.agent}" />
+                  <span class="small text-main" style="font-size: 0.7rem;">${t.agent}</span>
+                </div>
+              </td>
+              <td>${getPriorityBadge(t.priority)}</td>
+              <td><span class="small font-mono text-muted">${t.dueDate}</span></td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress progress-tiny" style="width: 50px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: ${t.progress}%" aria-valuenow="${t.progress}" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                  <span class="small text-main" style="font-size: 0.65rem;">${t.progress}%</span>
+                </div>
+              </td>
+              <td>${getStatusBadge(t.status)}</td>
+              <td class="text-end" style="padding-right: 1.25rem;">
+                <div class="btn-group btn-group-xs">
+                  <button class="btn btn-outline-secondary p-1 focus-visible-indicator" onclick="openDetailsDrawer(${index})" title="Quick Details View"><i class="bi bi-eye"></i></button>
+                  <button class="btn btn-outline-success p-1 focus-visible-indicator" onclick="markTaskIndexComplete(${index})" title="Complete Task"><i class="bi bi-check2"></i></button>
+                  <button class="btn btn-outline-danger p-1 focus-visible-indicator" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" onclick="prepareSingleDeleteFromTable('${t.id}')" title="Delete Task"><i class="bi bi-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          `;
+          body.innerHTML += rowHtml;
+        });
+
+        if (list.length === 0) {
+          body.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-muted small">No real-estate tasks match your layout query filters.</td></tr>`;
+        }
+      }
+
+      // Render Bento Card Grid Board
+      function renderBento(list) {
+        const grid = document.getElementById('bento-grid-list');
+        grid.innerHTML = '';
+
+        list.forEach(t => {
+          const index = tasks.findIndex(orig => orig.id === t.id);
+          const todayStr = new Date().toISOString().split('T')[0];
+          const isOverdue = t.status !== 'Completed' && t.dueDate < todayStr;
+
+          const cardHtml = `
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="uh-card p-3 card-lift-hover cursor-pointer h-100 d-flex flex-column justify-content-between ${isOverdue ? 'border-danger border-1' : ''}" onclick="openDetailsDrawer(${index})">
+                <div>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.65rem;">${t.category}</span>
+                    ${getPriorityBadge(t.priority)}
+                  </div>
+                  <h6 class="font-title fw-bold text-main mb-2">${t.title}</h6>
+                  <p class="text-muted small mb-3 line-clamp-2" style="font-size: 0.75rem;">${t.description}</p>
+                </div>
+                
+                <div>
+                  <div class="row g-2 mb-3 bg-body border border-light-subtle rounded p-2 text-center" style="font-size: 0.65rem;">
+                    <div class="col-6 border-end border-light-subtle">
+                      <span class="text-muted d-block">CLIENT</span>
+                      <strong class="text-main">${t.customer}</strong>
+                    </div>
+                    <div class="col-6">
+                      <span class="text-muted d-block">DUE DATE</span>
+                      <strong class="text-main">${t.dueDate}</strong>
+                    </div>
+                  </div>
+
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-1.5">
+                      <img src="${agentAvatars[t.agent]}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="${t.agent}" />
+                      <span class="small text-main" style="font-size: 0.72rem;">${t.agent}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="small font-mono text-muted" style="font-size: 0.65rem;"><i class="bi bi-check2-square"></i> ${t.checklist.filter(c => c.done).length}/${t.checklist.length}</span>
+                      ${getStatusBadge(t.status)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          grid.innerHTML += cardHtml;
+        });
+
+        if (list.length === 0) {
+          grid.innerHTML = `<div class="col-12 text-center py-4 text-muted small">No bento grid layouts matching filters.</div>`;
+        }
+      }
+
+      // Render Deadlines, Alert Panels
+      function renderDeadlinesAndAlerts() {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const containerOverdue = document.getElementById('overdue-items-container');
+        const containerUpcoming = document.getElementById('upcoming-deadlines-container');
+
+        // overdue tasks (due date < today, status not completed)
+        const overdueTasks = tasks.filter(t => t.status !== 'Completed' && t.dueDate < todayStr);
+        document.getElementById('critical-alert-badge').textContent = overdueTasks.length + ' Active';
+        
+        containerOverdue.innerHTML = '';
+        if (overdueTasks.length === 0) {
+          containerOverdue.innerHTML = `<p class="text-success small mb-0 p-2"><i class="bi bi-shield-check me-1.5"></i>All clear! No overdue tasks remaining in active registers.</p>`;
+        } else {
+          overdueTasks.forEach(t => {
+            const index = tasks.findIndex(orig => orig.id === t.id);
+            containerOverdue.innerHTML += `
+              <div class="p-2 rounded bg-danger-subtle border border-danger-subtle d-flex justify-content-between align-items-center cursor-pointer" onclick="openDetailsDrawer(${index})">
+                <div>
+                  <div class="small fw-bold text-danger">${t.title}</div>
+                  <span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-exclamation-circle me-1"></i>Due ${t.dueDate} | Agent: ${t.agent}</span>
+                </div>
+                <span class="badge bg-danger rounded-pill" style="font-size: 0.6rem;">OVERDUE</span>
+              </div>
+            `;
+          });
+        }
+
+        // Upcoming in next 7 days
+        const next7DaysStr = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const upcomingTasks = tasks.filter(t => t.status !== 'Completed' && t.dueDate >= todayStr && t.dueDate <= next7DaysStr);
+        
+        containerUpcoming.innerHTML = '';
+        if (upcomingTasks.length === 0) {
+          containerUpcoming.innerHTML = `<p class="text-muted small mb-0 p-2">No deadlines scheduled within the next 7 days.</p>`;
+        } else {
+          upcomingTasks.forEach(t => {
+            const index = tasks.findIndex(orig => orig.id === t.id);
+            containerUpcoming.innerHTML += `
+              <div class="p-2 rounded bg-body border border-light-subtle d-flex justify-content-between align-items-center cursor-pointer" onclick="openDetailsDrawer(${index})">
+                <div>
+                  <div class="small fw-semibold text-main">${t.title}</div>
+                  <span class="text-muted" style="font-size: 0.65rem;"><i class="bi bi-calendar-event me-1"></i>Due ${t.dueDate} | ${t.property}</span>
+                </div>
+                <span class="badge bg-secondary-subtle text-muted" style="font-size: 0.6rem;">${t.priority}</span>
+              </div>
+            `;
+          });
+        }
+      }
+
+      // Open task details drawer
+      function openDetailsDrawer(index) {
+        activeTaskIndex = index;
+        const t = tasks[index];
+
+        document.getElementById('drawer-category-badge').textContent = t.category;
+        document.getElementById('taskDetailsOffcanvasLabel').textContent = t.title;
+        document.getElementById('drawer-task-id').textContent = t.id;
+        document.getElementById('drawer-priority-badge').outerHTML = `<span class="small fw-bold" id="drawer-priority-badge">${getPriorityBadge(t.priority)}</span>`;
+        document.getElementById('drawer-due-date').textContent = t.dueDate;
+        document.getElementById('drawer-status-badge').outerHTML = `<span class="small fw-bold text-primary" id="drawer-status-badge">${getStatusBadge(t.status)}</span>`;
+        document.getElementById('drawer-description-content').textContent = t.description || 'No notes.';
+        document.getElementById('drawer-property-text').textContent = t.property;
+        document.getElementById('drawer-customer-text').textContent = t.customer;
+        document.getElementById('drawer-agent-text').textContent = t.agent;
+
+        // Set view full details link href
+        document.getElementById('drawer-view-full-details-link').setAttribute('href', `task-details.html?id=${t.id}`);
+
+        // Set checklist
+        renderDrawerChecklist(t);
+
+        // Render attachments
+        const attachmentsContainer = document.getElementById('drawer-attachments-container');
+        attachmentsContainer.innerHTML = '';
+        if (t.attachments.length === 0) {
+          attachmentsContainer.innerHTML = `<div class="col-12 text-muted small p-2 text-center bg-body border border-dashed rounded">No shared assets attached to this work task.</div>`;
+        } else {
+          t.attachments.forEach(att => {
+            let iconClass = 'bi-file-earmark-text';
+            let colorClass = 'text-primary';
+            if (att.type === 'pdf') { iconClass = 'bi-filetype-pdf'; colorClass = 'text-danger'; }
+            else if (att.type === 'image') { iconClass = 'bi-file-earmark-image'; colorClass = 'text-success'; }
+            else if (att.type === 'spreadsheet') { iconClass = 'bi-file-earmark-spreadsheet'; colorClass = 'text-emerald'; }
+
+            attachmentsContainer.innerHTML += `
+              <div class="col-6">
+                <div class="p-2 rounded bg-body border border-light-subtle d-flex align-items-center gap-2">
+                  <i class="bi ${iconClass} ${colorClass}" style="font-size: 1.25rem;"></i>
+                  <div class="text-truncate" style="max-width: 130px;">
+                    <span class="small d-block fw-semibold text-main text-truncate" style="font-size: 0.7rem;" title="${att.name}">${att.name}</span>
+                    <span class="text-muted d-block" style="font-size: 0.6rem;">${att.size}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        // Render comments
+        renderDrawerComments(t);
+
+        // Render activity logs timeline
+        const timelineContainer = document.getElementById('drawer-timeline-container');
+        timelineContainer.innerHTML = '';
+        t.timeline.forEach(log => {
+          timelineContainer.innerHTML += `
+            <div class="position-relative mb-2.5 pb-1">
+              <span class="position-absolute translate-middle-x rounded-circle bg-primary" style="width: 6px; height: 6px; left: -16px; top: 6px;"></span>
+              <strong class="small text-main d-block" style="font-size: 0.72rem;">${log.action}</strong>
+              <span class="text-muted" style="font-size: 0.62rem;">By ${log.user} | ${log.time}</span>
+            </div>
+          `;
+        });
+
+        // Trigger offcanvas show
+        const offcanvasEl = document.getElementById('taskDetailsOffcanvas');
+        const bsOffcanvas = new bootstrap.Offcanvas(offcanvasEl);
+        bsOffcanvas.show();
+      }
+
+      // Render Drawer Checklist
+      function renderDrawerChecklist(t) {
+        const checkContainer = document.getElementById('drawer-checklist-items-container');
+        checkContainer.innerHTML = '';
+        const finished = t.checklist.filter(c => c.done).length;
+        const total = t.checklist.length;
+        const percent = total > 0 ? Math.round((finished / total) * 100) : 0;
+
+        // Update progress radial circle dasharray
+        const radialBar = document.getElementById('drawer-radial-bar');
+        const strokeOffset = 100 - percent;
+        radialBar.setAttribute('stroke-dashoffset', strokeOffset);
+        document.getElementById('drawer-radial-text').textContent = percent + '%';
+        document.getElementById('drawer-checklist-progress-text').textContent = `${finished} of ${total} tasks completed`;
+
+        t.checklist.forEach((item, cIndex) => {
+          checkContainer.innerHTML += `
+            <div class="form-check d-flex align-items-center gap-1">
+              <input class="form-check-input mt-0 focus-visible-indicator" type="checkbox" id="check-${cIndex}" ${item.done ? 'checked' : ''} onchange="toggleChecklistItem(${cIndex})" />
+              <label class="form-check-label small text-main ${item.done ? 'text-decoration-line-through text-muted' : ''}" for="check-${cIndex}" style="font-size: 0.78rem;">
+                ${item.text}
+              </label>
+            </div>
+          `;
+        });
+      }
+
+      // Toggle item checklist done state
+      function toggleChecklistItem(cIndex) {
+        if (activeTaskIndex === null) return;
+        const t = tasks[activeTaskIndex];
+        t.checklist[cIndex].done = !t.checklist[cIndex].done;
+        
+        // Re-calculate task progress
+        const finished = t.checklist.filter(c => c.done).length;
+        t.progress = t.checklist.length > 0 ? Math.round((finished / t.checklist.length) * 100) : 0;
+        
+        // Redraw components
+        renderDrawerChecklist(t);
+        updateCountersAndViews();
+      }
+
+      // Render drawer comments list
+      function renderDrawerComments(t) {
+        const commBox = document.getElementById('drawer-comments-box');
+        commBox.innerHTML = '';
+        if (t.comments.length === 0) {
+          commBox.innerHTML = `<div class="text-muted small py-3 text-center">No conversational activity logs entered yet.</div>`;
+        } else {
+          t.comments.forEach(com => {
+            commBox.innerHTML += `
+              <div class="p-2 rounded bg-body border border-light-subtle mb-1.5">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <div class="d-flex align-items-center gap-1.5">
+                    <img src="${agentAvatars[com.author] || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=60'}" class="rounded-circle" style="width: 16px; height: 16px; object-fit: cover;" alt="${com.author}" />
+                    <span class="small fw-bold text-main" style="font-size: 0.7rem;">${com.author}</span>
+                  </div>
+                  <span class="text-muted" style="font-size: 0.6rem;">${com.time}</span>
+                </div>
+                <p class="mb-0 text-muted small" style="font-size: 0.72rem; line-height: 1.3;">${com.text}</p>
+              </div>
+            `;
+          });
+        }
+        // Scroll to bottom
+        commBox.scrollTop = commBox.scrollHeight;
+      }
+
+      // Add a comment to active task index
+      function addCommentToActiveTask() {
+        if (activeTaskIndex === null) return;
+        const input = document.getElementById('comment-input-field');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const t = tasks[activeTaskIndex];
+        const newCom = {
+          author: "Sarah Jenkins", // default log user
+          time: "Just now",
+          text: text
+        };
+        t.comments.push(newCom);
+        t.timeline.push({
+          action: "Comment Added: " + (text.length > 30 ? text.substring(0, 30) + "..." : text),
+          user: "Sarah Jenkins",
+          time: "Just now"
+        });
+
+        input.value = '';
+        renderDrawerComments(t);
+        updateCountersAndViews();
+        showToast("Comment logged to CRM successfully", "success");
+      }
+
+      // Quick Mark Complete from drawer
+      function markActiveComplete() {
+        if (activeTaskIndex === null) return;
+        markTaskIndexComplete(activeTaskIndex);
+        // Update Drawer Status
+        const t = tasks[activeTaskIndex];
+        document.getElementById('drawer-status-badge').outerHTML = `<span class="small fw-bold text-primary" id="drawer-status-badge">${getStatusBadge(t.status)}</span>`;
+        // Hide offcanvas
+        const offcanvasEl = document.getElementById('taskDetailsOffcanvas');
+        const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+        if (bsOffcanvas) bsOffcanvas.hide();
+      }
+
+      // Mark single task completed
+      function markTaskIndexComplete(index) {
+        const t = tasks[index];
+        t.status = 'Completed';
+        t.progress = 100;
+        t.checklist.forEach(c => c.done = true);
+        t.timeline.push({
+          action: "Task status set to COMPLETED",
+          user: "Sarah Jenkins",
+          time: "Just now"
+        });
+        updateCountersAndViews();
+        showToast(`Task ${t.id} successfully completed!`, "success");
+      }
+
+      // Duplicate Task from active drawer
+      function duplicateActiveTask() {
+        if (activeTaskIndex === null) return;
+        const original = tasks[activeTaskIndex];
+        const newId = "TASK-" + (1001 + tasks.length);
+        const copy = JSON.parse(JSON.stringify(original));
+        copy.id = newId;
+        copy.title = "Copy of " + copy.title;
+        copy.timeline = [{ action: "Duplicated from " + original.id, user: "Sarah Jenkins", time: "Just now" }];
+        
+        tasks.push(copy);
+        updateCountersAndViews();
+        showToast(`Duplicated into ${newId}!`, "success");
+
+        // Hide offcanvas
+        const offcanvasEl = document.getElementById('taskDetailsOffcanvas');
+        const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+        if (bsOffcanvas) bsOffcanvas.hide();
+      }
+
+      // Archive Active Task from drawer
+      function archiveActiveTask() {
+        if (activeTaskIndex === null) return;
+        const t = tasks[activeTaskIndex];
+        tasks.splice(activeTaskIndex, 1);
+        activeTaskIndex = null;
+        updateCountersAndViews();
+        showToast(`Task ${t.id} archived successfully`, "info");
+
+        // Hide offcanvas
+        const offcanvasEl = document.getElementById('taskDetailsOffcanvas');
+        const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+        if (bsOffcanvas) bsOffcanvas.hide();
+      }
+
+      // Create Task submission
+      function handleCreateTask(event) {
+        event.preventDefault();
+
+        const title = document.getElementById('task-title-input').value;
+        const category = document.getElementById('task-category-input').value;
+        const priority = document.getElementById('task-priority-input').value;
+        const agent = document.getElementById('task-agent-input').value;
+        const dueDate = document.getElementById('task-date-input').value;
+        const property = document.getElementById('task-property-input').value;
+        const customer = document.getElementById('task-customer-input').value;
+        const desc = document.getElementById('task-desc-input').value;
+
+        const newId = "TASK-" + (1001 + tasks.length);
+
+        const newTask = {
+          id: newId,
+          title: title,
+          category: category,
+          property: property,
+          customer: customer,
+          agent: agent,
+          priority: priority,
+          dueDate: dueDate,
+          status: "To Do",
+          progress: 0,
+          description: desc,
+          checklist: [
+            { text: "Initiate contact with reference team", done: false },
+            { text: "Document operational outcomes in CRM ledger", done: false }
+          ],
+          attachments: [],
+          comments: [],
+          timeline: [
+            { action: "Task Created", user: "Sarah Jenkins", time: "Just now" }
+          ]
+        };
+
+        tasks.push(newTask);
+        updateCountersAndViews();
+
+        // Close Modal
+        const modalEl = document.getElementById('createTaskModal');
+        const bsModal = bootstrap.Modal.getInstance(modalEl);
+        if (bsModal) bsModal.hide();
+
+        // Reset Form
+        document.getElementById('create-event-form')?.reset();
+        document.getElementById('create-task-form').reset();
+
+        showToast(`Scheduled Task ${newId} assigned to ${agent}`, "success");
+      }
+
+      // Delete triggers and confirmation modal operations
+      let activeDeleteTarget = null; // 'single' or 'bulk'
+      let activeDeleteId = null;
+
+      function prepareSingleDelete() {
+        if (activeTaskIndex === null) return;
+        activeDeleteTarget = 'single';
+        activeDeleteId = tasks[activeTaskIndex].id;
+      }
+
+      function prepareSingleDeleteFromTable(id) {
+        activeDeleteTarget = 'single';
+        activeDeleteId = id;
+      }
+
+      function prepareBulkDelete() {
+        activeDeleteTarget = 'bulk';
+      }
+
+      function executeDelete() {
+        if (activeDeleteTarget === 'single' && activeDeleteId) {
+          const index = tasks.findIndex(t => t.id === activeDeleteId);
+          if (index !== -1) {
+            tasks.splice(index, 1);
+            showToast(`Task ${activeDeleteId} deleted permanently`, "danger");
+          }
+          // Close drawer if open
+          const offcanvasEl = document.getElementById('taskDetailsOffcanvas');
+          const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+          if (bsOffcanvas) bsOffcanvas.hide();
+        } else if (activeDeleteTarget === 'bulk') {
+          tasks = tasks.filter(t => !bulkSelectionIds.includes(t.id));
+          showToast(`Deleted ${bulkSelectionIds.length} tasks successfully`, "danger");
+          bulkSelectionIds = [];
+        }
+
+        // Close delete confirmation modal
+        const modalEl = document.getElementById('deleteConfirmModal');
+        const bsModal = bootstrap.Modal.getInstance(modalEl);
+        if (bsModal) bsModal.hide();
+
+        updateCountersAndViews();
+      }
+
+      // Reassign hosts triggers and modals operations
+      let activeAssignTarget = null; // 'single' or 'bulk'
+
+      function prepareSingleAssign() {
+        activeAssignTarget = 'single';
+      }
+
+      function prepareBulkAssign() {
+        activeAssignTarget = 'bulk';
+      }
+
+      function executeAssign() {
+        const select = document.getElementById('reassign-agent-select');
+        const chosenAgent = select.value;
+
+        if (activeAssignTarget === 'single' && activeTaskIndex !== null) {
+          tasks[activeTaskIndex].agent = chosenAgent;
+          tasks[activeTaskIndex].timeline.push({
+            action: `Task reassigned to ${chosenAgent}`,
+            user: "Sarah Jenkins",
+            time: "Just now"
+          });
+          // Update drawer text
+          document.getElementById('drawer-agent-text').textContent = chosenAgent;
+          showToast(`Task reassigned to ${chosenAgent}`, "info");
+        } else if (activeAssignTarget === 'bulk') {
+          tasks.forEach(t => {
+            if (bulkSelectionIds.includes(t.id)) {
+              t.agent = chosenAgent;
+              t.timeline.push({
+                action: `Task bulk-assigned to ${chosenAgent}`,
+                user: "Sarah Jenkins",
+                time: "Just now"
+              });
+            }
+          });
+          showToast(`Assigned ${bulkSelectionIds.length} tasks to ${chosenAgent}`, "success");
+          bulkSelectionIds = [];
+        }
+
+        // Close Modal
+        const modalEl = document.getElementById('assignModal');
+        const bsModal = bootstrap.Modal.getInstance(modalEl);
+        if (bsModal) bsModal.hide();
+
+        updateCountersAndViews();
+      }
+
+      // Bulk Action support
+      function toggleMasterSelect(checkbox) {
+        const rows = document.querySelectorAll('.row-select');
+        bulkSelectionIds = [];
+        rows.forEach(r => {
+          r.checked = checkbox.checked;
+          const id = r.getAttribute('data-id');
+          if (checkbox.checked && id) {
+            bulkSelectionIds.push(id);
+          }
+        });
+        updateBulkBarState();
+      }
+
+      function toggleRowSelect(checkbox) {
+        const id = checkbox.getAttribute('data-id');
+        if (checkbox.checked) {
+          if (!bulkSelectionIds.includes(id)) bulkSelectionIds.push(id);
+        } else {
+          bulkSelectionIds = bulkSelectionIds.filter(val => val !== id);
+        }
+        updateBulkBarState();
+
+        // Sync master select state
+        const master = document.getElementById('master-bulk-select');
+        const rows = document.querySelectorAll('.row-select');
+        const checkedRows = document.querySelectorAll('.row-select:checked');
+        master.checked = rows.length === checkedRows.length;
+      }
+
+      function updateBulkBarState() {
+        const bar = document.getElementById('bulk-actions-floating-bar');
+        const countText = document.getElementById('bulk-selected-count');
+        if (bulkSelectionIds.length > 0 && currentView === 'list') {
+          countText.textContent = `${bulkSelectionIds.length} item${bulkSelectionIds.length > 1 ? 's' : ''} selected`;
+          bar.classList.add('show');
+        } else {
+          bar.classList.remove('show');
+        }
+      }
+
+      function bulkMarkComplete() {
+        tasks.forEach(t => {
+          if (bulkSelectionIds.includes(t.id)) {
+            t.status = 'Completed';
+            t.progress = 100;
+            t.checklist.forEach(c => c.done = true);
+          }
+        });
+        showToast(`Set ${bulkSelectionIds.length} tasks to Completed!`, "success");
+        bulkSelectionIds = [];
+        updateCountersAndViews();
+      }
+
+      // Export Selected CSV support
+      function bulkExportCSV() {
+        let csvContent = "data:text/csv;charset=utf-8,Task ID,Title,Category,Property,Customer,Agent,Priority,Due Date,Status,Progress\n";
+        tasks.forEach(t => {
+          if (bulkSelectionIds.includes(t.id)) {
+            csvContent += `"${t.id}","${t.title}","${t.category}","${t.property}","${t.customer}","${t.agent}","${t.priority}","${t.dueDate}","${t.status}","${t.progress}%"\n`;
+          }
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `urbanhub_tasks_bulk_export.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        bulkSelectionIds = [];
+        updateCountersAndViews();
+        showToast("Bulk CSV exported successfully", "success");
+      }
+
+      // General Export CSV
+      function exportCSV() {
+        let csvContent = "data:text/csv;charset=utf-8,Task ID,Title,Category,Property,Customer,Agent,Priority,Due Date,Status,Progress\n";
+        tasks.forEach(t => {
+          csvContent += `"${t.id}","${t.title}","${t.category}","${t.property}","${t.customer}","${t.agent}","${t.priority}","${t.dueDate}","${t.status}","${t.progress}%"\n`;
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "urbanhub_tasks_pipeline_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("Complete database exported to CSV successfully", "success");
+      }
+
+      // Global Search input handle
+      function performSearch(val) {
+        document.getElementById('filter-search').value = val;
+        applyAllFilters();
+      }
+
+      // Apply workspace filters
+      function applyAllFilters() {
+        updateCountersAndViews();
+      }
+
+      // Reset active filters
+      function resetFilters() {
+        document.getElementById('filter-search').value = '';
+        document.getElementById('filter-category').value = 'All';
+        document.getElementById('filter-priority').value = 'All';
+        document.getElementById('filter-agent').value = 'All';
+        updateCountersAndViews();
+        showToast("Workspace query filters cleared", "info");
+      }
+
+      // Switch Layout Format View Tab
+      function switchView(viewType) {
+        currentView = viewType;
+        document.querySelectorAll('.view-container').forEach(c => c.classList.remove('active'));
+        document.getElementById('btn-view-kanban').classList.remove('active');
+        document.getElementById('btn-view-list').classList.remove('active');
+        document.getElementById('btn-view-board').classList.remove('active');
+
+        document.getElementById(`view-${viewType}`).classList.add('active');
+        document.getElementById(`btn-view-${viewType}`).classList.add('active');
+
+        updateCountersAndViews();
+      }
+
+      // Switch My Tasks scope vs Team
+      function setTasksScope(scope) {
+        activeScope = scope;
+        document.getElementById('btn-team-tasks').classList.remove('active');
+        document.getElementById('btn-my-tasks').classList.remove('active');
+        document.getElementById(`btn-${scope}-tasks`).classList.add('active');
+        
+        updateCountersAndViews();
+        showToast(`Workspace scope shifted to ${scope === 'my' ? 'My Tasks (Sarah)' : 'Complete Team'}`, "info");
+      }
+
+      // Simulator UI States handler
+      function toggleSimState(stateName) {
+        const states = {
+          'success': document.getElementById('success-state'),
+          'loading': document.getElementById('loading-state'),
+          'empty': document.getElementById('empty-state'),
+          'error': document.getElementById('error-state')
+        };
+
+        // Reset classes
+        Object.keys(states).forEach(k => {
+          states[k].classList.add('d-none');
+          document.getElementById(`sim-${k}`).classList.remove('active');
+        });
+
+        // Activate selected state
+        states[stateName].classList.remove('d-none');
+        document.getElementById(`sim-${stateName}`).classList.add('active');
+
+        showToast(`Simulating workspace: ${stateName.toUpperCase()} State`, "info");
+      }
+
+      // Pipeline manual sync trigger
+      function refreshTasksData() {
+        toggleSimState('loading');
+        setTimeout(() => {
+          tasks = [...initialTasksData];
+          toggleSimState('success');
+          updateCountersAndViews();
+          showToast("Workspace synchronization complete!", "success");
+        }, 1200);
+      }
+
+      // Bootstrap Toaster generator helper
+      function showToast(message, type = "success") {
+        const container = document.getElementById('toast-container');
+        const icon = type === 'success' ? 'bi-check-circle-fill text-success' : (type === 'danger' ? 'bi-trash-fill text-danger' : 'bi-info-circle-fill text-primary');
+        const toastHtml = `
+          <div class="toast align-items-center text-main bg-body border-1 border-light-subtle show" role="alert" aria-live="assertive" aria-atomic="true" style="min-width: 250px;">
+            <div class="d-flex">
+              <div class="toast-body d-flex align-items-center gap-2">
+                <i class="bi ${icon}" style="font-size: 1.15rem;"></i>
+                <span class="small fw-semibold">${message}</span>
+              </div>
+              <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+          </div>
+        `;
+        const temp = document.createElement('div');
+        temp.innerHTML = toastHtml;
+        const child = temp.firstElementChild;
+        container.appendChild(child);
+
+        // Auto remove in 3.5 seconds
+        setTimeout(() => {
+          child.remove();
+        }, 3500);
+      }
+    </script>
+  </body>
+</html>

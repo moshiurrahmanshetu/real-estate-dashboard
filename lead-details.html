@@ -1,0 +1,1812 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lead Details - UrbanHub CRM</title>
+
+    <!-- Theme Choice Pre-load Script -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Page-specific high-fidelity detail classes */
+      .glow-card {
+        position: relative;
+        overflow: hidden;
+      }
+      .card-glow-effect {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none;
+        background: radial-gradient(circle 120px at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(var(--uh-primary-rgb), 0.08), transparent 80%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 1;
+      }
+      .glow-card:hover .card-glow-effect {
+        opacity: 1;
+      }
+
+      /* Hover lift effect */
+      .lift-on-hover {
+        transition: var(--uh-transition-smooth);
+      }
+      .lift-on-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--uh-shadow-lg) !important;
+      }
+
+      /* Circular Progress for Lead Score */
+      .score-circle-lg {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        margin: 0 auto;
+      }
+      .score-circle-lg svg {
+        width: 110px;
+        height: 110px;
+        transform: rotate(-90deg);
+      }
+      .score-circle-lg circle {
+        fill: none;
+        stroke-width: 8;
+      }
+      .score-circle-lg .bg-ring {
+        stroke: rgba(255, 255, 255, 0.08);
+      }
+      [data-bs-theme="light"] .score-circle-lg .bg-ring {
+        stroke: rgba(0, 0, 0, 0.06);
+      }
+      .score-circle-lg .score-ring {
+        stroke: var(--uh-primary);
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.8s ease;
+      }
+      .score-lg-text-center {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: var(--uh-font-title);
+        text-align: center;
+      }
+
+      /* Vertical Milestone Timeline */
+      .timeline-vertical {
+        position: relative;
+        padding-left: 2rem;
+        border-left: 2px solid var(--uh-border-color);
+      }
+      .timeline-vertical-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+      }
+      .timeline-vertical-item:last-child {
+        padding-bottom: 0;
+      }
+      .timeline-vertical-dot {
+        position: absolute;
+        left: calc(-2rem - 6px);
+        top: 4px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--uh-border-card);
+        border: 2px solid var(--uh-bg-card);
+        transition: var(--uh-transition-smooth);
+        z-index: 2;
+      }
+      .timeline-vertical-item.completed .timeline-vertical-dot {
+        background-color: var(--uh-success);
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+      }
+      .timeline-vertical-item.active .timeline-vertical-dot {
+        background-color: var(--uh-primary);
+        box-shadow: 0 0 8px rgba(var(--uh-primary-rgb), 0.5);
+      }
+
+      /* Communication Log Timeline Card */
+      .comm-log-card {
+        border-left: 3px solid var(--uh-border-card);
+        transition: var(--uh-transition-smooth);
+      }
+      .comm-log-card:hover {
+        border-left-color: var(--uh-primary);
+        background-color: rgba(var(--uh-primary-rgb), 0.02);
+      }
+
+      /* State Simulator Banner Styling */
+      .state-simulator-bar {
+        background-color: rgba(var(--uh-primary-rgb), 0.04);
+        border: 1px solid rgba(var(--uh-primary-rgb), 0.15);
+        border-radius: 10px;
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      /* Skeleton placeholder styling */
+      .skeleton-placeholder {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255, 255, 255, 0.05) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading-flow 1.5s infinite;
+        border-radius: 6px;
+        display: inline-block;
+      }
+      @keyframes skeleton-loading-flow {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-hidden {
+        display: none !important;
+      }
+
+      /* Activity indicator pulse */
+      .pulse-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--uh-success);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulse-ring-green 2s infinite;
+      }
+      @keyframes pulse-ring-green {
+        0% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        }
+        70% {
+          transform: scale(1);
+          box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+        }
+        100% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        }
+      }
+
+      /* Interactive documents list styling */
+      .doc-list-item {
+        border: 1px solid var(--uh-border-card);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: var(--uh-transition-smooth);
+      }
+      .doc-list-item:hover {
+        border-color: rgba(var(--uh-primary-rgb), 0.25);
+        background-color: rgba(var(--uh-primary-rgb), 0.01);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar mobile overlay backdrop -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon"><i class="bi bi-building-up"></i></div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="customers.html" class="sidebar-menu-link">
+                <i class="bi bi-person-badge"></i>
+                <span>Customers</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="leads.html" class="sidebar-menu-link active">
+                <i class="bi bi-funnel"></i>
+                <span>Leads</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" referrerpolicy="no-referrer" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT WRAPPER -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input" placeholder="Quick lead lookup..." onkeyup="handleQuickLeadLookup(this.value)" />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <!-- Theme toggle standard binding with main.js -->
+            <button id="theme-toggle" class="header-btn" title="Switch Theme">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE BODY CONTAINER -->
+        <div class="page-body">
+
+          <!-- STATE SIMULATOR BAR -->
+          <div class="state-simulator-bar mb-4" data-aos="fade-down">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-cpu text-primary"></i>
+              <span class="small fw-semibold text-main">UI Reusable States Simulator:</span>
+            </div>
+            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+              <button class="btn btn-xs btn-outline-primary px-2.5 py-1 active" id="sim-btn-success" onclick="switchSimulatorState('success')">
+                <i class="bi bi-check-circle me-1"></i> Success State
+              </button>
+              <button class="btn btn-xs btn-outline-secondary px-2.5 py-1" id="sim-btn-loading" onclick="switchSimulatorState('loading')">
+                <i class="bi bi-hourglass-split me-1"></i> Loading Skeletons
+              </button>
+              <button class="btn btn-xs btn-outline-warning px-2.5 py-1" id="sim-btn-empty" onclick="switchSimulatorState('empty')">
+                <i class="bi bi-folder-x me-1"></i> Empty State
+              </button>
+              <button class="btn btn-xs btn-outline-danger px-2.5 py-1" id="sim-btn-error" onclick="switchSimulatorState('error')">
+                <i class="bi bi-exclamation-triangle me-1"></i> Error State
+              </button>
+            </div>
+          </div>
+          
+          <!-- BREADCRUMB & HEADER PANEL -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" data-aos="fade-down" data-aos-delay="50">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item"><a href="leads.html" class="text-decoration-none text-muted">Leads</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Lead Details</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Lead Details Profile</h1>
+            </div>
+
+            <!-- Toolbar buttons -->
+            <div class="d-flex align-items-center flex-wrap gap-2 btn-no-print">
+              <a href="leads.html" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
+                <i class="bi bi-arrow-left"></i> <span>Back to Leads</span>
+              </a>
+              <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span>Print</span>
+              </button>
+              <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" onclick="triggerRefreshSim()">
+                <i class="bi bi-arrow-clockwise"></i> <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SKELETON PRELOAD STATE -->
+          <div id="state-loading-skeleton" class="skeleton-hidden">
+            <div class="row g-4">
+              <!-- Sidebar skeleton -->
+              <div class="col-12 col-lg-4 col-xl-3">
+                <div class="uh-card p-4 text-center mb-4">
+                  <div class="skeleton-placeholder rounded-circle mb-3" style="width: 100px; height: 100px;"></div>
+                  <div class="skeleton-placeholder mb-2" style="width: 70%; height: 24px;"></div>
+                  <div class="skeleton-placeholder mb-3" style="width: 40%; height: 14px;"></div>
+                  <div class="skeleton-placeholder" style="width: 90%; height: 38px;"></div>
+                </div>
+                <div class="uh-card p-4">
+                  <div class="skeleton-placeholder mb-3" style="width: 50%; height: 18px;"></div>
+                  <div class="skeleton-placeholder mb-2" style="width: 100%; height: 14px;"></div>
+                  <div class="skeleton-placeholder mb-2" style="width: 90%; height: 14px;"></div>
+                  <div class="skeleton-placeholder" style="width: 80%; height: 14px;"></div>
+                </div>
+              </div>
+              <!-- Main Content skeleton -->
+              <div class="col-12 col-lg-8 col-xl-9">
+                <div class="row g-3 mb-4">
+                  <div class="col-4" v-for="n in 3">
+                    <div class="uh-card p-3">
+                      <div class="skeleton-placeholder mb-2" style="width: 50%; height: 12px;"></div>
+                      <div class="skeleton-placeholder" style="width: 80%; height: 26px;"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="uh-card p-4 mb-4">
+                  <div class="skeleton-placeholder mb-3" style="width: 30%; height: 20px;"></div>
+                  <div class="skeleton-placeholder mb-2" style="width: 100%; height: 15px;"></div>
+                  <div class="skeleton-placeholder mb-2" style="width: 100%; height: 15px;"></div>
+                  <div class="skeleton-placeholder" style="width: 90%; height: 15px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE PANEL -->
+          <div id="state-empty" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 max-width-600 mx-auto">
+              <div class="text-warning mb-4"><i class="bi bi-person-fill-slash" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">Lead Record Not Found</h3>
+              <p class="text-muted small mb-4">The requested lead data profile does not exist in UrbanHub, has been fully deleted, or was transferred to the main Customer ledger archive.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <a href="leads.html" class="btn btn-sm btn-primary"><i class="bi bi-arrow-left me-1"></i> Back to Leads Directory</a>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ERROR STATE PANEL -->
+          <div id="state-error" class="skeleton-hidden text-center py-5">
+            <div class="uh-card p-5 max-width-600 mx-auto border-danger">
+              <div class="text-danger mb-4"><i class="bi bi-shield-slash" style="font-size: 4rem;"></i></div>
+              <h3 class="font-title fw-bold text-main mb-2">Access Denied / Network Failure</h3>
+              <p class="text-muted small mb-4">UrbanHub was unable to securely retrieve this record. This error occurs if your user credentials have expired, or if there is a transient connection breakdown with the cloud datastore.</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-sm btn-danger" onclick="triggerRefreshSim()"><i class="bi bi-arrow-clockwise me-1"></i> Retry Connection</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchSimulatorState('success')"><i class="bi bi-arrow-counterclockwise"></i> Reset Simulator</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- REAL HIGH-FIDELITY SUCCESS CONTENT -->
+          <div id="state-success-content" class="fade-transition">
+
+            <!-- PROFILE HEADER BAR -->
+            <div class="uh-card p-4 mb-4" data-aos="fade-up" data-aos-delay="100">
+              <div class="row align-items-center g-4">
+                <div class="col-auto">
+                  <div class="position-relative">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop" id="profile-picture-display" class="rounded-circle border border-3 border-primary" style="width: 100px; height: 100px; object-fit: cover;" alt="Lead Portrait" referrerpolicy="no-referrer" />
+                    <span class="position-absolute bottom-0 end-0 bg-success border border-2 border-dark rounded-circle p-1" style="width: 16px; height: 16px;" title="Active Lead Status"></span>
+                  </div>
+                </div>
+
+                <div class="col text-start">
+                  <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <h2 class="h4 fw-bold font-title mb-0 text-main" id="profile-name-display">Liam Kensington</h2>
+                    <span class="badge bg-body border border-light-subtle text-muted text-uppercase" style="font-size: 0.75rem;" id="profile-id-display">LED-1092</span>
+                    <span class="badge text-bg-primary font-title py-1 px-2.5" id="profile-status-badge">Proposal Sent</span>
+                    <span class="badge text-bg-danger font-title py-1 px-2.5" id="profile-priority-badge">High Priority</span>
+                  </div>
+
+                  <div class="d-flex align-items-center gap-3 flex-wrap text-muted small mb-3">
+                    <span class="d-flex align-items-center gap-1"><i class="bi bi-person-fill-check text-primary"></i> Advisor: <strong class="text-main" id="profile-agent-display">Sophia Lopez</strong></span>
+                    <span class="d-flex align-items-center gap-1"><i class="bi bi-calendar-check"></i> Created: <strong class="text-main">May 12, 2026</strong></span>
+                    <span class="d-flex align-items-center gap-1"><i class="bi bi-clock-history"></i> Last Updated: <strong class="text-main" id="profile-updated-display">July 10, 2026</strong></span>
+                    <span class="d-flex align-items-center gap-1"><i class="bi bi-diagram-3-fill text-info"></i> Source: <strong class="text-main">Website Inquiry</strong></span>
+                  </div>
+
+                  <div class="row g-2 text-start">
+                    <div class="col-12 col-md-4">
+                      <div class="bg-body border border-light-subtle p-2 rounded" style="font-size: 0.8rem;">
+                        <span class="text-muted d-block small">INTERESTED PROPERTY</span>
+                        <strong class="text-main" id="profile-property-display">Penthouse, Horizon Heights</strong>
+                      </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <div class="bg-body border border-light-subtle p-2 rounded" style="font-size: 0.8rem;">
+                        <span class="text-muted d-block small">TARGET BUDGET</span>
+                        <strong class="text-main" id="profile-budget-display">$12,500,000</strong>
+                      </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <div class="bg-body border border-light-subtle p-2 rounded" style="font-size: 0.8rem;">
+                        <span class="text-muted d-block small">EXPECTED CLOSING</span>
+                        <strong class="text-main">Sept 30, 2026</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-12 col-xl-auto btn-no-print">
+                  <div class="d-flex flex-column gap-2">
+                    <div class="d-flex gap-2">
+                      <button class="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center gap-1.5" onclick="triggerCallAction()">
+                        <i class="bi bi-telephone-fill"></i> <span>Call</span>
+                      </button>
+                      <button class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-1.5" onclick="triggerEmailAction()">
+                        <i class="bi bi-envelope-at-fill"></i> <span>Email</span>
+                      </button>
+                      <button class="btn btn-sm btn-outline-success w-100 d-flex align-items-center justify-content-center gap-1.5" onclick="triggerWhatsAppAction()">
+                        <i class="bi bi-whatsapp"></i> <span>WhatsApp</span>
+                      </button>
+                    </div>
+                    <div class="d-flex gap-2">
+                      <button class="btn btn-sm btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-1.5" onclick="openScheduleVisitModal()">
+                        <i class="bi bi-calendar-plus"></i> <span>Schedule Visit</span>
+                      </button>
+                      <button class="btn btn-sm btn-outline-warning w-100 d-flex align-items-center justify-content-center gap-1.5" onclick="triggerGenerateProposal()">
+                        <i class="bi bi-file-earmark-pdf"></i> <span>Proposal</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- THREE COLUMN ADAPTIVE BENTO GRID -->
+            <div class="row g-4">
+              
+              <!-- LEFT COLUMN: PROFILE DATA, QUALIFICATION INDEX, DOCUMENTS -->
+              <div class="col-12 col-lg-4 col-xl-3">
+                
+                <!-- LEAD SCORE ANALYSIS -->
+                <div class="uh-card p-4 text-center mb-4" data-aos="fade-up" data-aos-delay="150">
+                  <h5 class="font-title fw-bold text-start mb-3"><i class="bi bi-shield-check text-primary me-2"></i>Affinity Score</h5>
+                  <div class="score-circle-lg mb-3">
+                    <svg>
+                      <circle class="bg-ring" cx="55" cy="55" r="48" />
+                      <circle class="score-ring" cx="55" cy="55" r="48" stroke-dasharray="301.6" stroke-dashoffset="36.2" />
+                    </svg>
+                    <div class="score-lg-text-center">
+                      <span class="h3 fw-bold mb-0 text-main font-title">88</span>
+                      <span class="text-muted d-block small" style="font-size: 0.65rem;">SCORE</span>
+                    </div>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <span class="badge bg-success-subtle text-success py-1 px-3 rounded-pill font-title small">Very High Buying Intent</span>
+                  </div>
+
+                  <div class="text-start bg-body border border-light-subtle p-3 rounded" style="font-size: 0.8rem;">
+                    <span class="text-muted d-block uppercase mb-2" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">AI REVENUE PREDICTION</span>
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">Closing Probability</span>
+                      <strong class="text-main" id="conversion-percent">85%</strong>
+                    </div>
+                    <div class="progress mb-2" style="height: 4px;"><div class="progress-bar bg-success" style="width: 85%"></div></div>
+                    
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">Est. Commission</span>
+                      <strong class="text-success">$375,000</strong>
+                    </div>
+                    <span class="text-muted small d-block mt-2 pt-2 border-top border-light-subtle text-center" style="font-size: 0.725rem;">3.0% Commission rate based on $12.5M.</span>
+                  </div>
+                </div>
+
+                <!-- CONTACT INFORMATION -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up" data-aos-delay="200">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-person-rolodex text-primary me-2"></i>Contact Registry</h5>
+                  <div class="d-flex flex-column gap-3" style="font-size: 0.85rem;">
+                    <div>
+                      <span class="text-muted d-block small">MOBILE PHONE</span>
+                      <strong class="text-main d-flex align-items-center gap-1.5">
+                        <i class="bi bi-telephone text-primary"></i> +1 (305) 555-0192
+                      </strong>
+                    </div>
+                    <div>
+                      <span class="text-muted d-block small">SECURE EMAIL</span>
+                      <strong class="text-main d-flex align-items-center gap-1.5 text-break">
+                        <i class="bi bi-envelope text-primary"></i> liam.kensington@royalholding.com
+                      </strong>
+                    </div>
+                    <div>
+                      <span class="text-muted d-block small">ALTERNATIVE CONTACT</span>
+                      <strong class="text-main d-flex align-items-center gap-1.5">
+                        <i class="bi bi-person-lines-fill text-muted"></i> +1 (305) 555-0199 (Assistant)
+                      </strong>
+                    </div>
+                    <div>
+                      <span class="text-muted d-block small">OCCUPATION &amp; CORPORATION</span>
+                      <strong class="text-main">Chief Executive Officer, Royal Sovereign Holdings</strong>
+                    </div>
+                    <div>
+                      <span class="text-muted d-block small">PREFERRED CONTACT METHOD</span>
+                      <span class="badge bg-info-subtle text-info py-0.5 px-2 mt-1">Direct Phone &amp; Email</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- LEAD QUALIFICATION SCORE CARDS -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up" data-aos-delay="250">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-clipboard-check text-primary me-2"></i>Qualification Metrics</h5>
+                  <div class="d-flex flex-column gap-2.5">
+                    
+                    <div class="bg-body border border-light-subtle p-2.5 rounded text-start">
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold small text-main">Budget Match</span>
+                        <span class="badge bg-success-subtle text-success small">100%</span>
+                      </div>
+                      <div class="progress" style="height: 4px;"><div class="progress-bar bg-success" style="width: 100%"></div></div>
+                    </div>
+
+                    <div class="bg-body border border-light-subtle p-2.5 rounded text-start">
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold small text-main">Timeline Urgency</span>
+                        <span class="badge bg-warning-subtle text-dark small">80%</span>
+                      </div>
+                      <div class="progress" style="height: 4px;"><div class="progress-bar bg-warning" style="width: 80%"></div></div>
+                    </div>
+
+                    <div class="bg-body border border-light-subtle p-2.5 rounded text-start">
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold small text-main">Decision Authority</span>
+                        <span class="badge bg-success-subtle text-success small">100%</span>
+                      </div>
+                      <div class="progress" style="height: 4px;"><div class="progress-bar bg-success" style="width: 100%"></div></div>
+                    </div>
+
+                    <div class="bg-body border border-light-subtle p-2.5 rounded text-start">
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold small text-main">Financing Certified</span>
+                        <span class="badge bg-success-subtle text-success small">Liquid Assets</span>
+                      </div>
+                      <div class="progress" style="height: 4px;"><div class="progress-bar bg-success" style="width: 100%"></div></div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- REVENUE FORECAST DETAILS -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Revenue Forecast</h5>
+                  <div style="position: relative; height: 110px; width: 100%;" class="mb-3">
+                    <canvas id="revenueForecastMiniChart"></canvas>
+                  </div>
+                  <div class="text-start" style="font-size: 0.8rem;">
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">Target Commission Pool</span>
+                      <strong class="text-main">$375,000</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">Expected Closing Date</span>
+                      <strong class="text-main">Sept 30, 2026</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ASSIGNED AGENT CARD -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-person-badge-fill text-primary me-2"></i>Lead Advisor</h5>
+                  <div class="text-center">
+                    <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" id="agent-card-photo" class="rounded-circle border border-2 border-primary mb-2" style="width: 72px; height: 72px; object-fit: cover;" alt="Advisor Photo" />
+                    <h6 class="font-title fw-bold mb-0 text-main" id="agent-card-name">Sophia Lopez</h6>
+                    <p class="text-muted small mb-3">Senior Executive Broker</p>
+                    
+                    <div class="text-start bg-body border border-light-subtle p-2.5 rounded mb-3" style="font-size: 0.775rem;">
+                      <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Direct Mobile:</span>
+                        <strong class="text-main">+1 (305) 555-0812</strong>
+                      </div>
+                      <div class="d-flex justify-content-between">
+                        <span class="text-muted">Advisor Close Rate:</span>
+                        <strong class="text-success">92% Won</strong>
+                      </div>
+                    </div>
+                    
+                    <a href="agent-details.html" class="btn btn-sm btn-outline-primary w-100">
+                      <i class="bi bi-briefcase me-1"></i> View Advisor Profile
+                    </a>
+                  </div>
+                </div>
+
+                <!-- DOCUMENTS LIST CENTER -->
+                <div class="uh-card p-4" data-aos="fade-up">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="font-title fw-bold mb-0"><i class="bi bi-folder-check text-primary me-2"></i>Vault Center</h5>
+                    <span class="badge bg-secondary-subtle text-secondary py-0.5 px-2">4 Files</span>
+                  </div>
+                  
+                  <div class="d-flex flex-column gap-2" style="font-size: 0.8rem;">
+                    
+                    <div class="doc-list-item d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-lock text-info h5 mb-0"></i>
+                        <div>
+                          <strong class="text-main d-block">ID_Proof_KYC.pdf</strong>
+                          <span class="text-muted small" style="font-size: 0.7rem;">Verified • 1.4 MB</span>
+                        </div>
+                      </div>
+                      <button class="btn btn-xs btn-outline-secondary p-1 border-0" onclick="triggerDownloadDoc('KYC ID Proof')"><i class="bi bi-download"></i></button>
+                    </div>
+
+                    <div class="doc-list-item d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-pdf text-danger h5 mb-0"></i>
+                        <div>
+                          <strong class="text-main d-block">Horizon_Heights_Proposal_V2.pdf</strong>
+                          <span class="text-muted small" style="font-size: 0.7rem;">Active • 4.8 MB</span>
+                        </div>
+                      </div>
+                      <button class="btn btn-xs btn-outline-secondary p-1 border-0" onclick="triggerDownloadDoc('Horizon Heights Proposal V2')"><i class="bi bi-download"></i></button>
+                    </div>
+
+                    <div class="doc-list-item d-flex justify-content-between align-items-center">
+                      <div class="doc-list-item-title d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-spreadsheet text-success h5 mb-0"></i>
+                        <div>
+                          <strong class="text-main d-block">Escrow_Quotation_Sheet.xlsx</strong>
+                          <span class="text-muted small" style="font-size: 0.7rem;">Signed • 820 KB</span>
+                        </div>
+                      </div>
+                      <button class="btn btn-xs btn-outline-secondary p-1 border-0" onclick="triggerDownloadDoc('Escrow Quotation Sheet')"><i class="bi bi-download"></i></button>
+                    </div>
+
+                    <div class="doc-list-item d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-text text-warning h5 mb-0"></i>
+                        <div>
+                          <strong class="text-main d-block">Agreement_Draft_UrbanHub.pdf</strong>
+                          <span class="text-muted small" style="font-size: 0.7rem;">In Review • 2.1 MB</span>
+                        </div>
+                      </div>
+                      <button class="btn btn-xs btn-outline-secondary p-1 border-0" onclick="triggerDownloadDoc('Agreement Draft UrbanHub')"><i class="bi bi-download"></i></button>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- MIDDLE COLUMN: STATS, SUMMARY, INTERESTED PROPERTIES, FOLLOW-UPS, NOTES, RELATED LEADS -->
+              <div class="col-12 col-lg-8 col-xl-6">
+                
+                <!-- STATS MATRIX CARDS -->
+                <div class="row g-3 mb-4" data-aos="fade-up" data-aos-delay="100">
+                  <div class="col-6 col-sm-3">
+                    <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                      <span class="text-muted d-block uppercase small" style="font-size: 0.65rem;">INTERACTIONS</span>
+                      <h3 class="font-title fw-bold mb-0 text-primary animate-counter-uh" data-target="24">24</h3>
+                      <span class="text-muted small" style="font-size: 0.65rem;">Total contacts</span>
+                    </div>
+                  </div>
+                  <div class="col-6 col-sm-3">
+                    <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                      <span class="text-muted d-block uppercase small" style="font-size: 0.65rem;">MEETINGS</span>
+                      <h3 class="font-title fw-bold mb-0 text-success animate-counter-uh" data-target="4">4</h3>
+                      <span class="text-muted small" style="font-size: 0.65rem;">Conducted tours</span>
+                    </div>
+                  </div>
+                  <div class="col-6 col-sm-3">
+                    <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                      <span class="text-muted d-block uppercase small" style="font-size: 0.65rem;">PHONE CALLS</span>
+                      <h3 class="font-title fw-bold mb-0 text-info animate-counter-uh" data-target="8">8</h3>
+                      <span class="text-muted small" style="font-size: 0.65rem;">Inbound/outbound</span>
+                    </div>
+                  </div>
+                  <div class="col-6 col-sm-3">
+                    <div class="uh-card p-3 text-center lift-on-hover bg-body">
+                      <span class="text-muted d-block uppercase small" style="font-size: 0.65rem;">EMAILS SENT</span>
+                      <h3 class="font-title fw-bold mb-0 text-warning animate-counter-uh" data-target="12">12</h3>
+                      <span class="text-muted small" style="font-size: 0.65rem;">Documents shared</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- LEAD SUMMARY & REQUIREMENTS -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up" data-aos-delay="150">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-file-earmark-person text-primary me-2"></i>Executive Summary &amp; Brief</h5>
+                  <div class="bg-body border border-light-subtle p-3 rounded text-start mb-3">
+                    <h6 class="font-title fw-bold mb-1" style="font-size: 0.9rem;">Lead Overview</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.85rem; line-height: 1.5;">
+                      Liam Kensington is the Managing CEO of Royal Sovereign Holdings. He is looking to acquire a prestigious waterfront penthouse or high-elevation estate villa in Miami to serve as his primary seasonal estate and corporate entertainment headquarters. He requires maximum visual elevation, direct security checkpoints, and a private dock or heliport access.
+                    </p>
+                  </div>
+
+                  <div class="row g-3 text-start">
+                    <div class="col-12 col-md-6">
+                      <div class="bg-body border border-light-subtle p-3 rounded" style="font-size: 0.85rem; min-height: 120px;">
+                        <h6 class="font-title fw-bold text-main mb-1" style="font-size: 0.85rem;"><i class="bi bi-list-stars text-primary me-1"></i>Aesthetic Demands</h6>
+                        <ul class="text-muted p-0 ps-3 mb-0" style="font-size: 0.8rem;">
+                          <li>Waterfront view profile preferred</li>
+                          <li>Minimum 4 dedicated guest suites</li>
+                          <li>Private rooftop infinity lounge</li>
+                          <li>Concierge service and gated ingress</li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <div class="bg-body border border-light-subtle p-3 rounded" style="font-size: 0.85rem; min-height: 120px;">
+                        <h6 class="font-title fw-bold text-main mb-1" style="font-size: 0.85rem;"><i class="bi bi-wallet2 text-success me-1"></i>Financial Mandate</h6>
+                        <ul class="text-muted p-0 ps-3 mb-0" style="font-size: 0.8rem;">
+                          <li>Allocated budget up to $15.0M</li>
+                          <li>Liquid pre-approved assets confirmed</li>
+                          <li>Requires escrow clearing before Sept</li>
+                          <li>Single-signer executive authority</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- INTERESTED PROPERTIES CARDS -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up" data-aos-delay="200">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="font-title fw-bold mb-0"><i class="bi bi-houses-fill text-primary me-2"></i>Properties of High Interest</h5>
+                    <span class="badge bg-primary-subtle text-primary py-0.5 px-2">2 Listings</span>
+                  </div>
+
+                  <div class="row g-3">
+                    <!-- Property Card 1 -->
+                    <div class="col-12 col-md-6">
+                      <div class="uh-card p-0 bg-body border-light-subtle overflow-hidden lift-on-hover">
+                        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=400&auto=format&fit=crop" class="w-100" style="height: 140px; object-fit: cover;" alt="Horizon Heights Penthouse" />
+                        <div class="p-3 text-start">
+                          <span class="badge bg-success-subtle text-success py-0.5 px-2 mb-1.5" style="font-size: 0.7rem;">Active Portfolio</span>
+                          <h6 class="font-title fw-bold mb-1" style="font-size: 0.875rem;">Horizon Heights Penthouse</h6>
+                          <p class="text-muted small mb-2"><i class="bi bi-geo-alt"></i> Biscayne Bay, Miami</p>
+                          <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light-subtle">
+                            <span class="font-title fw-bold text-primary" style="font-size: 0.95rem;">$12,500,000</span>
+                            <a href="property-details.html" class="btn btn-xs btn-outline-primary py-1 px-2.5" style="font-size: 0.75rem;">Explore Profile</a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Property Card 2 -->
+                    <div class="col-12 col-md-6">
+                      <div class="uh-card p-0 bg-body border-light-subtle overflow-hidden lift-on-hover">
+                        <img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=400&auto=format&fit=crop" class="w-100" style="height: 140px; object-fit: cover;" alt="The Obsidian Villa" />
+                        <div class="p-3 text-start">
+                          <span class="badge bg-warning-subtle text-warning py-0.5 px-2 mb-1.5" style="font-size: 0.7rem;">Alternative Selection</span>
+                          <h6 class="font-title fw-bold mb-1" style="font-size: 0.875rem;">The Obsidian Villa</h6>
+                          <p class="text-muted small mb-2"><i class="bi bi-geo-alt"></i> Key Biscayne, Miami</p>
+                          <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light-subtle">
+                            <span class="font-title fw-bold text-primary" style="font-size: 0.95rem;">$14,200,000</span>
+                            <a href="property-details.html" class="btn btn-xs btn-outline-primary py-1 px-2.5" style="font-size: 0.75rem;">Explore Profile</a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- FOLLOW-UP MANAGER & APPOINTMENTS -->
+                <div class="row g-3 mb-4">
+                  <!-- Upcoming Follow-up -->
+                  <div class="col-12 col-md-6">
+                    <div class="uh-card p-4 h-100 text-start" data-aos="fade-up">
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-title fw-bold mb-0" style="font-size: 0.95rem;"><i class="bi bi-bell-fill text-warning me-2"></i>Active Reminders</h5>
+                        <button class="btn btn-xs btn-outline-primary" onclick="openAddFollowupModal()">
+                          <i class="bi bi-plus-lg"></i> Add
+                        </button>
+                      </div>
+
+                      <div id="active-followups-list">
+                        <div class="bg-body border border-light-subtle p-3 rounded mb-2">
+                          <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge bg-danger-subtle text-danger py-0.5 px-2" style="font-size: 0.65rem;">CRITICAL</span>
+                            <span class="text-muted small" style="font-size: 0.7rem;"><i class="bi bi-calendar"></i> July 12, 14:00</span>
+                          </div>
+                          <strong class="text-main d-block font-title mb-1" style="font-size: 0.85rem;">Send Escalation Escrow Draft</strong>
+                          <p class="text-muted mb-0" style="font-size: 0.775rem;">Email revised escrow adjustments for Skydeck review.</p>
+                          <span class="text-muted d-block mt-2 small" style="font-size: 0.7rem;">Assigned: <strong class="text-main">Sophia Lopez</strong></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Appointments Calendar Card -->
+                  <div class="col-12 col-md-6">
+                    <div class="uh-card p-4 h-100 text-start" data-aos="fade-up">
+                      <h5 class="font-title fw-bold mb-3" style="font-size: 0.95rem;"><i class="bi bi-calendar3 text-primary me-2"></i>Scheduled Events</h5>
+                      
+                      <div class="bg-body border border-light-subtle p-3 rounded d-flex gap-3 align-items-center">
+                        <div class="bg-primary text-white text-center rounded p-2" style="min-width: 54px;">
+                          <span class="d-block font-title fw-bold text-uppercase" style="font-size: 0.6rem; letter-spacing: 0.5px;">JULY</span>
+                          <span class="h4 font-title fw-extrabold mb-0">15</span>
+                        </div>
+                        <div class="flex-grow-1">
+                          <span class="badge bg-success-subtle text-success py-0.5 px-2 mb-1" style="font-size: 0.65rem;"><i class="bi bi-patch-check"></i> CONFIRMED Tour</span>
+                          <strong class="text-main d-block font-title" style="font-size: 0.825rem;">Horizon Heights Private Heliport Tour</strong>
+                          <p class="text-muted mb-0" style="font-size: 0.725rem;">Direct private helicopter chauffeur tour hosted by Sophia.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- INTERNAL NOTES REGISTRY -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="font-title fw-bold mb-0"><i class="bi bi-chat-left-quote-fill text-primary me-2"></i>Internal CRM Logs</h5>
+                    <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" onclick="openAddNoteModal()">
+                      <i class="bi bi-chat-right-text"></i> <span>Add Internal Note</span>
+                    </button>
+                  </div>
+
+                  <!-- Add note mini-form directly in-page for beautiful accessibility -->
+                  <div class="bg-body border border-light-subtle p-3 rounded mb-3 text-start">
+                    <label class="form-label text-muted small fw-semibold">Quickly Append Internal Note:</label>
+                    <div class="input-group">
+                      <input type="text" class="form-control bg-body" id="inpage-note-text" placeholder="Type brief advisory update..." />
+                      <button class="btn btn-primary" type="button" onclick="submitInpageNote()">Post Note</button>
+                    </div>
+                  </div>
+
+                  <div class="d-flex flex-column gap-3" id="internal-notes-list">
+                    
+                    <div class="bg-body border border-light-subtle p-3 rounded text-start position-relative">
+                      <span class="position-absolute top-3 end-3 text-warning" title="Pinned Note"><i class="bi bi-pin-angle-fill"></i></span>
+                      <div class="d-flex align-items-center gap-2 mb-1.5">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=60&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="Staff" />
+                        <strong class="text-main small">Sophia Lopez</strong>
+                        <span class="text-muted small" style="font-size: 0.7rem;">• Pinned • 2 hours ago</span>
+                      </div>
+                      <p class="text-muted mb-0" style="font-size: 0.8rem; line-height: 1.4;">
+                        Liam indicated extreme interest in Horizon Heights. He values high security. Avoid sending email drafts regarding inland options, as his board strictly requires waterfront access to allow helipad operations.
+                      </p>
+                    </div>
+
+                    <div class="bg-body border border-light-subtle p-3 rounded text-start">
+                      <div class="d-flex align-items-center gap-2 mb-1.5">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=60&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="Staff" />
+                        <strong class="text-main small">Sophia Lopez</strong>
+                        <span class="text-muted small" style="font-size: 0.7rem;">• July 08, 2026</span>
+                      </div>
+                      <p class="text-muted mb-0" style="font-size: 0.8rem; line-height: 1.4;">
+                        Conducted phone follow-up. Discussed the revised pricing framework. Liquid asset reports are uploaded and verified in the vault center.
+                      </p>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- RELATED LEADS RECOMMENDATION -->
+                <div class="uh-card p-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-people text-primary me-2"></i>Suggested Comparable Active Leads</h5>
+                  
+                  <div class="row g-3">
+                    
+                    <div class="col-12 col-md-6">
+                      <div class="uh-card p-3 bg-body border-light-subtle d-flex align-items-center gap-3 lift-on-hover" style="cursor: pointer;" onclick="showDynamicToast('Opening details profile for Alexander Sterling')">
+                        <div class="score-circle">
+                          <svg style="width:40px; height:40px;">
+                            <circle class="bg-ring" cx="20" cy="20" r="16" />
+                            <circle class="score-ring" cx="20" cy="20" r="16" stroke-dasharray="100.5" stroke-dashoffset="15" />
+                          </svg>
+                          <div class="score-text-center text-primary" style="font-size: 0.65rem;">85</div>
+                        </div>
+                        <div class="text-start">
+                          <strong class="text-main d-block font-title small">Alexander Sterling</strong>
+                          <span class="text-muted small d-block" style="font-size: 0.725rem;">Budget: $15.0M</span>
+                          <span class="badge bg-primary-subtle text-primary py-0.5 px-1.5" style="font-size: 0.6rem;">Oceanfront Estate</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                      <div class="uh-card p-3 bg-body border-light-subtle d-flex align-items-center gap-3 lift-on-hover" style="cursor: pointer;" onclick="showDynamicToast('Opening details profile for Charlotte Dubois')">
+                        <div class="score-circle">
+                          <svg style="width:40px; height:40px;">
+                            <circle class="bg-ring" cx="20" cy="20" r="16" />
+                            <circle class="score-ring" cx="20" cy="20" r="16" stroke-dasharray="100.5" stroke-dashoffset="21" />
+                          </svg>
+                          <div class="score-text-center text-primary" style="font-size: 0.65rem;">79</div>
+                        </div>
+                        <div class="text-start">
+                          <strong class="text-main d-block font-title small">Charlotte Dubois</strong>
+                          <span class="text-muted small d-block" style="font-size: 0.725rem;">Budget: $10.5M</span>
+                          <span class="badge bg-primary-subtle text-primary py-0.5 px-1.5" style="font-size: 0.6rem;">Azure Sky Villa</span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- RIGHT COLUMN: QUICK ACTIONS, CHARTS, TIMELINE & COMM HISTORY -->
+              <div class="col-12 col-lg-12 col-xl-3">
+                
+                <!-- QUICK ACTIONS CARD -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up" data-aos-delay="150">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-lightning-charge-fill text-primary me-2"></i>Quick Administrative Actions</h5>
+                  
+                  <div class="d-flex flex-column gap-2">
+                    
+                    <button class="btn btn-sm btn-outline-warning text-start py-2 px-3 d-flex align-items-center gap-2 w-100" onclick="triggerConvertCustomer()">
+                      <i class="bi bi-person-badge-fill text-warning"></i>
+                      <div>
+                        <strong class="d-block" style="font-size: 0.8rem;">Convert to Customer Ledger</strong>
+                        <span class="text-muted d-block" style="font-size: 0.7rem;">Promote to active customer buyer profile.</span>
+                      </div>
+                    </button>
+
+                    <button class="btn btn-sm btn-outline-primary text-start py-2 px-3 d-flex align-items-center gap-2 w-100" onclick="openAssignAgentModal()">
+                      <i class="bi bi-person-gear text-primary"></i>
+                      <div>
+                        <strong class="d-block" style="font-size: 0.8rem;">Reassign Advisor</strong>
+                        <span class="text-muted d-block" style="font-size: 0.7rem;">Transfer accountability to Sophia/Marcus.</span>
+                      </div>
+                    </button>
+
+                    <button class="btn btn-sm btn-outline-success text-start py-2 px-3 d-flex align-items-center gap-2 w-100" onclick="triggerMarkWon()">
+                      <i class="bi bi-award-fill text-success"></i>
+                      <div>
+                        <strong class="d-block" style="font-size: 0.8rem;">Mark as Deal WON</strong>
+                        <span class="text-muted d-block" style="font-size: 0.7rem;">Move lead to closed-won escrow stage.</span>
+                      </div>
+                    </button>
+
+                    <button class="btn btn-sm btn-outline-danger text-start py-2 px-3 d-flex align-items-center gap-2 w-100" onclick="triggerMarkLost()">
+                      <i class="bi bi-slash-circle-fill text-danger"></i>
+                      <div>
+                        <strong class="d-block" style="font-size: 0.8rem;">Mark as Deal LOST</strong>
+                        <span class="text-muted d-block" style="font-size: 0.7rem;">Decline, archive or drop lead inquiry.</span>
+                      </div>
+                    </button>
+
+                    <button class="btn btn-sm btn-outline-secondary text-start py-2 px-3 d-flex align-items-center gap-2 w-100" onclick="triggerArchiveLead()">
+                      <i class="bi bi-archive-fill text-muted"></i>
+                      <div>
+                        <strong class="d-block" style="font-size: 0.8rem;">Archive Lead</strong>
+                        <span class="text-muted d-block" style="font-size: 0.7rem;">Temporarily suppress without purging records.</span>
+                      </div>
+                    </button>
+
+                    <button class="btn btn-sm btn-outline-danger border-dashed text-start py-2 px-3 d-flex align-items-center gap-2 w-100" onclick="openDeleteConfirmationModal()">
+                      <i class="bi bi-trash3-fill"></i>
+                      <div>
+                        <strong class="d-block" style="font-size: 0.8rem;">Purge / Delete Lead</strong>
+                        <span class="text-muted d-block" style="font-size: 0.7rem;">Irreversibly erase records from directory.</span>
+                      </div>
+                    </button>
+
+                  </div>
+                </div>
+
+                <!-- CONVERSION ANALYTICS CHART -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-activity text-primary me-2"></i>Conversion Analytics</h5>
+                  <div style="position: relative; height: 180px; width: 100%;">
+                    <canvas id="conversionAnalyticsChart"></canvas>
+                  </div>
+                </div>
+
+                <!-- COMMUNICATION HISTORY -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-clock-history text-primary me-2"></i>Interaction Registry</h5>
+                  
+                  <div class="d-flex flex-column gap-3 text-start">
+                    
+                    <div class="comm-log-card bg-body p-2.5 rounded border-light-subtle">
+                      <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold text-main" style="font-size: 0.775rem;"><i class="bi bi-telephone-outbound text-primary"></i> Outbound Call Completed</span>
+                        <span class="text-muted small" style="font-size: 0.65rem;">July 08, 11:20</span>
+                      </div>
+                      <p class="text-muted mb-0" style="font-size: 0.75rem;">Discussed high-elevation heliport accessibility. Duration: 18 mins.</p>
+                    </div>
+
+                    <div class="comm-log-card bg-body p-2.5 rounded border-light-subtle">
+                      <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold text-main" style="font-size: 0.775rem;"><i class="bi bi-envelope text-info"></i> Proposal Email Sent</span>
+                        <span class="text-muted small" style="font-size: 0.65rem;">July 05, 14:02</span>
+                      </div>
+                      <p class="text-muted mb-0" style="font-size: 0.75rem;">Sent PDF version of contract proposal sheet. Opened twice by client.</p>
+                    </div>
+
+                    <div class="comm-log-card bg-body p-2.5 rounded border-light-subtle">
+                      <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold text-main" style="font-size: 0.775rem;"><i class="bi bi-whatsapp text-success"></i> WhatsApp Update</span>
+                        <span class="text-muted small" style="font-size: 0.65rem;">July 02, 09:15</span>
+                      </div>
+                      <p class="text-muted mb-0" style="font-size: 0.75rem;">Client sent voice-note confirming they favor Horizon Heights elevations.</p>
+                    </div>
+
+                    <div class="comm-log-card bg-body p-2.5 rounded border-light-subtle">
+                      <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold text-main" style="font-size: 0.775rem;"><i class="bi bi-people text-warning"></i> Property Tour Conducted</span>
+                        <span class="text-muted small" style="font-size: 0.65rem;">June 15, 15:00</span>
+                      </div>
+                      <p class="text-muted mb-0" style="font-size: 0.75rem;">Sophia conducted extensive physical walkthrough of penthouse structure.</p>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- LEAD TIMELINE MILESTONES -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-4"><i class="bi bi-bar-chart-steps text-primary me-2"></i>Pipeline Milestones</h5>
+                  
+                  <div class="timeline-vertical text-start" style="font-size: 0.8rem;">
+                    
+                    <div class="timeline-vertical-item completed">
+                      <div class="timeline-vertical-dot"></div>
+                      <strong class="text-main d-block font-title">Lead Created in CRM</strong>
+                      <span class="text-muted small">May 12, 2026</span>
+                    </div>
+
+                    <div class="timeline-vertical-item completed">
+                      <div class="timeline-vertical-dot"></div>
+                      <strong class="text-main d-block font-title">First Call Contacted</strong>
+                      <span class="text-muted small">May 14, 2026</span>
+                    </div>
+
+                    <div class="timeline-vertical-item completed">
+                      <div class="timeline-vertical-dot"></div>
+                      <strong class="text-main d-block font-title">Pre-Approved / Qualified</strong>
+                      <span class="text-muted small">May 15, 2026</span>
+                    </div>
+
+                    <div class="timeline-vertical-item completed">
+                      <div class="timeline-vertical-dot"></div>
+                      <strong class="text-main d-block font-title">Luxury Site Visit Conducted</strong>
+                      <span class="text-muted small">June 15, 2026</span>
+                    </div>
+
+                    <div class="timeline-vertical-item completed">
+                      <div class="timeline-vertical-dot"></div>
+                      <strong class="text-main d-block font-title">Official Proposal Issued</strong>
+                      <span class="text-muted small">June 28, 2026</span>
+                    </div>
+
+                    <div class="timeline-vertical-item active">
+                      <div class="timeline-vertical-dot"></div>
+                      <strong class="text-main d-block font-title">Escrow Negotiation Started</strong>
+                      <span class="text-muted small">July 05, 2026</span>
+                    </div>
+
+                    <div class="timeline-vertical-item">
+                      <div class="timeline-vertical-dot"></div>
+                      <strong class="text-muted d-block font-title">Closed-Won Contract Clearance</strong>
+                      <span class="text-muted small">Pending Action</span>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- BOOTSTRAP TOAST FOR REAL-TIME FEEDBACK -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1060;">
+      <div id="appToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body d-flex align-items-center gap-2" id="toast-message-content">
+            <i class="bi bi-check-circle-fill"></i> Successfully processed action.
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REUSABLE SYSTEM MODALS -->
+
+    <!-- Assign Agent Modal -->
+    <div class="modal fade" id="assignAgentModal" tabindex="-1" aria-labelledby="assignAgentModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main" id="assignAgentModalLabel"><i class="bi bi-person-gear text-primary me-2"></i>Assign Strategic Advisor</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Select Advisor Account</label>
+              <select class="form-select bg-body text-main" id="modal-agent-select">
+                <option value="Sophia Lopez">Sophia Lopez (Senior Executive Broker)</option>
+                <option value="Marcus Vance">Marcus Vance (Managing Director)</option>
+                <option value="David Kim">David Kim (Luxury Broker)</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitAssignAgent()">Reassign Lead</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule Visit Modal -->
+    <div class="modal fade" id="scheduleVisitModal" tabindex="-1" aria-labelledby="scheduleVisitModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main" id="scheduleVisitModalLabel"><i class="bi bi-calendar-event text-primary me-2"></i>Schedule Tour / Visit</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Target Site</label>
+              <input type="text" class="form-control bg-body text-main" value="Penthouse, Horizon Heights" readonly />
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label text-muted small fw-semibold">Date</label>
+                <input type="date" class="form-control bg-body" id="modal-visit-date" required value="2026-07-15" />
+              </div>
+              <div class="col-6">
+                <label class="form-label text-muted small fw-semibold">Time Hour</label>
+                <input type="time" class="form-control bg-body" id="modal-visit-time" required value="10:30" />
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Select Advisor / Chauffeur Host</label>
+              <select class="form-select bg-body" id="modal-visit-agent">
+                <option value="Sophia Lopez">Sophia Lopez</option>
+                <option value="Marcus Vance">Marcus Vance</option>
+                <option value="David Kim">David Kim</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitScheduleVisit()">Confirm Schedule</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Note Modal -->
+    <div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main" id="addNoteModalLabel"><i class="bi bi-chat-right-text text-primary me-2"></i>Append Internal Advisory Note</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Author</label>
+              <input type="text" class="form-control bg-body" value="Sophia Lopez" readonly />
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Advisory Note Content</label>
+              <textarea class="form-control bg-body" id="modal-note-textarea" rows="4" placeholder="Write internal compliance updates..."></textarea>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="" id="modal-note-pin-checkbox" checked />
+              <label class="form-check-label text-muted small fw-semibold" for="modal-note-pin-checkbox">
+                Pin this note to the top of Liam's timeline
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitModalNote()">Save Advisory Note</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Follow-up Modal -->
+    <div class="modal fade" id="addFollowupModal" tabindex="-1" aria-labelledby="addFollowupModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main" id="addFollowupModalLabel"><i class="bi bi-bell-plus text-primary me-2"></i>Create Future Follow-up Reminder</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Reminder Task Description</label>
+              <input type="text" class="form-control bg-body" id="modal-followup-title" placeholder="e.g. Share escrow fee sheet..." required />
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label text-muted small fw-semibold">Follow-up Date</label>
+                <input type="date" class="form-control bg-body" id="modal-followup-date" value="2026-07-20" required />
+              </div>
+              <div class="col-6">
+                <label class="form-label text-muted small fw-semibold">Time Hour</label>
+                <input type="time" class="form-control bg-body" id="modal-followup-time" value="09:00" required />
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">Select Advisory Owner</label>
+              <select class="form-select bg-body" id="modal-followup-agent">
+                <option value="Sophia Lopez">Sophia Lopez</option>
+                <option value="Marcus Vance">Marcus Vance</option>
+                <option value="David Kim">David Kim</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitModalFollowup()">Add Reminder</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Convert to Customer Modal -->
+    <div class="modal fade" id="convertCustomerModal" tabindex="-1" aria-labelledby="convertCustomerModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main" id="convertCustomerModalLabel"><i class="bi bi-person-badge text-warning me-2"></i>Convert Lead to Customer</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <p class="text-muted small">You are about to promote <strong class="text-main">Liam Kensington</strong> to the Active Customer Ledger. This confirms all initial buying validations and assets pre-clearance are complete.</p>
+            <div class="bg-body border border-light-subtle p-3 rounded">
+              <span class="text-muted d-block small">INITIAL CONTRACT STATUS</span>
+              <strong class="text-main"><i class="bi bi-file-check-fill text-success"></i> Pre-cleared Escrow Contract Profile Opened</strong>
+            </div>
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-warning font-title text-dark fw-bold" onclick="submitConvertCustomer()">Promote to Customer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle bg-dark" style="border-radius: 12px;">
+          <div class="modal-header border-bottom border-light-subtle bg-body">
+            <h5 class="modal-title font-title fw-bold text-main" id="deleteConfirmationModalLabel"><i class="bi bi-trash3 text-danger me-2"></i>Purge Record Confirmation</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-start">
+            <p class="text-muted mb-0">Are you absolutely sure you want to permanently delete <strong class="text-main">Liam Kensington</strong> from the UrbanHub directories? This operation is immediate, irreversible, and clears all linked document registers.</p>
+          </div>
+          <div class="modal-footer border-top border-light-subtle bg-body">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="submitDeleteLead()">Yes, Purge Lead Record</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap 5.3 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AOS Animation library JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom/Global Script -->
+    <script src="/assets/js/main.js"></script>
+
+    <!-- Page Specific Script Logic -->
+    <script>
+      // Keep track of charts so we can destroy/rebuild on theme or data updates
+      let conversionAnalyticsChartInstance = null;
+      let revenueForecastChartInstance = null;
+
+      // DOM Elements
+      const stateSuccess = document.getElementById('state-success-content');
+      const stateLoading = document.getElementById('state-loading-skeleton');
+      const stateEmpty = document.getElementById('state-empty');
+      const stateError = document.getElementById('state-error');
+
+      // Bootstrap Modal Instances
+      let assignModal, visitModal, noteModal, followupModal, convertModal, deleteModal;
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // Init modals
+        assignModal = new bootstrap.Modal(document.getElementById('assignAgentModal'));
+        visitModal = new bootstrap.Modal(document.getElementById('scheduleVisitModal'));
+        noteModal = new bootstrap.Modal(document.getElementById('addNoteModal'));
+        followupModal = new bootstrap.Modal(document.getElementById('addFollowupModal'));
+        convertModal = new bootstrap.Modal(document.getElementById('convertCustomerModal'));
+        deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+
+        // Load premium charts
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+        renderPageCharts(currentTheme);
+
+        // Listen to global theme change events dispatched by main.js
+        window.addEventListener('themeChanged', (e) => {
+          renderPageCharts(e.detail.theme);
+        });
+
+        // Initialize mouse move glowing effects on glow cards
+        setupGlowEffect();
+      });
+
+      function setupGlowEffect() {
+        document.querySelectorAll('.glow-card').forEach(card => {
+          let glow = card.querySelector('.card-glow-effect');
+          if (!glow) {
+            glow = document.createElement('div');
+            glow.className = 'card-glow-effect';
+            card.appendChild(glow);
+          }
+          card.addEventListener('mousemove', e => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+          });
+        });
+      }
+
+      function renderPageCharts(theme) {
+        const isDark = theme === 'dark';
+        const textColor = isDark ? '#8E9BAE' : '#64748B';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        const primaryColor = isDark ? '#D4AF37' : '#B8860B'; // Gold
+        const secondaryColor = '#10B981'; // Green
+        const accentColor = '#3B82F6'; // Blue
+
+        // 1. Conversion Probability / Gauge line chart
+        const convCtx = document.getElementById('conversionAnalyticsChart');
+        if (convCtx) {
+          if (conversionAnalyticsChartInstance) conversionAnalyticsChartInstance.destroy();
+          conversionAnalyticsChartInstance = new Chart(convCtx, {
+            type: 'line',
+            data: {
+              labels: ['May 12', 'May 20', 'June 02', 'June 15', 'June 28', 'July 05', 'July 10'],
+              datasets: [{
+                label: 'Conversion Likelihood',
+                data: [35, 42, 55, 68, 79, 85, 88],
+                borderColor: primaryColor,
+                backgroundColor: isDark ? 'rgba(212, 175, 55, 0.05)' : 'rgba(184, 134, 11, 0.05)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: primaryColor,
+                pointBorderColor: isDark ? '#111114' : '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  padding: 10,
+                  backgroundColor: isDark ? '#111114' : '#FFFFFF',
+                  borderColor: gridColor,
+                  borderWidth: 1,
+                  titleColor: isDark ? '#FFFFFF' : '#0F172A',
+                  bodyColor: textColor,
+                  callbacks: {
+                    label: function(context) { return ` Likelihood: ${context.parsed.y}%`; }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: { color: textColor, font: { family: 'Inter', size: 9 } }
+                },
+                y: {
+                  min: 0,
+                  max: 100,
+                  grid: { color: gridColor },
+                  ticks: { color: textColor, font: { family: 'Inter', size: 9 }, stepSize: 25 }
+                }
+              }
+            }
+          });
+        }
+
+        // 2. Revenue forecast mini chart
+        const revCtx = document.getElementById('revenueForecastMiniChart');
+        if (revCtx) {
+          if (revenueForecastChartInstance) revenueForecastChartInstance.destroy();
+          revenueForecastChartInstance = new Chart(revCtx, {
+            type: 'bar',
+            data: {
+              labels: ['Min Goal', 'Exp Val', 'Potential'],
+              datasets: [{
+                data: [10.0, 12.5, 15.0],
+                backgroundColor: [accentColor, primaryColor, secondaryColor],
+                borderRadius: 4,
+                barThickness: 20
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: { color: textColor, font: { family: 'Inter', size: 8 } }
+                },
+                y: {
+                  grid: { display: false },
+                  ticks: { color: textColor, font: { family: 'Inter', size: 8 } }
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // Quick toast trigger helper
+      function showPageToast(message, isSuccess = true) {
+        const toastEl = document.getElementById('appToast');
+        const contentEl = document.getElementById('toast-message-content');
+        
+        toastEl.classList.remove('text-bg-success', 'text-bg-danger', 'text-bg-warning');
+        
+        if (isSuccess) {
+          toastEl.classList.add('text-bg-success');
+          contentEl.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${message}`;
+        } else {
+          toastEl.classList.add('text-bg-danger');
+          contentEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> ${message}`;
+        }
+        
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+      }
+
+      // Interactive states simulator switcher
+      function switchSimulatorState(state) {
+        // Reset button active classes
+        document.querySelectorAll('.state-simulator-bar button').forEach(b => b.classList.remove('active'));
+        
+        // Hide all screens
+        stateSuccess.classList.add('skeleton-hidden');
+        stateLoading.classList.add('skeleton-hidden');
+        stateEmpty.classList.add('skeleton-hidden');
+        stateError.classList.add('skeleton-hidden');
+
+        if (state === 'success') {
+          document.getElementById('sim-btn-success').classList.add('active');
+          stateSuccess.classList.remove('skeleton-hidden');
+          stateSuccess.style.opacity = '1';
+          // Re-render charts
+          setTimeout(() => {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+            renderPageCharts(currentTheme);
+            setupGlowEffect();
+          }, 100);
+        } else if (state === 'loading') {
+          document.getElementById('sim-btn-loading').classList.add('active');
+          stateLoading.classList.remove('skeleton-hidden');
+        } else if (state === 'empty') {
+          document.getElementById('sim-btn-empty').classList.add('active');
+          stateEmpty.classList.remove('skeleton-hidden');
+        } else if (state === 'error') {
+          document.getElementById('sim-btn-error').classList.add('active');
+          stateError.classList.remove('skeleton-hidden');
+        }
+      }
+
+      function triggerRefreshSim() {
+        switchSimulatorState('loading');
+        showPageToast('Synchronizing with UrbanHub CRM cloud registry...');
+        setTimeout(() => {
+          switchSimulatorState('success');
+          showPageToast('Registry values successfully up to date.');
+        }, 1200);
+      }
+
+      // Quick Lookup for header search
+      function handleQuickLeadLookup(value) {
+        if (!value) return;
+        if (value.toLowerCase() === 'empty') {
+          switchSimulatorState('empty');
+        } else if (value.toLowerCase() === 'error') {
+          switchSimulatorState('error');
+        } else if (value.toLowerCase().includes('liam') || value.toLowerCase().includes('1092')) {
+          switchSimulatorState('success');
+          showPageToast('Filtered records to: Liam Kensington');
+        } else {
+          showPageToast(`Searched: "${value}". Type "empty" or "error" to trigger simulation screens.`, true);
+        }
+      }
+
+      // Quick Action Functions
+      function triggerCallAction() {
+        showPageToast('Connecting secure IP telephone route to CEO Line +1 (305) 555-0192...');
+      }
+
+      function triggerEmailAction() {
+        showPageToast('Opening internal secure draft assistant for liam.kensington@royalholding.com...');
+      }
+
+      function triggerWhatsAppAction() {
+        showPageToast('Initiating private luxury concierge concierge chat on verified WhatsApp line...');
+      }
+
+      function triggerGenerateProposal() {
+        showPageToast('Generating updated contract proposal draft (PDF Version 2.2)...');
+      }
+
+      function triggerDownloadDoc(name) {
+        showPageToast(`Initiating secure encrypted download for document: "${name}"`);
+      }
+
+      // Reassign Agent
+      function openAssignAgentModal() {
+        assignModal.show();
+      }
+
+      function submitAssignAgent() {
+        const selected = document.getElementById('modal-agent-select').value;
+        document.getElementById('profile-agent-display').textContent = selected;
+        document.getElementById('agent-card-name').textContent = selected;
+        
+        // Update Advisor image
+        const img = document.getElementById('agent-card-photo');
+        if (selected === 'Sophia Lopez') {
+          img.src = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop';
+        } else if (selected === 'Marcus Vance') {
+          img.src = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=150&auto=format&fit=crop';
+        } else {
+          img.src = 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=150&auto=format&fit=crop';
+        }
+
+        assignModal.hide();
+        showPageToast(`Lead successfully assigned to: ${selected}`);
+      }
+
+      // Schedule Visit
+      function openScheduleVisitModal() {
+        visitModal.show();
+      }
+
+      function submitScheduleVisit() {
+        const date = document.getElementById('modal-visit-date').value;
+        const time = document.getElementById('modal-visit-time').value;
+        const host = document.getElementById('modal-visit-agent').value;
+
+        visitModal.hide();
+        showPageToast(`Private Tour scheduled on ${date} at ${time} with ${host}`);
+      }
+
+      // Notes
+      function openAddNoteModal() {
+        noteModal.show();
+      }
+
+      function submitModalNote() {
+        const text = document.getElementById('modal-note-textarea').value;
+        const pin = document.getElementById('modal-note-pin-checkbox').checked;
+
+        if (!text) {
+          showPageToast('Please write advisory content first.', false);
+          return;
+        }
+
+        prependNoteToList('Sophia Lopez', text, pin);
+        document.getElementById('modal-note-textarea').value = '';
+        noteModal.hide();
+        showPageToast('Internal advisory note successfully posted.');
+      }
+
+      function submitInpageNote() {
+        const text = document.getElementById('inpage-note-text').value;
+        if (!text) {
+          showPageToast('Please write advisory content first.', false);
+          return;
+        }
+
+        prependNoteToList('Sophia Lopez', text, false);
+        document.getElementById('inpage-note-text').value = '';
+        showPageToast('Internal advisory note successfully posted.');
+      }
+
+      function prependNoteToList(author, content, isPinned) {
+        const container = document.getElementById('internal-notes-list');
+        const noteDiv = document.createElement('div');
+        noteDiv.className = 'bg-body border border-light-subtle p-3 rounded text-start position-relative';
+        
+        let pinIconHtml = '';
+        if (isPinned) {
+          pinIconHtml = `<span class="position-absolute top-3 end-3 text-warning" title="Pinned Note"><i class="bi bi-pin-angle-fill"></i></span>`;
+        }
+
+        noteDiv.innerHTML = `
+          ${pinIconHtml}
+          <div class="d-flex align-items-center gap-2 mb-1.5">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=60&auto=format&fit=crop" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" alt="Staff" />
+            <strong class="text-main small">${author}</strong>
+            <span class="text-muted small" style="font-size: 0.7rem;">• Just now</span>
+          </div>
+          <p class="text-muted mb-0" style="font-size: 0.8rem; line-height: 1.4;">${content}</p>
+        `;
+
+        if (isPinned && container.firstChild) {
+          container.insertBefore(noteDiv, container.firstChild);
+        } else {
+          container.appendChild(noteDiv);
+        }
+      }
+
+      // Follow-up
+      function openAddFollowupModal() {
+        followupModal.show();
+      }
+
+      function submitModalFollowup() {
+        const title = document.getElementById('modal-followup-title').value;
+        const date = document.getElementById('modal-followup-date').value;
+        const time = document.getElementById('modal-followup-time').value;
+        const agent = document.getElementById('modal-followup-agent').value;
+
+        if (!title) {
+          showPageToast('Please write reminder task description first.', false);
+          return;
+        }
+
+        const container = document.getElementById('active-followups-list');
+        const div = document.createElement('div');
+        div.className = 'bg-body border border-light-subtle p-3 rounded mb-2';
+        div.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="badge bg-primary-subtle text-primary py-0.5 px-2" style="font-size: 0.65rem;">FOLLOW-UP</span>
+            <span class="text-muted small" style="font-size: 0.7rem;"><i class="bi bi-calendar"></i> ${date}, ${time}</span>
+          </div>
+          <strong class="text-main d-block font-title mb-1" style="font-size: 0.85rem;">${title}</strong>
+          <span class="text-muted d-block mt-2 small" style="font-size: 0.7rem;">Assigned: <strong class="text-main">${agent}</strong></span>
+        `;
+
+        container.appendChild(div);
+        followupModal.hide();
+        document.getElementById('modal-followup-title').value = '';
+        showPageToast('Future follow-up reminder created successfully.');
+      }
+
+      // Convert Customer
+      function triggerConvertCustomer() {
+        convertModal.show();
+      }
+
+      function submitConvertCustomer() {
+        convertModal.hide();
+        // Update badge and status displays
+        document.getElementById('profile-status-badge').textContent = 'Converted';
+        document.getElementById('profile-status-badge').className = 'badge text-bg-success font-title py-1 px-2.5';
+        
+        // Custom interactive visual congrats
+        showPageToast('CONGRATULATIONS! Liam Kensington has been promoted to Active Customer ledger.', true);
+        
+        // Add congratulations banner
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0'; overlay.style.left = '0'; overlay.style.width = '100vw'; overlay.style.height = '100vh';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.6)';
+        overlay.style.zIndex = '9999';
+        overlay.style.display = 'flex'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+        overlay.style.pointerEvents = 'none';
+        
+        overlay.innerHTML = `
+          <div class="uh-card p-5 text-center animate-fade-in text-white border-primary" style="max-width: 450px; background-color: var(--uh-bg-sidebar); border-width: 2px;">
+            <div class="text-warning mb-3"><i class="bi bi-trophy" style="font-size: 3.5rem;"></i></div>
+            <h4 class="font-title fw-bold text-main mb-2">Deal Converted!</h4>
+            <p class="text-muted small">Liam Kensington is now registered in your master buyers directory as an Active Customer.</p>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        setTimeout(() => overlay.remove(), 2500);
+      }
+
+      // Mark Won
+      function triggerMarkWon() {
+        document.getElementById('profile-status-badge').textContent = 'Won';
+        document.getElementById('profile-status-badge').className = 'badge text-bg-success font-title py-1 px-2.5';
+        
+        // Update conversion metric display
+        document.getElementById('conversion-percent').textContent = '100%';
+        
+        showPageToast('Lead marked successfully as Deal WON. Escrow lock triggered.', true);
+      }
+
+      // Mark Lost
+      function triggerMarkLost() {
+        document.getElementById('profile-status-badge').textContent = 'Lost';
+        document.getElementById('profile-status-badge').className = 'badge text-bg-danger font-title py-1 px-2.5';
+        
+        // Update conversion metric display
+        document.getElementById('conversion-percent').textContent = '0%';
+        
+        showPageToast('Lead status updated to Lost. Record filed to archives.');
+      }
+
+      // Archive
+      function triggerArchiveLead() {
+        showPageToast('Lead profile archived securely. You can reactivate this profile anytime.');
+      }
+
+      // Delete Confirmation
+      function openDeleteConfirmationModal() {
+        deleteModal.show();
+      }
+
+      function submitDeleteLead() {
+        deleteModal.hide();
+        switchSimulatorState('empty');
+        showPageToast('Liam Kensington successfully purged from active systems directories.', false);
+      }
+    </script>
+  </body>
+</html>

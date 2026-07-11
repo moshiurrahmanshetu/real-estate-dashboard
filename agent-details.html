@@ -1,0 +1,1761 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Details - UrbanHub Real Estate CRM</title>
+
+    <!-- Pre-load LocalStorage theme choice to prevent visual flicker before render -->
+    <script>
+      (function () {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      })();
+    </script>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <style>
+      /* Page specific style additions for Agent Details */
+      .glow-card {
+        position: relative;
+        overflow: hidden;
+      }
+      .card-glow-effect {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        background: radial-gradient(circle 120px at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(var(--uh-primary-rgb), 0.08), transparent 80%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 1;
+      }
+      .glow-card:hover .card-glow-effect {
+        opacity: 1;
+      }
+
+      .profile-image-container {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 4px solid var(--uh-primary);
+        box-shadow: var(--uh-shadow-lg);
+        overflow: hidden;
+        background-color: var(--uh-bg-body);
+      }
+      @media (max-width: 768px) {
+        .profile-image-container {
+          width: 120px;
+          height: 120px;
+          margin: 0 auto 1.5rem auto;
+        }
+      }
+
+      .pulse-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+      }
+      .pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        animation: pulse-glow 1.5s infinite;
+      }
+      .pulse-online {
+        background-color: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+      }
+      .pulse-online .pulse-dot {
+        background-color: #10b981;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      }
+      @keyframes pulse-glow {
+        0% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        }
+        70% {
+          transform: scale(1);
+          box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+        }
+        100% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        }
+      }
+
+      /* Calendar UI Customizations */
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+      }
+      .calendar-day-header {
+        text-align: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--uh-text-muted);
+        padding: 4px 0;
+      }
+      .calendar-cell {
+        background: rgba(var(--uh-primary-rgb), 0.02);
+        border: 1px solid var(--uh-border-card);
+        border-radius: 8px;
+        padding: 8px;
+        min-height: 80px;
+        transition: var(--uh-transition-smooth);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .calendar-cell:hover {
+        background: rgba(var(--uh-primary-rgb), 0.05);
+        border-color: rgba(var(--uh-primary-rgb), 0.2);
+      }
+      .calendar-cell.today {
+        border-color: var(--uh-primary);
+        background: rgba(var(--uh-primary-rgb), 0.08);
+      }
+      .calendar-cell-date {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--uh-text-muted);
+      }
+      .calendar-cell.today .calendar-cell-date {
+        color: var(--uh-primary);
+      }
+      .calendar-event-tag {
+        font-size: 0.6rem;
+        font-weight: 600;
+        padding: 2px 4px;
+        border-radius: 4px;
+        margin-top: 4px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .tag-confirmed {
+        background-color: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+      }
+      .tag-pending {
+        background-color: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+      }
+
+      /* Activity Timeline Custom */
+      .timeline-container {
+        position: relative;
+        padding-left: 24px;
+      }
+      .timeline-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 7px;
+        width: 2px;
+        background: var(--uh-border-card);
+      }
+      .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+      }
+      .timeline-item-dot {
+        position: absolute;
+        left: -22px;
+        top: 4px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--uh-primary);
+        border: 2px solid var(--uh-bg-card);
+        z-index: 2;
+      }
+      .timeline-item-time {
+        font-size: 0.7rem;
+        color: var(--uh-text-muted);
+        margin-bottom: 2px;
+      }
+      .timeline-item-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--uh-text-main);
+      }
+      .timeline-item-desc {
+        font-size: 0.8rem;
+        color: var(--uh-text-muted);
+      }
+
+      /* Skeleton loader simulation */
+      .skeleton-placeholder {
+        background: linear-gradient(90deg, var(--uh-border-card) 25%, rgba(255, 255, 255, 0.05) 50%, var(--uh-border-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading-flow 1.5s infinite;
+        border-radius: 6px;
+      }
+      @keyframes skeleton-loading-flow {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-hidden {
+        display: none !important;
+      }
+      .fade-transition {
+        transition: opacity 0.4s ease, transform 0.4s ease;
+      }
+
+      /* Star rating distribution styles */
+      .star-bar-fill {
+        background-color: var(--uh-primary);
+        height: 8px;
+        border-radius: 4px;
+        transition: width 1s ease-in-out;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Overlay backdrop for mobile sidebars -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-wrapper">
+      <!-- SIDEBAR -->
+      <aside id="sidebar-wrapper" class="sidebar-wrapper">
+        <div class="sidebar-logo">
+          <div class="logo-icon"><i class="bi bi-building-up"></i></div>
+          <span class="logo-text">UrbanHub<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="sidebar-menu-container">
+          <div class="menu-section-label">General</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="index.html" class="sidebar-menu-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="properties.html" class="sidebar-menu-link">
+                <i class="bi bi-houses"></i>
+                <span>Properties</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="add-property.html" class="sidebar-menu-link">
+                <i class="bi bi-house-add"></i>
+                <span>Add Property</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="agents.html" class="sidebar-menu-link active">
+                <i class="bi bi-people"></i>
+                <span>Agents</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Operations</div>
+          <ul class="sidebar-menu-list mb-4">
+            <li class="sidebar-menu-item">
+              <a href="appointments.html" class="sidebar-menu-link">
+                <i class="bi bi-calendar-event"></i>
+                <span>Appointments</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="messages.html" class="sidebar-menu-link">
+                <i class="bi bi-chat-text"></i>
+                <span>Messages</span>
+              </a>
+            </li>
+          </ul>
+
+          <div class="menu-section-label">Preferences</div>
+          <ul class="sidebar-menu-list">
+            <li class="sidebar-menu-item">
+              <a href="settings.html" class="sidebar-menu-link">
+                <i class="bi bi-sliders2"></i>
+                <span>Settings</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="profile.html" class="sidebar-menu-link">
+                <i class="bi bi-person-circle"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+            <li class="sidebar-menu-item">
+              <a href="login.html" class="sidebar-menu-link text-danger">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="profile.html" class="user-mini-card">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150&auto=format&fit=crop" class="user-avatar" alt="Sarah Jenkins" />
+            <div class="user-info">
+              <p class="user-name">Sarah Jenkins</p>
+              <span class="user-role">Managing Director</span>
+            </div>
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="main-content-wrapper">
+        <!-- HEADER -->
+        <header class="top-header">
+          <div class="d-flex align-items-center">
+            <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn">
+              <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search-form d-none d-md-block">
+              <input type="text" class="header-search-input" id="global-search-agents" placeholder="Quick find agent..." />
+              <i class="bi bi-search header-search-icon"></i>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <button id="theme-toggle" class="header-btn" title="Switch Theme">
+              <i id="theme-icon" class="bi bi-sun"></i>
+            </button>
+            <div class="dropdown">
+              <button class="header-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-bell"></i>
+                <span class="header-btn-badge bg-primary"></span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium" style="width: 300px;">
+                <li><span class="dropdown-header">System Notifications</span></li>
+                <li><a class="dropdown-item py-2 border-bottom border-light-subtle text-wrap" style="font-size: 0.8rem;" href="messages.html">New appraisal request assigned to <strong>Marcus Vance</strong>.</a></li>
+                <li><a class="dropdown-item py-2 text-wrap" style="font-size: 0.8rem;" href="appointments.html">Monthly performance review ready. 3 agents updated.</a></li>
+              </ul>
+            </div>
+          </div>
+        </header>
+
+        <!-- CONTAINER -->
+        <div class="page-body">
+          <!-- BREADCRUMBS & PAGE HEADER -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 animate-fade-down">
+            <div>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Dashboard</a></li>
+                  <li class="breadcrumb-item"><a href="agents.html" class="text-decoration-none text-muted">Agents</a></li>
+                  <li class="breadcrumb-item active text-primary" aria-current="page">Agent Details</li>
+                </ol>
+              </nav>
+              <h1 class="h3 mb-0 font-title fw-bold text-main">Agent CRM Dossier</h1>
+              <p class="text-muted mb-0" style="font-size: 0.85rem;">In-depth performance evaluation, active pipelines, client reviews, and shift dispatch indexes.</p>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-secondary d-flex align-items-center gap-2" id="refresh-dossier-btn">
+                <i class="bi bi-arrow-clockwise"></i> <span>Refresh Dossier</span>
+              </button>
+              <a href="agents.html" class="btn btn-outline-primary d-flex align-items-center gap-2">
+                <i class="bi bi-arrow-left"></i> <span>Back to Agents</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- SKELETON LOADER PREVIEW -->
+          <div id="skeleton-loader" class="row g-4 mb-4">
+            <div class="col-12">
+              <div class="uh-card p-4">
+                <div class="row align-items-center">
+                  <div class="col-md-auto text-center mb-3 mb-md-0">
+                    <div class="skeleton-placeholder mx-auto" style="width: 130px; height: 130px; border-radius: 50%;"></div>
+                  </div>
+                  <div class="col-md">
+                    <div class="skeleton-placeholder mb-2" style="height: 28px; width: 250px;"></div>
+                    <div class="skeleton-placeholder mb-3" style="height: 18px; width: 180px;"></div>
+                    <div class="row g-2">
+                      <div class="col-6 col-md-3"><div class="skeleton-placeholder" style="height: 16px; width: 100%;"></div></div>
+                      <div class="col-6 col-md-3"><div class="skeleton-placeholder" style="height: 16px; width: 100%;"></div></div>
+                      <div class="col-6 col-md-3"><div class="skeleton-placeholder" style="height: 16px; width: 100%;"></div></div>
+                      <div class="col-6 col-md-3"><div class="skeleton-placeholder" style="height: 16px; width: 100%;"></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="uh-card p-4 h-100">
+                <div class="skeleton-placeholder mb-3" style="height: 24px; width: 60%;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 14px; width: 100%;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 14px; width: 90%;"></div>
+                <div class="skeleton-placeholder mb-4" style="height: 14px; width: 95%;"></div>
+                <div class="skeleton-placeholder mb-3" style="height: 20px; width: 100%;"></div>
+                <div class="skeleton-placeholder mb-2" style="height: 20px; width: 100%;"></div>
+                <div class="skeleton-placeholder" style="height: 20px; width: 100%;"></div>
+              </div>
+            </div>
+            <div class="col-12 col-md-8">
+              <div class="uh-card p-4 h-100">
+                <div class="skeleton-placeholder mb-4" style="height: 28px; width: 40%;"></div>
+                <div class="row g-3">
+                  <div class="col-6 col-md-3"><div class="skeleton-placeholder" style="height: 80px; width: 100%;"></div></div>
+                  <div class="col-6 col-md-3"><div class="skeleton-placeholder" style="height: 80px; width: 100%;"></div></div>
+                  <div class="col-6 col-md-3"><div class="skeleton-placeholder" style="height: 80px; width: 100%;"></div></div>
+                  <div class="col-6 col-md-3"><div class="skeleton-placeholder" style="height: 80px; width: 100%;"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REAL DATA WRAPPER -->
+          <div id="real-data" class="fade-transition skeleton-hidden" style="opacity: 0;">
+            <!-- PROFILE HEADER -->
+            <div class="uh-card p-4 mb-4 glow-card" data-aos="fade-up">
+              <div class="card-glow-effect"></div>
+              <div class="row align-items-center g-4 position-relative" style="z-index: 2;">
+                <!-- Avatar & Status -->
+                <div class="col-12 col-md-auto text-center">
+                  <div class="profile-image-container mx-auto position-relative">
+                    <img id="agent-profile-img" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=300&auto=format&fit=crop" class="w-100 h-100 object-fit-cover" alt="Marcus Vance" />
+                  </div>
+                  <div class="mt-3">
+                    <span class="pulse-indicator pulse-online" id="agent-pulse">
+                      <span class="pulse-dot"></span>
+                      <span id="agent-pulse-text">Online & Active</span>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Main Info Header -->
+                <div class="col-12 col-md text-center text-md-start">
+                  <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2 flex-wrap mb-2">
+                    <h2 class="h3 font-title fw-bold text-main mb-0" id="agent-fullname">Marcus Vance</h2>
+                    <span class="badge bg-primary text-body fw-bold" style="font-size: 0.75rem;"><i class="bi bi-patch-check-fill me-1"></i>Verified Advisor</span>
+                  </div>
+                  <p class="text-muted mb-3" style="font-size: 0.9rem;" id="agent-title-header">
+                    <strong class="text-primary" id="agent-designation">Executive Partner</strong> &bull; <span id="agent-department">Luxury Sales Portfolio</span>
+                  </p>
+
+                  <!-- Mini Metadata Grid -->
+                  <div class="row g-3 mb-4 text-start">
+                    <div class="col-6 col-sm-4 col-md-3">
+                      <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Employee ID</span>
+                      <span class="fw-semibold text-main" id="agent-emp-id" style="font-size: 0.85rem;">AGT-302</span>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                      <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Office Location</span>
+                      <span class="fw-semibold text-main" id="agent-office-location" style="font-size: 0.85rem;">Beverly Hills Office</span>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                      <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Experience</span>
+                      <span class="fw-semibold text-main" id="agent-experience-years" style="font-size: 0.85rem;">12 Years</span>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                      <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Joining Date</span>
+                      <span class="fw-semibold text-main" id="agent-joining-date" style="font-size: 0.85rem;">March 15, 2018</span>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                      <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Broker License</span>
+                      <span class="fw-semibold text-main text-primary" id="agent-license-no" style="font-size: 0.85rem;">CA-DRE #0194825</span>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                      <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Rating Index</span>
+                      <span class="fw-semibold text-main d-flex align-items-center gap-1" style="font-size: 0.85rem;">
+                        <i class="bi bi-star-fill text-warning"></i> <span id="agent-rating">4.9</span> <span class="text-muted" style="font-size: 0.75rem;">(<span id="agent-reviews-count">148</span> reviews)</span>
+                      </span>
+                    </div>
+                    <div class="col-12 col-sm-4 col-md-3">
+                      <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Availability Status</span>
+                      <span class="badge bg-success-light text-success px-2 py-1" id="agent-status-label" style="font-size: 0.75rem;">Dispatchable Available</span>
+                    </div>
+                  </div>
+
+                  <!-- Quick Action Buttons Row -->
+                  <div class="d-flex gap-2 flex-wrap justify-content-center justify-content-md-start">
+                    <a href="tel:+13105550190" class="btn btn-sm btn-outline-primary px-3 d-flex align-items-center gap-2">
+                      <i class="bi bi-telephone-fill"></i> <span>Call</span>
+                    </a>
+                    <a href="mailto:marcus.vance@urbanhub.com" class="btn btn-sm btn-outline-primary px-3 d-flex align-items-center gap-2">
+                      <i class="bi bi-envelope-fill"></i> <span>Email</span>
+                    </a>
+                    <button onclick="triggerWhatsApp()" class="btn btn-sm btn-outline-primary px-3 d-flex align-items-center gap-2">
+                      <i class="bi bi-whatsapp"></i> <span>WhatsApp</span>
+                    </button>
+                    <button onclick="window.print()" class="btn btn-sm btn-outline-secondary px-3 d-flex align-items-center gap-2">
+                      <i class="bi bi-printer"></i> <span>Print Profile</span>
+                    </a>
+                    <button onclick="triggerReportDownload()" class="btn btn-sm btn-outline-secondary px-3 d-flex align-items-center gap-2">
+                      <i class="bi bi-download"></i> <span>Download Dossier</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PROFILE STATISTICS -->
+            <div class="row g-3 mb-4" data-aos="fade-up">
+              <!-- Total Listings -->
+              <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                <div class="uh-card h-100 p-3">
+                  <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Total Active Listings</span>
+                  <div class="d-flex align-items-center justify-content-between mt-1">
+                    <h3 class="font-title fw-bold mb-0 animate-counter-uh" id="stat-total-listings" data-target="45">0</h3>
+                    <div class="bg-primary-subtle text-primary p-2 rounded-3" style="font-size: 1.15rem;"><i class="bi bi-houses"></i></div>
+                  </div>
+                  <span class="text-muted d-block mt-2" style="font-size: 0.75rem;"><strong class="text-success">12 active</strong> right now</span>
+                </div>
+              </div>
+              <!-- Properties Sold -->
+              <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                <div class="uh-card h-100 p-3">
+                  <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Historical Properties Sold</span>
+                  <div class="d-flex align-items-center justify-content-between mt-1">
+                    <h3 class="font-title fw-bold mb-0 animate-counter-uh" id="stat-sold" data-target="128">0</h3>
+                    <div class="bg-success-light text-success p-2 rounded-3" style="font-size: 1.15rem;"><i class="bi bi-house-check-fill"></i></div>
+                  </div>
+                  <span class="text-muted d-block mt-2" style="font-size: 0.75rem;"><strong class="text-success">+15 deals</strong> this quarter</span>
+                </div>
+              </div>
+              <!-- Revenue Generated -->
+              <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                <div class="uh-card h-100 p-3">
+                  <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Volume Sales Revenue</span>
+                  <div class="d-flex align-items-center justify-content-between mt-1">
+                    <h3 class="font-title fw-bold mb-0 text-main">$<span class="animate-counter-uh" id="stat-revenue" data-target="48.5">0</span>M</h3>
+                    <div class="bg-info-light text-info p-2 rounded-3" style="font-size: 1.15rem;"><i class="bi bi-currency-dollar"></i></div>
+                  </div>
+                  <span class="text-muted d-block mt-2" style="font-size: 0.75rem;"><strong class="text-info">Premium Index</strong> output</span>
+                </div>
+              </div>
+              <!-- Commission Earned -->
+              <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+                <div class="uh-card h-100 p-3">
+                  <span class="text-muted d-block" style="font-size: 0.7rem; text-transform: uppercase;">Commissions Earned</span>
+                  <div class="d-flex align-items-center justify-content-between mt-1">
+                    <h3 class="font-title fw-bold mb-0 text-main">$<span class="animate-counter-uh" id="stat-commission" data-target="1.45">0</span>M</h3>
+                    <div class="bg-warning-light text-warning p-2 rounded-3" style="font-size: 1.15rem;"><i class="bi bi-wallet2"></i></div>
+                  </div>
+                  <span class="text-muted d-block mt-2" style="font-size: 0.75rem;"><strong class="text-warning">3.0% average</strong> rate ratio</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- TWO COLUMN MAIN LAYOUT -->
+            <div class="row g-4">
+              <!-- LEFT COLUMN (8/12 grid for extensive tables, charts and detailed bios) -->
+              <div class="col-12 col-xl-8">
+                <!-- About Agent -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h4 class="font-title fw-bold mb-3"><i class="bi bi-person-lines-fill text-primary me-2"></i>Professional Biography</h4>
+                  <p class="text-muted mb-4" style="line-height: 1.6;" id="agent-bio">
+                    Marcus Vance is a seasoned real estate executive with over 12 years of experience specializing in elite high-rise penthouses, waterfront estates, and historic luxury mansions in Beverly Hills and Manhattan. Recognized in the industry for his exceptional negotiation tactics, hyper-local market intelligence, and customized client relationship management, Marcus has facilitated some of the city's most significant luxury residential transactions. He holds an MBA in Real Estate Finance and is frequently invited as a guest speaker at industry symposiums.
+                  </p>
+                  
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <h5 class="font-title fw-bold mb-2" style="font-size: 0.95rem;">Languages Spoken</h5>
+                      <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.75rem;">English (Fluent)</span>
+                        <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.75rem;">Spanish (Conversational)</span>
+                        <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.75rem;">Mandarin (Basic)</span>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <h5 class="font-title fw-bold mb-2" style="font-size: 0.95rem;">Specializations</h5>
+                      <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-primary-subtle text-primary" style="font-size: 0.75rem;">High-Rise Penthouse</span>
+                        <span class="badge bg-primary-subtle text-primary" style="font-size: 0.75rem;">Waterfront Estate</span>
+                        <span class="badge bg-primary-subtle text-primary" style="font-size: 0.75rem;">Luxury Mansions</span>
+                      </div>
+                    </div>
+                    <div class="col-12"><hr class="border-secondary opacity-25" /></div>
+                    <div class="col-md-4">
+                      <h6 class="text-muted mb-1" style="font-size: 0.7rem; text-transform: uppercase;">Education</h6>
+                      <p class="mb-0 fw-semibold text-main" style="font-size: 0.8rem;">MBA in Real Estate Finance</p>
+                      <span class="text-muted d-block" style="font-size: 0.75rem;">Columbia University</span>
+                    </div>
+                    <div class="col-md-4">
+                      <h6 class="text-muted mb-1" style="font-size: 0.7rem; text-transform: uppercase;">Certifications</h6>
+                      <p class="mb-0 fw-semibold text-main" style="font-size: 0.8rem;">CLHMS & SRS Diplomas</p>
+                      <span class="text-muted d-block" style="font-size: 0.75rem;">Luxury Home Marketing Inst.</span>
+                    </div>
+                    <div class="col-md-4">
+                      <h6 class="text-muted mb-1" style="font-size: 0.7rem; text-transform: uppercase;">Key Awards</h6>
+                      <p class="mb-0 fw-semibold text-main" style="font-size: 0.8rem;">President's Circle Elite</p>
+                      <span class="text-muted d-block" style="font-size: 0.75rem;">Beverly Hills Realtor Association</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Performance Dashboard -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                      <h4 class="font-title fw-bold mb-0"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Performance Dashboard</h4>
+                      <p class="text-muted mb-0" style="font-size: 0.75rem;">Historical CRM production and campaign volume indices.</p>
+                    </div>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button type="button" class="btn btn-outline-secondary active" id="btn-chart-sales" onclick="toggleAgentChart('sales')">Sales Volume</button>
+                      <button type="button" class="btn btn-outline-secondary" id="btn-chart-revenue" onclick="toggleAgentChart('revenue')">Revenue</button>
+                      <button type="button" class="btn btn-outline-secondary" id="btn-chart-leads" onclick="toggleAgentChart('leads')">Conversion</button>
+                      <button type="button" class="btn btn-outline-secondary" id="btn-chart-commission" onclick="toggleAgentChart('commission')">Commission</button>
+                    </div>
+                  </div>
+                  <div style="position: relative; height: 320px; width: 100%;">
+                    <canvas id="agentPerformanceChart"></canvas>
+                  </div>
+                </div>
+
+                <!-- Assigned Properties -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <h4 class="font-title fw-bold mb-0"><i class="bi bi-houses text-primary me-2"></i>Active Assigned Properties</h4>
+                    <div class="d-flex gap-2">
+                      <input type="text" id="property-search" class="form-control form-control-sm bg-body" placeholder="Filter listings..." style="width: 160px;" />
+                    </div>
+                  </div>
+
+                  <!-- Property Cards Grid -->
+                  <div class="row g-3" id="property-cards-container">
+                    <!-- Loaded dynamically via JS -->
+                  </div>
+
+                  <!-- Property Empty State -->
+                  <div class="text-center p-4 d-none" id="property-empty-state">
+                    <div class="mb-3 text-muted" style="font-size: 2.5rem;"><i class="bi bi-house-x"></i></div>
+                    <h5 class="fw-bold font-title">No matching listings found</h5>
+                    <p class="text-muted" style="font-size: 0.8rem;">Try adjusting your query. No properties fit the specified filter term.</p>
+                  </div>
+                </div>
+
+                <!-- Commission History -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <h4 class="font-title fw-bold mb-0"><i class="bi bi-wallet2 text-primary me-2"></i>Commission Invoicing History</h4>
+                    <div class="d-flex gap-2">
+                      <input type="text" id="invoice-search" class="form-control form-control-sm bg-body" placeholder="Search invoices..." style="width: 160px;" />
+                    </div>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                      <thead class="table-dark" style="--bs-table-bg: var(--uh-bg-sidebar); --bs-table-border-color: var(--uh-border-card);">
+                        <tr>
+                          <th>Invoice</th>
+                          <th>Property</th>
+                          <th>Client</th>
+                          <th>Commission</th>
+                          <th>Date</th>
+                          <th class="text-end">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody id="invoice-table-body">
+                        <!-- Loaded dynamically via JS -->
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Invoice Empty State -->
+                  <div class="text-center p-4 d-none" id="invoice-empty-state">
+                    <div class="mb-3 text-muted" style="font-size: 2.5rem;"><i class="bi bi-wallet-fill"></i></div>
+                    <h5 class="fw-bold font-title">No invoices found</h5>
+                    <p class="text-muted" style="font-size: 0.8rem;">Try adjusting your search terms. No matching commission invoices are listed.</p>
+                  </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h4 class="font-title fw-bold mb-3"><i class="bi bi-journal-check text-primary me-2"></i>Recent Closed Deals & Transactions</h4>
+                  <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                      <thead class="table-dark" style="--bs-table-bg: var(--uh-bg-sidebar); --bs-table-border-color: var(--uh-border-card);">
+                        <tr>
+                          <th>Deal ID</th>
+                          <th>Property Name</th>
+                          <th>Type</th>
+                          <th>Client Name</th>
+                          <th>Deal Value</th>
+                          <th>Date</th>
+                          <th class="text-end">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody id="transaction-table-body">
+                        <!-- Loaded dynamically via JS -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Customer Reviews & Summary -->
+                <div class="uh-card p-4 mb-4" data-aos="fade-up">
+                  <h4 class="font-title fw-bold mb-4"><i class="bi bi-chat-heart text-primary me-2"></i>Client Reviews & Satisfaction</h4>
+                  
+                  <!-- Review Summary Grid -->
+                  <div class="row g-4 align-items-center mb-4">
+                    <div class="col-md-4 text-center border-end border-light-subtle">
+                      <h2 class="display-4 fw-bold font-title text-main mb-0" id="avg-rating-big">4.9</h2>
+                      <div class="text-warning mb-2" style="font-size: 1.2rem;">
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i>
+                      </div>
+                      <span class="text-muted d-block" style="font-size: 0.8rem;">Based on <span id="rating-total-count">148</span> client evaluations</span>
+                    </div>
+                    <div class="col-md-8">
+                      <!-- 5 Star Progress -->
+                      <div class="d-flex align-items-center mb-2" style="font-size: 0.8rem;">
+                        <span class="fw-semibold text-main" style="width: 50px;">5 Star</span>
+                        <div class="progress flex-grow-1 bg-body border border-light-subtle" style="height: 8px;">
+                          <div class="star-bar-fill" style="width: 91%;"></div>
+                        </div>
+                        <span class="text-muted text-end ms-3" style="width: 40px;">91%</span>
+                      </div>
+                      <!-- 4 Star Progress -->
+                      <div class="d-flex align-items-center mb-2" style="font-size: 0.8rem;">
+                        <span class="fw-semibold text-main" style="width: 50px;">4 Star</span>
+                        <div class="progress flex-grow-1 bg-body border border-light-subtle" style="height: 8px;">
+                          <div class="star-bar-fill" style="width: 7%;"></div>
+                        </div>
+                        <span class="text-muted text-end ms-3" style="width: 40px;">7%</span>
+                      </div>
+                      <!-- 3 Star Progress -->
+                      <div class="d-flex align-items-center" style="font-size: 0.8rem;">
+                        <span class="fw-semibold text-main" style="width: 50px;">3 Star</span>
+                        <div class="progress flex-grow-1 bg-body border border-light-subtle" style="height: 8px;">
+                          <div class="star-bar-fill" style="width: 2%;"></div>
+                        </div>
+                        <span class="text-muted text-end ms-3" style="width: 40px;">2%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr class="border-secondary opacity-25 mb-4" />
+
+                  <!-- Customer Reviews list -->
+                  <div class="d-flex flex-column gap-3" id="reviews-list-container">
+                    <!-- Loaded dynamically via JS -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT COLUMN (4/12 grid for Quick Actions, Schedule, Skills & Contacts) -->
+              <div class="col-12 col-xl-4">
+                <!-- Quick Actions Panel -->
+                <div class="uh-card p-3 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-lightning-charge text-primary me-2"></i>Quick Dispatch Actions</h5>
+                  <div class="d-flex flex-column gap-2">
+                    <button class="btn btn-sm btn-outline-primary text-start px-3 py-2" data-bs-toggle="modal" data-bs-target="#assignPropertyModal">
+                      <i class="bi bi-building-add me-2 text-primary"></i> Assign New Listing
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary text-start px-3 py-2" data-bs-toggle="modal" data-bs-target="#sendMessageModal">
+                      <i class="bi bi-chat-text me-2 text-primary"></i> Send CRM Direct message
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary text-start px-3 py-2" data-bs-toggle="modal" data-bs-target="#scheduleMeetingModal">
+                      <i class="bi bi-calendar-plus me-2 text-primary"></i> Schedule Performance appraisal
+                    </button>
+                    <button onclick="generatePerformanceReport()" class="btn btn-sm btn-outline-primary text-start px-3 py-2">
+                      <i class="bi bi-file-earmark-bar-graph me-2 text-primary"></i> Generate Appraisal report
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger text-start px-3 py-2" data-bs-toggle="modal" data-bs-target="#deactivateAgentModal">
+                      <i class="bi bi-shield-lock me-2 text-danger"></i> Deactivate CRM Account
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="uh-card p-3 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-card-checklist text-primary me-2"></i>Contact Particulars</h5>
+                  <ul class="list-unstyled mb-3" style="font-size: 0.85rem; line-height: 1.8;">
+                    <li class="mb-2">
+                      <span class="text-muted d-block" style="font-size: 0.7rem;">Primary Direct Dial</span>
+                      <strong class="text-main" id="agent-phone">+1 (310) 555-0190</strong>
+                    </li>
+                    <li class="mb-2">
+                      <span class="text-muted d-block" style="font-size: 0.7rem;">Work Email Address</span>
+                      <strong class="text-main" id="agent-email">marcus.vance@urbanhub.com</strong>
+                    </li>
+                    <li class="mb-2">
+                      <span class="text-muted d-block" style="font-size: 0.7rem;">Primary Office Address</span>
+                      <strong class="text-main" id="agent-address">9460 Wilshire Blvd, Beverly Hills, CA 90212</strong>
+                    </li>
+                    <li class="mb-2">
+                      <span class="text-muted d-block" style="font-size: 0.7rem;">Emergency Advisory Desk</span>
+                      <strong class="text-main" id="agent-emergency-contact">+1 (310) 555-0199 (Advisory Desk)</strong>
+                    </li>
+                    <li class="mb-2">
+                      <span class="text-muted d-block" style="font-size: 0.7rem;">Domain Desk URL</span>
+                      <a href="https://www.urbanhub.com/agents/marcus-vance" class="text-primary text-decoration-none" id="agent-website" target="_blank">www.urbanhub.com/agents/marcus-vance</a>
+                    </li>
+                  </ul>
+                  
+                  <div class="d-flex gap-3 mt-3">
+                    <a href="https://linkedin.com" target="_blank" class="text-muted text-primary-hover" style="font-size: 1.2rem;"><i class="bi bi-linkedin"></i></a>
+                    <a href="https://twitter.com" target="_blank" class="text-muted text-primary-hover" style="font-size: 1.2rem;"><i class="bi bi-twitter-x"></i></a>
+                    <a href="https://instagram.com" target="_blank" class="text-muted text-primary-hover" style="font-size: 1.2rem;"><i class="bi bi-instagram"></i></a>
+                    <a href="https://facebook.com" target="_blank" class="text-muted text-primary-hover" style="font-size: 1.2rem;"><i class="bi bi-facebook"></i></a>
+                  </div>
+                </div>
+
+                <!-- Skills section -->
+                <div class="uh-card p-3 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-mortarboard text-primary me-2"></i>Skill Matrix Indices</h5>
+                  <div class="d-flex flex-column gap-2" id="skills-matrix-container">
+                    <!-- Loaded dynamically via JS -->
+                  </div>
+                </div>
+
+                <!-- Upcoming Appointments -->
+                <div class="uh-card p-3 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-calendar2-check text-primary me-2"></i>Upcoming Client Appointments</h5>
+                  <div class="d-flex flex-column gap-2" id="appointments-container">
+                    <!-- Loaded dynamically via JS -->
+                  </div>
+                </div>
+
+                <!-- Weekly Schedule -->
+                <div class="uh-card p-3 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-calendar-range text-primary me-2"></i>Weekly Dispatch Calendar</h5>
+                  <p class="text-muted mb-3" style="font-size: 0.75rem;">Current active shift slots for property tours and private listings appraisals.</p>
+                  <div class="calendar-grid" id="weekly-calendar-container">
+                    <!-- Loaded dynamically via JS -->
+                  </div>
+                </div>
+
+                <!-- Activity Timeline -->
+                <div class="uh-card p-3 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-activity text-primary me-2"></i>CRM Activity & Milestones</h5>
+                  <div class="timeline-container" id="activity-timeline-container">
+                    <!-- Loaded dynamically via JS -->
+                  </div>
+                </div>
+
+                <!-- Documents Hub -->
+                <div class="uh-card p-3 mb-4" data-aos="fade-up">
+                  <h5 class="font-title fw-bold mb-3"><i class="bi bi-file-earmark-lock text-primary me-2"></i>Credentials & Documents</h5>
+                  <div class="d-flex flex-column gap-2">
+                    <div class="p-2 border rounded-3 bg-body d-flex align-items-center justify-content-between">
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.8rem;">Real Estate Broker License</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">PDF &bull; 1.4 MB</span>
+                      </div>
+                      <button onclick="triggerDocumentDownload('Broker License')" class="btn btn-outline-secondary btn-sm p-1" style="font-size: 0.75rem;" title="Download Document">
+                        <i class="bi bi-download"></i>
+                      </button>
+                    </div>
+                    <div class="p-2 border rounded-3 bg-body d-flex align-items-center justify-content-between">
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.8rem;">National ID / Broker Passport</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">PDF &bull; 2.1 MB</span>
+                      </div>
+                      <button onclick="triggerDocumentDownload('National ID / Passport')" class="btn btn-outline-secondary btn-sm p-1" style="font-size: 0.75rem;" title="Download Document">
+                        <i class="bi bi-download"></i>
+                      </button>
+                    </div>
+                    <div class="p-2 border rounded-3 bg-body d-flex align-items-center justify-content-between">
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.8rem;">CLHMS Certification Diploma</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">PDF &bull; 850 KB</span>
+                      </div>
+                      <button onclick="triggerDocumentDownload('CLHMS Certification Diploma')" class="btn btn-outline-secondary btn-sm p-1" style="font-size: 0.75rem;" title="Download Document">
+                        <i class="bi bi-download"></i>
+                      </button>
+                    </div>
+                    <div class="p-2 border rounded-3 bg-body d-flex align-items-center justify-content-between">
+                      <div>
+                        <span class="fw-semibold text-main d-block" style="font-size: 0.8rem;">AML Training Compliance</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">PDF &bull; 420 KB</span>
+                      </div>
+                      <button onclick="triggerDocumentDownload('AML Training Certificate')" class="btn btn-outline-secondary btn-sm p-1" style="font-size: 0.75rem;" title="Download Document">
+                        <i class="bi bi-download"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- REUSABLE FOOTER -->
+        <footer class="uh-footer mt-auto">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <p class="footer-text">© 2026 <a href="index.html" class="footer-link fw-semibold font-title">UrbanHub</a>. Premium Real Estate Advisory System. All rights reserved.</p>
+            <div class="d-flex gap-4">
+              <a href="coming-soon.html" class="footer-text footer-link">Terms of Service</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Privacy Policy</a>
+              <a href="coming-soon.html" class="footer-text footer-link">Support Hub</a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <!-- BOOTSTRAP MODALS -->
+    <!-- Modal: Send Message -->
+    <div class="modal fade" id="sendMessageModal" tabindex="-1" aria-labelledby="sendMessageModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle rounded-4" style="background-color: var(--uh-bg-card); color: var(--uh-text-main);">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="sendMessageModalLabel"><i class="bi bi-chat-right-text me-2 text-primary"></i>Direct CRM Message</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="sendMessageForm" onsubmit="submitSendMessage(event)">
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 0.8rem;">Recipient</label>
+                <input type="text" class="form-control bg-body border-light-subtle" value="Marcus Vance (Executive Partner)" readonly />
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 0.8rem;">Campaign Action / Route</label>
+                <select class="form-select bg-body border-light-subtle" required>
+                  <option value="direct">Direct CRM Notification</option>
+                  <option value="sms">SMS Text Alert</option>
+                  <option value="email">Urgent Work Email</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 0.8rem;">Message Content</label>
+                <textarea class="form-control bg-body border-light-subtle" rows="4" placeholder="Type your instruction or briefing notes here..." required></textarea>
+              </div>
+              <div class="text-end">
+                <button type="button" class="btn btn-outline-secondary btn-sm me-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4">Transmit Message</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Schedule Meeting -->
+    <div class="modal fade" id="scheduleMeetingModal" tabindex="-1" aria-labelledby="scheduleMeetingModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle rounded-4" style="background-color: var(--uh-bg-card); color: var(--uh-text-main);">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="scheduleMeetingModalLabel"><i class="bi bi-calendar-event me-2 text-primary"></i>Schedule Performance Appraisal</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="scheduleMeetingForm" onsubmit="submitScheduleMeeting(event)">
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 0.8rem;">Target Advisor</label>
+                <input type="text" class="form-control bg-body border-light-subtle" value="Marcus Vance (Executive Partner)" readonly />
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label" style="font-size: 0.8rem;">Appraisal Date</label>
+                  <input type="date" class="form-control bg-body border-light-subtle" required />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" style="font-size: 0.8rem;">Appraisal Time</label>
+                  <input type="time" class="form-control bg-body border-light-subtle" required />
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 0.8rem;">Appraisal Topic / Agenda</label>
+                <select class="form-select bg-body border-light-subtle" required>
+                  <option value="quarterly">Quarterly Commission Review</option>
+                  <option value="licensing">Licensing Compliance Verification</option>
+                  <option value="portfolio">Luxury Client Assignment Strategy</option>
+                  <option value="performance">General Performance Evaluation</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 0.8rem;">Meeting Format</label>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="meetingFormat" id="formatInPerson" value="In-Person" checked />
+                  <label class="form-check-item" for="formatInPerson" style="font-size: 0.8rem;">In-Person (Executive Room)</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="meetingFormat" id="formatVirtual" value="Virtual" />
+                  <label class="form-check-item" for="formatVirtual" style="font-size: 0.8rem;">Virtual (UrbanHub Meet)</label>
+                </div>
+              </div>
+              <div class="text-end">
+                <button type="button" class="btn btn-outline-secondary btn-sm me-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4">Schedule Event</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Assign Property -->
+    <div class="modal fade" id="assignPropertyModal" tabindex="-1" aria-labelledby="assignPropertyModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border border-light-subtle rounded-4" style="background-color: var(--uh-bg-card); color: var(--uh-text-main);">
+          <div class="modal-header border-bottom border-light-subtle">
+            <h5 class="modal-title font-title fw-bold" id="assignPropertyModalLabel"><i class="bi bi-building-add me-2 text-primary"></i>Assign Portfolio Listing</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="assignPropertyForm" onsubmit="submitAssignProperty(event)">
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 0.8rem;">Select Listing to Route</label>
+                <select class="form-select bg-body border-light-subtle" required>
+                  <option value="">Choose active unassigned listing...</option>
+                  <option value="prop-1">Hollywood Hills Modern ($8,450,000)</option>
+                  <option value="prop-2">Pasadena Crest Ranch ($3,250,000)</option>
+                  <option value="prop-3">Marina Del Rey Wharf Marina ($11,900,000)</option>
+                  <option value="prop-4">Malibu Coastal Cliff Villa ($24,000,000)</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 0.8rem;">Commission Incentive Tier</label>
+                <select class="form-select bg-body border-light-subtle" required>
+                  <option value="standard">Standard Partner Allocation (3.0%)</option>
+                  <option value="high">Presidential Allocation (4.5%)</option>
+                  <option value="ultra">Elite Special Assignment Fee (5.0%)</option>
+                </select>
+              </div>
+              <div class="mb-3 text-muted" style="font-size: 0.75rem;">
+                <i class="bi bi-shield-alert text-warning me-1"></i> Assignment will immediately trigger email notifications to the owner and update the public listing details index.
+              </div>
+              <div class="text-end">
+                <button type="button" class="btn btn-outline-secondary btn-sm me-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4">Assign Listing</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Deactivate CRM Account -->
+    <div class="modal fade" id="deactivateAgentModal" tabindex="-1" aria-labelledby="deactivateAgentModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border border-danger rounded-4" style="background-color: var(--uh-bg-card); color: var(--uh-text-main);">
+          <div class="modal-header border-bottom-0 pb-0">
+            <h5 class="modal-title font-title fw-bold text-danger" id="deactivateAgentModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Deactivation</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body py-3">
+            <p class="mb-2 text-main" style="font-size: 0.9rem;">Are you sure you wish to deactivate and suspend the active CRM system credentials of this agent?</p>
+            <p class="mb-0 fw-bold font-title text-danger" style="font-size: 0.95rem;">Marcus Vance (AGT-302)</p>
+            <span class="text-muted d-block mt-1" style="font-size: 0.75rem;">This will freeze all listing operations, route emails to management, and temporarily lockout their client access permissions.</span>
+          </div>
+          <div class="modal-footer border-top-0 pt-0 gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button onclick="executeAgentDeactivation()" type="button" class="btn btn-danger btn-sm px-4">Deactivate Account</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST MESSAGES FEEDBACK -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+      <div id="feedback-success-toast" class="toast align-items-center text-white bg-success border-0 rounded-3" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle-fill"></i>
+            <span id="toast-feedback-text">Operation completed successfully.</span>
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- AOS Animation Library JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- CRM DATABASES & RENDER ENGINE (Vanilla JS) -->
+    <script>
+      // Global Roster Dataset for Marcus Vance
+      const AGENT_DATA = {
+        fullName: "Marcus Vance",
+        id: "AGT-302",
+        designation: "Executive Partner",
+        department: "Luxury Sales Portfolio",
+        office: "Beverly Hills Office",
+        experience: "12 Years",
+        joiningDate: "March 15, 2018",
+        license: "CA-DRE #0194825",
+        rating: 4.9,
+        reviewsCount: 148,
+        status: "Available",
+        phone: "+1 (310) 555-0190",
+        email: "marcus.vance@urbanhub.com",
+        address: "9460 Wilshire Blvd, Beverly Hills, CA 90212",
+        emergencyContact: "+1 (310) 555-0199 (Advisory Desk)",
+        website: "www.urbanhub.com/agents/marcus-vance",
+        bio: "Marcus Vance is a seasoned real estate executive with over 12 years of experience specializing in elite high-rise penthouses, waterfront estates, and historic luxury mansions in Beverly Hills and Manhattan. Recognized in the industry for his exceptional negotiation tactics, hyper-local market intelligence, and customized client relationship management, Marcus has facilitated some of the city's most significant luxury residential transactions. He holds an MBA in Real Estate Finance and is frequently invited as a guest speaker at industry symposiums.",
+        stats: {
+          listings: 45,
+          sold: 128,
+          rented: 54,
+          active: 12,
+          revenue: "48.5",
+          commission: "1.45"
+        },
+        skills: [
+          { name: "Negotiation", val: 96 },
+          { name: "Sales Velocity", val: 94 },
+          { name: "Communication", val: 92 },
+          { name: "Luxury Marketing", val: 90 },
+          { name: "Client Advisory Desk", val: 95 },
+          { name: "Property Valuation", val: 88 },
+          { name: "Escrow Legal Knowledge", val: 85 }
+        ],
+        properties: [
+          {
+            id: "prop-101",
+            name: "Malibu Beachfront Estate",
+            city: "Malibu Beach",
+            price: "$14,500,000",
+            status: "Active For Sale",
+            img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=400&auto=format&fit=crop"
+          },
+          {
+            id: "prop-102",
+            name: "Beverly Hills Ritz Penthouse",
+            city: "Beverly Hills",
+            price: "$8,900,000",
+            status: "Active For Sale",
+            img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=400&auto=format&fit=crop"
+          },
+          {
+            id: "prop-103",
+            name: "Pasadena Heritage Mansion",
+            city: "Pasadena",
+            price: "$6,250,000",
+            status: "Active For Sale",
+            img: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=400&auto=format&fit=crop"
+          },
+          {
+            id: "prop-104",
+            name: "Bel Air Glass Villa",
+            city: "Bel Air",
+            price: "$18,200,000",
+            status: "Pending Escrow",
+            img: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=400&auto=format&fit=crop"
+          }
+        ],
+        invoices: [
+          { inv: "INV-2026-004", prop: "Beverly Hills Penthouse", client: "Sophia Loren", val: "$45,000", date: "2026-06-12", status: "Paid" },
+          { inv: "INV-2026-012", prop: "Bel-Air Modern Mansion", client: "Richard Sterling", val: "$125,000", date: "2026-05-18", status: "Paid" },
+          { inv: "INV-2026-025", prop: "Sunset Strip Loft", client: "Emma Watson", val: "$18,500", date: "2026-04-20", status: "Paid" },
+          { inv: "INV-2026-039", prop: "Wilshire Luxury Condo", client: "Liam Neeson", val: "$24,000", date: "2026-03-05", status: "Paid" },
+          { inv: "INV-2026-055", prop: "Malibu Cove Estate", client: "Olivia Wilde", val: "$160,000", date: "2026-01-14", status: "Paid" }
+        ],
+        transactions: [
+          { id: "DL-2026-101", prop: "Beverly Crest Modern Villa", type: "Sale", client: "Robert Downey Jr.", val: "$12,400,000", date: "June 28, 2026", status: "Closed" },
+          { id: "DL-2026-145", prop: "Hollywood Hills Sanctuary", type: "Rent", client: "Scarlett Johansson", val: "$35,000/mo", date: "June 10, 2026", status: "Closed" },
+          { id: "DL-2026-189", prop: "Westwood Executive Penthouse", type: "Sale", client: "Chris Evans", val: "$4,850,000", date: "May 22, 2026", status: "Closed" },
+          { id: "DL-2026-210", prop: "Malibu Coast Cove", type: "Sale", client: "Jennifer Lawrence", val: "$19,500,000", date: "April 14, 2026", status: "Closed" }
+        ],
+        appointments: [
+          { client: "Michael Fassbender", type: "Appraisal", date: "July 12, 2026", time: "10:00 AM", prop: "Pacific Palisades Mansion", status: "Confirmed" },
+          { client: "Angelina Jolie", type: "Private Tour", date: "July 15, 2026", time: "2:30 PM", prop: "Bel Air Glass Villa", status: "Confirmed" },
+          { client: "Tom Hanks", type: "Consultation", date: "July 18, 2026", time: "11:15 AM", prop: "Malibu Road Coastal Villa", status: "Pending" }
+        ],
+        calendar: [
+          { day: "Mon", date: "Jul 13", time: "09:00 AM", label: "Team sync" },
+          { day: "Tue", date: "Jul 14", time: "10:00 AM", label: "Appraisal walkthrough", event: "Fassbender" },
+          { day: "Wed", date: "Jul 15", time: "02:30 PM", label: "Private tour", event: "Jolie" },
+          { day: "Thu", date: "Jul 16", time: "11:00 AM", label: "Contract appraisal" },
+          { day: "Fri", date: "Jul 17", time: "04:00 PM", label: "Escrow review" },
+          { day: "Sat", date: "Jul 18", time: "11:15 AM", label: "Listing review", event: "Hanks" },
+          { day: "Sun", date: "Jul 19", time: "Offline", label: "Desk break" }
+        ],
+        timeline: [
+          { time: "Yesterday", type: "Property Added", title: "Listed Malibu Road Coastal Villa for $16.8M.", badge: "New Listing" },
+          { time: "3 days ago", type: "Deal Closed", title: "Completed sale of Beverly Crest Modern Villa for $12.4M.", badge: "Deal Closed" },
+          { time: "4 days ago", type: "Client Meeting", title: "Conducted initial appraisal walkthrough with Michael Fassbender.", badge: "Meeting" },
+          { time: "5 days ago", type: "Commission Paid", title: "Received $372,000 commission for Beverly Crest Modern Villa.", badge: "Paid" },
+          { time: "1 week ago", type: "Review Received", title: "Rated 5.0 stars by Robert Downey Jr. - 'Marcus is the absolute standard of residential excellence.'", badge: "Review Received" }
+        ],
+        reviews: [
+          {
+            name: "Sophia Loren",
+            rating: 5,
+            comment: "Marcus handled our penthouse purchase with extreme care, absolute confidentiality, and superb commercial judgment. Highly recommend his advisory service.",
+            date: "2 weeks ago",
+            img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=120&auto=format&fit=crop"
+          },
+          {
+            name: "Richard Sterling",
+            rating: 5,
+            comment: "An absolute powerhouse of a negotiator. He got us the house in Bel-Air well below our target ceiling. A master class in transaction management.",
+            date: "1 month ago",
+            img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=120&auto=format&fit=crop"
+          },
+          {
+            name: "Olivia Wilde",
+            rating: 4.8,
+            comment: "Incredibly professional and organized. His marketing team produced breathtaking cinematic video walkthroughs for our beachfront estate which drove high-profile viewings within 48 hours.",
+            date: "2 months ago",
+            img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=120&auto=format&fit=crop"
+          }
+        ]
+      };
+
+      // Chart.js global instance tracker
+      let agentPerformanceChartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Init theme switching listeners
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        function applyCurrentTheme(theme) {
+          document.documentElement.setAttribute('data-bs-theme', theme);
+          localStorage.setItem('theme', theme);
+          if (theme === 'light') {
+            if (themeIcon) themeIcon.className = 'bi bi-moon-stars';
+          } else {
+            if (themeIcon) themeIcon.className = 'bi bi-sun';
+          }
+          // Re-render chart to reflect theme colors
+          renderPerformanceChart(theme);
+        }
+
+        if (themeToggleBtn) {
+          themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+            const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyCurrentTheme(nextTheme);
+          });
+        }
+
+        // Sidebar mobile toggling support
+        const sidebarWrapper = document.getElementById('sidebar-wrapper');
+        const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+        if (sidebarToggleBtn && sidebarWrapper && sidebarOverlay) {
+          const toggleSidebar = () => {
+            sidebarWrapper.classList.toggle('mobile-show');
+            sidebarOverlay.classList.toggle('active');
+          };
+          sidebarToggleBtn.addEventListener('click', toggleSidebar);
+          sidebarOverlay.addEventListener('click', toggleSidebar);
+        }
+
+        // Trigger first dossier simulated fetch with skeletons
+        simulateCRMFetch();
+
+        // Register refresh button action
+        document.getElementById("refresh-dossier-btn").addEventListener("click", () => {
+          simulateCRMFetch();
+        });
+
+        // Search inputs listeners for filterings
+        document.getElementById("property-search").addEventListener("input", (e) => {
+          filterProperties(e.target.value);
+        });
+
+        document.getElementById("invoice-search").addEventListener("input", (e) => {
+          filterInvoices(e.target.value);
+        });
+
+        // Initialize mouse coordinate glow updates
+        initCardGlows();
+      });
+
+      // Simulated dossier fetch and rendering
+      function simulateCRMFetch() {
+        const skeleton = document.getElementById("skeleton-loader");
+        const realData = document.getElementById("real-data");
+
+        // Reveal skeletons, hide real dataset
+        skeleton.classList.remove("skeleton-hidden");
+        realData.classList.add("skeleton-hidden");
+        realData.style.opacity = "0";
+        realData.style.transform = "translateY(15px)";
+
+        setTimeout(() => {
+          // Hide skeletons, fade-in real dataset
+          skeleton.classList.add("skeleton-hidden");
+          realData.classList.remove("skeleton-hidden");
+          setTimeout(() => {
+            realData.style.opacity = "1";
+            realData.style.transform = "translateY(0)";
+            renderAllDossierFields();
+          }, 50);
+        }, 1100);
+      }
+
+      function renderAllDossierFields() {
+        // Base headers
+        document.getElementById("agent-fullname").textContent = AGENT_DATA.fullName;
+        document.getElementById("agent-profile-img").src = AGENT_DATA.profile;
+        document.getElementById("agent-designation").textContent = AGENT_DATA.designation;
+        document.getElementById("agent-department").textContent = AGENT_DATA.department;
+        document.getElementById("agent-emp-id").textContent = AGENT_DATA.id;
+        document.getElementById("agent-office-location").textContent = AGENT_DATA.office;
+        document.getElementById("agent-experience-years").textContent = AGENT_DATA.experience;
+        document.getElementById("agent-joining-date").textContent = AGENT_DATA.joiningDate;
+        document.getElementById("agent-license-no").textContent = AGENT_DATA.license;
+        document.getElementById("agent-rating").textContent = AGENT_DATA.rating;
+        document.getElementById("agent-reviews-count").textContent = AGENT_DATA.reviewsCount;
+        document.getElementById("agent-phone").textContent = AGENT_DATA.phone;
+        document.getElementById("agent-email").textContent = AGENT_DATA.email;
+        document.getElementById("agent-address").textContent = AGENT_DATA.address;
+        document.getElementById("agent-emergency-contact").textContent = AGENT_DATA.emergencyContact;
+        document.getElementById("agent-website").textContent = AGENT_DATA.website;
+        document.getElementById("agent-website").href = "https://" + AGENT_DATA.website;
+        document.getElementById("agent-bio").textContent = AGENT_DATA.bio;
+
+        // Render counters
+        initDossierCounters();
+
+        // Render sub-sections
+        renderPropertyCards(AGENT_DATA.properties);
+        renderInvoicesTable(AGENT_DATA.invoices);
+        renderTransactionsTable(AGENT_DATA.transactions);
+        renderSkillsProgress(AGENT_DATA.skills);
+        renderAppointments(AGENT_DATA.appointments);
+        renderWeeklyCalendar(AGENT_DATA.calendar);
+        renderActivityTimeline(AGENT_DATA.timeline);
+        renderReviews(AGENT_DATA.reviews);
+
+        // Chart render
+        const theme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+        renderPerformanceChart(theme);
+
+        // Active AOS
+        if (typeof AOS !== 'undefined') {
+          AOS.refresh();
+        }
+      }
+
+      // Counter animation logic
+      function initDossierCounters() {
+        const counters = document.querySelectorAll(".animate-counter-uh");
+        counters.forEach(counter => {
+          const target = parseFloat(counter.getAttribute("data-target"));
+          const speed = 1000; // ms
+          const step = target / (speed / 16);
+          let curr = 0;
+          
+          const update = () => {
+            curr += step;
+            if (curr >= target) {
+              counter.textContent = target.toLocaleString();
+            } else {
+              counter.textContent = curr.toFixed(1).replace(".0", "");
+              requestAnimationFrame(update);
+            }
+          };
+          update();
+        });
+      }
+
+      // Render Active Assigned Listing Cards
+      function renderPropertyCards(props) {
+        const container = document.getElementById("property-cards-container");
+        container.innerHTML = "";
+        
+        if (props.length === 0) {
+          document.getElementById("property-empty-state").classList.remove("d-none");
+          return;
+        } else {
+          document.getElementById("property-empty-state").classList.add("d-none");
+        }
+
+        props.forEach(p => {
+          const badgeClass = p.status.includes("Pending") ? "bg-warning text-dark" : "bg-primary text-body";
+          const cardHtml = `
+            <div class="col-12 col-md-6" data-aos="fade-up">
+              <div class="card h-100 border border-light-subtle overflow-hidden bg-body shadow-sm" style="border-radius: 10px;">
+                <div style="height: 140px; overflow: hidden; position: relative;">
+                  <img src="${p.img}" class="w-100 h-100 object-fit-cover" alt="${p.name}" />
+                  <span class="badge ${badgeClass} position-absolute top-2 start-2" style="font-size: 0.7rem; font-weight:700;">${p.status}</span>
+                </div>
+                <div class="p-3">
+                  <h6 class="font-title fw-bold mb-1 text-main text-truncate">${p.name}</h6>
+                  <span class="text-muted d-block mb-2" style="font-size: 0.75rem;"><i class="bi bi-geo-alt me-1"></i>${p.city}</span>
+                  <div class="d-flex align-items-center justify-content-between pt-2 border-top border-light-subtle">
+                    <span class="fw-bold text-primary" style="font-size: 0.95rem;">${p.price}</span>
+                    <a href="property-details.html" class="btn btn-outline-primary btn-xs py-1 px-2" style="font-size: 0.7rem;">View Details</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          container.innerHTML += cardHtml;
+        });
+      }
+
+      // Search Property filter
+      function filterProperties(query) {
+        const filtered = AGENT_DATA.properties.filter(p => 
+          p.name.toLowerCase().includes(query.toLowerCase()) || 
+          p.city.toLowerCase().includes(query.toLowerCase()) || 
+          p.price.toLowerCase().includes(query.toLowerCase()) || 
+          p.status.toLowerCase().includes(query.toLowerCase())
+        );
+        renderPropertyCards(filtered);
+      }
+
+      // Render Invoice List Table
+      function renderInvoicesTable(invs) {
+        const tbody = document.getElementById("invoice-table-body");
+        tbody.innerHTML = "";
+
+        if (invs.length === 0) {
+          document.getElementById("invoice-empty-state").classList.remove("d-none");
+          return;
+        } else {
+          document.getElementById("invoice-empty-state").classList.add("d-none");
+        }
+
+        invs.forEach(i => {
+          tbody.innerHTML += `
+            <tr style="border-color: var(--uh-border-card);">
+              <td><span class="fw-bold text-main" style="font-size: 0.8rem;"><i class="bi bi-receipt me-1 text-primary"></i>${i.inv}</span></td>
+              <td><span style="font-size: 0.8rem; font-weight:500;">${i.prop}</span></td>
+              <td><span style="font-size: 0.8rem;">${i.client}</span></td>
+              <td><span class="fw-bold text-primary" style="font-size: 0.8rem;">${i.val}</span></td>
+              <td><span class="text-muted" style="font-size: 0.75rem;">${i.date}</span></td>
+              <td class="text-end"><span class="badge bg-success-light text-success" style="font-size: 0.7rem;">${i.status}</span></td>
+            </tr>
+          `;
+        });
+      }
+
+      // Search Invoice filter
+      function filterInvoices(query) {
+        const filtered = AGENT_DATA.invoices.filter(i => 
+          i.inv.toLowerCase().includes(query.toLowerCase()) || 
+          i.prop.toLowerCase().includes(query.toLowerCase()) || 
+          i.client.toLowerCase().includes(query.toLowerCase()) || 
+          i.val.toLowerCase().includes(query.toLowerCase())
+        );
+        renderInvoicesTable(filtered);
+      }
+
+      // Render Transaction history Table
+      function renderTransactionsTable(txs) {
+        const tbody = document.getElementById("transaction-table-body");
+        tbody.innerHTML = "";
+        txs.forEach(t => {
+          const typeBadge = t.type === "Sale" ? "bg-primary-subtle text-primary" : "bg-info-subtle text-info";
+          tbody.innerHTML += `
+            <tr style="border-color: var(--uh-border-card);">
+              <td><span class="fw-semibold text-primary" style="font-size: 0.8rem;">${t.id}</span></td>
+              <td><span class="fw-semibold text-main" style="font-size: 0.8rem;">${t.prop}</span></td>
+              <td><span class="badge ${typeBadge}" style="font-size: 0.7rem;">${t.type}</span></td>
+              <td><span style="font-size: 0.8rem;">${t.client}</span></td>
+              <td><span class="fw-bold text-main" style="font-size: 0.8rem;">${t.val}</span></td>
+              <td><span class="text-muted" style="font-size: 0.75rem;">${t.date}</span></td>
+              <td class="text-end"><span class="badge bg-success-light text-success" style="font-size: 0.7rem;">${t.status}</span></td>
+            </tr>
+          `;
+        });
+      }
+
+      // Render Skills animated progress lines
+      function renderSkillsProgress(skills) {
+        const container = document.getElementById("skills-matrix-container");
+        container.innerHTML = "";
+        skills.forEach(s => {
+          container.innerHTML += `
+            <div class="mb-2" style="font-size: 0.8rem;">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="fw-semibold text-main">${s.name}</span>
+                <span class="text-primary fw-bold">${s.val}%</span>
+              </div>
+              <div class="progress bg-body border border-light-subtle" style="height: 6px; border-radius: 4px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: ${s.val}%; border-radius: 4px;" aria-valuenow="${s.val}" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // Render Upcoming Appointments List
+      function renderAppointments(apps) {
+        const container = document.getElementById("appointments-container");
+        container.innerHTML = "";
+        apps.forEach(a => {
+          const badge = a.status === "Confirmed" ? "badge bg-success-light text-success" : "badge bg-warning-light text-warning";
+          container.innerHTML += `
+            <div class="p-2 border rounded-3 bg-body d-flex align-items-start justify-content-between shadow-sm">
+              <div>
+                <span class="fw-bold text-main d-block" style="font-size: 0.8rem;">${a.client}</span>
+                <span class="text-muted d-block" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>${a.date} &bull; ${a.time}</span>
+                <span class="text-muted text-truncate d-block mt-1" style="font-size: 0.7rem; max-width: 180px;"><i class="bi bi-geo-alt"></i> ${a.prop}</span>
+              </div>
+              <div class="text-end">
+                <span class="${badge}" style="font-size: 0.65rem;">${a.status}</span>
+                <span class="text-primary d-block mt-1 fw-bold" style="font-size: 0.65rem;">${a.type}</span>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // Render Calendar Grid
+      function renderWeeklyCalendar(cal) {
+        const container = document.getElementById("weekly-calendar-container");
+        container.innerHTML = "";
+        cal.forEach(c => {
+          const isToday = c.day === "Tue"; // Simulating Tuesday July 14 as today
+          const tagClass = c.event ? (c.event === "Hanks" ? "tag-pending" : "tag-confirmed") : "";
+          const tagText = c.event ? `${c.time} - ${c.event}` : (c.time === "Offline" ? "Out" : "Free Slot");
+          const tagColorClass = c.time === "Offline" ? "bg-body-tertiary text-muted" : (c.event ? tagClass : "bg-primary-subtle text-primary");
+          
+          container.innerHTML += `
+            <div class="calendar-cell ${isToday ? 'today' : ''}">
+              <div class="d-flex justify-content-between">
+                <span class="calendar-cell-date fw-bold">${c.day}</span>
+                <span class="text-muted" style="font-size: 0.6rem;">${c.date.split(" ")[1]}</span>
+              </div>
+              <div class="calendar-event-tag ${tagColorClass}" title="${c.label}">
+                ${tagText}
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // Render Activity timeline
+      function renderActivityTimeline(tl) {
+        const container = document.getElementById("activity-timeline-container");
+        container.innerHTML = "";
+        tl.forEach(t => {
+          container.innerHTML += `
+            <div class="timeline-item">
+              <span class="timeline-item-dot"></span>
+              <div class="timeline-item-time">${t.time} &bull; <span class="badge bg-primary-subtle text-primary px-1" style="font-size: 0.6rem;">${t.badge}</span></div>
+              <div class="timeline-item-title">${t.type}</div>
+              <div class="timeline-item-desc">${t.title}</div>
+            </div>
+          `;
+        });
+      }
+
+      // Render Client Reviews List
+      function renderReviews(revs) {
+        const container = document.getElementById("reviews-list-container");
+        container.innerHTML = "";
+        revs.forEach(r => {
+          let starsHtml = "";
+          for (let s = 1; s <= 5; s++) {
+            starsHtml += `<i class="bi bi-star-fill text-warning" style="font-size: 0.75rem;"></i> `;
+          }
+          container.innerHTML += `
+            <div class="p-3 border rounded-3 bg-body d-flex gap-3 align-items-start shadow-sm">
+              <img src="${r.img}" class="rounded-circle border border-primary" style="width: 44px; height: 44px; object-fit:cover;" alt="${r.name}" />
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <h6 class="fw-bold text-main mb-0" style="font-size: 0.85rem;">${r.name}</h6>
+                  <span class="text-muted" style="font-size: 0.7rem;">${r.date}</span>
+                </div>
+                <div class="mb-2">${starsHtml}</div>
+                <p class="text-muted mb-0" style="font-size: 0.8rem; line-height: 1.5;">"${r.comment}"</p>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // Render Chart Performance Dashboard using Chart.js
+      let currentActiveChartType = "sales";
+      function toggleAgentChart(type) {
+        document.getElementById("btn-chart-sales").classList.remove("active");
+        document.getElementById("btn-chart-revenue").classList.remove("active");
+        document.getElementById("btn-chart-leads").classList.remove("active");
+        document.getElementById("btn-chart-commission").classList.remove("active");
+
+        document.getElementById(`btn-chart-${type}`).classList.add("active");
+        currentActiveChartType = type;
+
+        const theme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+        renderPerformanceChart(theme);
+      }
+
+      function renderPerformanceChart(theme) {
+        const isDark = theme === 'dark';
+        const ctx = document.getElementById("agentPerformanceChart");
+        if (!ctx) return;
+
+        if (agentPerformanceChartInstance) {
+          agentPerformanceChartInstance.destroy();
+        }
+
+        // Color definitions matching the CSS vars
+        const textColor = isDark ? '#94A3B8' : '#64748B';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        const primaryColor = isDark ? '#D4AF37' : '#B8860B'; // Gold
+        const secondaryColor = '#10B981'; // Success Green
+
+        let labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        let datasets = [];
+
+        if (currentActiveChartType === "sales") {
+          datasets = [
+            {
+              label: "Luxury Sales Properties Sold",
+              data: [8, 12, 10, 15, 18, 14, 20, 22, 18, 25, 21, 28],
+              borderColor: primaryColor,
+              backgroundColor: 'rgba(212, 175, 55, 0.1)',
+              tension: 0.3,
+              fill: true,
+              borderWidth: 2
+            }
+          ];
+        } else if (currentActiveChartType === "revenue") {
+          datasets = [
+            {
+              label: "Sales Volume Value ($M)",
+              data: [3.2, 4.8, 4.0, 5.5, 6.2, 5.0, 7.5, 8.2, 6.8, 9.5, 8.0, 10.5],
+              borderColor: secondaryColor,
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              tension: 0.3,
+              fill: true,
+              borderWidth: 2
+            }
+          ];
+        } else if (currentActiveChartType === "leads") {
+          datasets = [
+            {
+              label: "Assigned Lead Conversion Rate (%)",
+              data: [72, 75, 74, 78, 82, 80, 85, 88, 86, 92, 90, 95],
+              borderColor: '#3B82F6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              tension: 0.3,
+              fill: true,
+              borderWidth: 2
+            }
+          ];
+        } else if (currentActiveChartType === "commission") {
+          datasets = [
+            {
+              label: "Commission Cashflows ($K)",
+              data: [96, 144, 120, 165, 186, 150, 225, 246, 204, 285, 240, 315],
+              borderColor: '#F59E0B',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              tension: 0.3,
+              fill: true,
+              borderWidth: 2
+            }
+          ];
+        }
+
+        agentPerformanceChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: { labels, datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: {
+                  color: textColor,
+                  font: { family: 'Inter', size: 11 }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: gridColor },
+                ticks: { color: textColor, font: { family: 'Inter', size: 10 } }
+              },
+              y: {
+                grid: { color: gridColor },
+                ticks: { color: textColor, font: { family: 'Inter', size: 10 } }
+              }
+            }
+          }
+        });
+      }
+
+      // Initialize Mouse coordinates update for beautiful glow hovers
+      function initCardGlows() {
+        document.addEventListener("mousemove", (e) => {
+          const cards = document.querySelectorAll(".glow-card");
+          cards.forEach(card => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty("--mouse-x", `${x}px`);
+            card.style.setProperty("--mouse-y", `${y}px`);
+          });
+        });
+      }
+
+      // Toast dispatchers for actions
+      function showSuccessFeedback(msg) {
+        document.getElementById("toast-feedback-text").textContent = msg;
+        const toastEl = document.getElementById("feedback-success-toast");
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+      }
+
+      function submitSendMessage(e) {
+        e.preventDefault();
+        const modal = bootstrap.Modal.getInstance(document.getElementById("sendMessageModal"));
+        modal.hide();
+        showSuccessFeedback("CRM message dispatched to Marcus Vance successfully.");
+        e.target.reset();
+      }
+
+      function submitScheduleMeeting(e) {
+        e.preventDefault();
+        const modal = bootstrap.Modal.getInstance(document.getElementById("scheduleMeetingModal"));
+        modal.hide();
+        showSuccessFeedback("Performance Appraisal Scheduled and email invitation sent.");
+        e.target.reset();
+      }
+
+      function submitAssignProperty(e) {
+        e.preventDefault();
+        const modal = bootstrap.Modal.getInstance(document.getElementById("assignPropertyModal"));
+        modal.hide();
+        showSuccessFeedback("Listing assigned to Marcus Vance portfolio index.");
+        e.target.reset();
+      }
+
+      function executeAgentDeactivation() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById("deactivateAgentModal"));
+        modal.hide();
+        showSuccessFeedback("Marcus Vance CRM login suspends. Account suspended.");
+        document.getElementById("agent-pulse").className = "pulse-indicator status-offline";
+        document.getElementById("agent-pulse-text").textContent = "Account Deactivated";
+        document.getElementById("agent-status-label").className = "badge bg-danger-subtle text-danger px-2 py-1";
+        document.getElementById("agent-status-label").textContent = "Deactivated Suspended";
+      }
+
+      function triggerWhatsApp() {
+        showSuccessFeedback("WhatsApp direct dial link initialized in secure client workspace.");
+      }
+
+      function triggerReportDownload() {
+        showSuccessFeedback("Comprehensive PDF performance report downloaded successfully.");
+      }
+
+      function generatePerformanceReport() {
+        showSuccessFeedback("CRM Portfolio Report generated. PDF download dispatched.");
+      }
+
+      function triggerDocumentDownload(docName) {
+        showSuccessFeedback(`Downloading validated copy of: ${docName}`);
+      }
+    </script>
+  </body>
+</html>
